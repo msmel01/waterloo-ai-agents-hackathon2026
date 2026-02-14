@@ -8,13 +8,11 @@ from typing import Annotated
 
 from arq import create_pool
 from arq.connections import RedisSettings
-from dependency_injector.wiring import Provide
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.config import config
-from src.core.container import Container
 from src.core.exceptions import NotFoundError
 from src.dependencies import (
     get_calcom_service,
@@ -39,11 +37,18 @@ from src.services.tavus_service import TavusService
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
 AdminKey = Annotated[str, Depends(verify_admin_key)]
-HeartRepoDep = Annotated[HeartRepository, Depends(Provide[Container.heart_repository])]
 HeartIdDep = Annotated[uuid.UUID, Depends(get_heart_id)]
 TavusDep = Annotated[TavusService, Depends(get_tavus_service)]
 CalcomDep = Annotated[CalcomService, Depends(get_calcom_service)]
 DbDep = Annotated[AsyncSession, Depends(get_db_session)]
+
+
+def get_heart_repo(request: Request) -> HeartRepository:
+    """Resolve HeartRepository from app container without wiring markers."""
+    return request.app.state.container.heart_repository()
+
+
+HeartRepoDep = Annotated[HeartRepository, Depends(get_heart_repo)]
 
 
 async def _get_heart_or_404(

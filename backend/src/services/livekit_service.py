@@ -25,18 +25,20 @@ class LiveKitService:
         self.api_key = api_key
         self.api_secret = api_secret
         self.url = url
-        self._api = (
-            LiveKitAPI(url=url, api_key=api_key, api_secret=api_secret)
-            if LiveKitAPI
-            else None
-        )
 
     def _require_sdk(self) -> None:
-        if not self._api or not AccessToken or not VideoGrants:
+        if not LiveKitAPI or not AccessToken or not VideoGrants:
             raise RuntimeError(
                 "LiveKit SDK is not available. Install `livekit-api` and "
                 "`livekit-agents` dependencies."
             )
+
+    def _new_api(self):
+        """Create a LiveKitAPI client in an async context."""
+        self._require_sdk()
+        return LiveKitAPI(
+            url=self.url, api_key=self.api_key, api_secret=self.api_secret
+        )
 
     async def create_room(
         self,
@@ -46,25 +48,29 @@ class LiveKitService:
     ) -> dict[str, Any]:
         """Create a LiveKit room used by one interview session."""
         self._require_sdk()
+        api = self._new_api()
         try:
-            room = await self._api.room.create_room(  # type: ignore[union-attr]
-                name=room_name,
-                empty_timeout=300,
-                max_participants=max_participants,
-                metadata=metadata,
-            )
-        except TypeError:
-            # Compatibility path for SDK versions expecting a request object.
-            from livekit.api import CreateRoomRequest
-
-            room = await self._api.room.create_room(  # type: ignore[union-attr]
-                CreateRoomRequest(
+            try:
+                room = await api.room.create_room(
                     name=room_name,
                     empty_timeout=300,
                     max_participants=max_participants,
                     metadata=metadata,
                 )
-            )
+            except TypeError:
+                # Compatibility path for SDK versions expecting a request object.
+                from livekit.api import CreateRoomRequest
+
+                room = await api.room.create_room(
+                    CreateRoomRequest(
+                        name=room_name,
+                        empty_timeout=300,
+                        max_participants=max_participants,
+                        metadata=metadata,
+                    )
+                )
+        finally:
+            await api.aclose()
         return {"name": room.name, "sid": room.sid}
 
     def generate_suitor_token(
@@ -89,16 +95,19 @@ class LiveKitService:
     async def delete_room(self, room_name: str) -> None:
         """Delete a LiveKit room when a session is fully complete."""
         self._require_sdk()
+        api = self._new_api()
         try:
-            await self._api.room.delete_room(room_name)  # type: ignore[union-attr]
+            await api.room.delete_room(room_name)
         except Exception:
             # Room may already be cleaned up by timeout/egress flows.
             return
+        finally:
+            await api.aclose()
 
     async def close(self) -> None:
         """Close API client resources if the SDK provides an async close hook."""
-        if self._api and hasattr(self._api, "aclose"):
-            await self._api.aclose()
+        # LiveKitAPI is created per-call in async methods, so this is a no-op.
+        return
 
     async def create_agent_dispatch(
         self, room_name: str, agent_name: str, metadata: str | None = None
@@ -107,13 +116,17 @@ class LiveKitService:
         self._require_sdk()
         if not CreateAgentDispatchRequest:
             raise RuntimeError("CreateAgentDispatchRequest unavailable in livekit-api")
-        dispatch = await self._api.agent_dispatch.create_dispatch(  # type: ignore[union-attr]
-            CreateAgentDispatchRequest(
-                room=room_name,
-                agent_name=agent_name,
-                metadata=metadata or "",
+        api = self._new_api()
+        try:
+            dispatch = await api.agent_dispatch.create_dispatch(
+                CreateAgentDispatchRequest(
+                    room=room_name,
+                    agent_name=agent_name,
+                    metadata=metadata or "",
+                )
             )
-        )
+        finally:
+            await api.aclose()
         return {
             "id": dispatch.id,
             "agent_name": dispatch.agent_name,
