@@ -1,4 +1,5 @@
 import logging
+import os
 from enum import Enum
 from functools import lru_cache
 from typing import Optional
@@ -22,6 +23,11 @@ class EnvironmentOption(str, Enum):
 class LLMProvider(str, Enum):
     OPENAI = "openai"
     HUGGINGFACE = "huggingface"
+
+
+class TTSProvider(str, Enum):
+    DEEPGRAM = "deepgram"
+    SMALLESTAI = "smallestai"
 
 
 class Config(BaseSettings):
@@ -120,6 +126,9 @@ class Config(BaseSettings):
 
     OPENAI_API_KEY: Optional[SecretStr] = None
     HUGGINGFACE_API_TOKEN: Optional[SecretStr] = None
+    TTS: TTSProvider = TTSProvider.DEEPGRAM
+    DEEPGRAM_TTS_MODEL: str = "aura-2-andromeda-en"
+    SMALLEST_TTS_MODEL: str = "lightning-v2"
 
     # Clerk Authentication (Suitor auth)
     CLERK_JWKS_URL: str
@@ -136,8 +145,12 @@ class Config(BaseSettings):
     LIVEKIT_URL: Optional[str] = None
     TAVUS_API_KEY: Optional[SecretStr] = None
     SMALLEST_AI_API_KEY: Optional[SecretStr] = None
+    SMALLEST_LLM_BASE_URL: str = "https://llm-api.smallest.ai/v1"
+    SMALLEST_LLM_MODEL: str = "electron-v2"
     HUME_API_KEY: Optional[SecretStr] = None
     HUME_SECRET_KEY: Optional[SecretStr] = None
+    HUME_VOICE_ID: Optional[str] = None
+    DEEPGRAM_API_KEY: Optional[SecretStr] = None
     ANTHROPIC_API_KEY: Optional[SecretStr] = None
     CALCOM_API_KEY: Optional[SecretStr] = None
     CALCOM_EVENT_TYPE_ID: Optional[str] = None
@@ -169,7 +182,10 @@ class Config(BaseSettings):
 
 @lru_cache()
 def get_config() -> Config:
-    return Config()
+    cfg = Config()
+    if cfg.SMALLEST_AI_API_KEY and not os.environ.get("SMALLEST_API_KEY"):
+        os.environ["SMALLEST_API_KEY"] = cfg.SMALLEST_AI_API_KEY.get_secret_value()
+    return cfg
 
 
 config = get_config()

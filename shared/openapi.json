@@ -345,7 +345,7 @@
           "Sessions"
         ],
         "summary": "Start Session",
-        "description": "Initialize a new interview session for the authenticated suitor.",
+        "description": "Start a new interview session and return LiveKit join credentials.",
         "operationId": "start_session_api_v1_sessions_start_post",
         "requestBody": {
           "content": {
@@ -378,12 +378,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
+        }
       }
     },
     "/api/v1/sessions/{id}/status": {
@@ -435,13 +430,62 @@
         }
       }
     },
+    "/api/v1/sessions/{id}/end": {
+      "post": {
+        "tags": [
+          "Sessions"
+        ],
+        "summary": "End Session",
+        "description": "End an active session and clean up the LiveKit room.",
+        "operationId": "end_session_api_v1_sessions__id__end_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/sessions/{id}/verdict": {
       "get": {
         "tags": [
           "Sessions"
         ],
         "summary": "Get Session Verdict",
-        "description": "Poll final verdict and score breakdown for a session owned by the authenticated suitor.",
+        "description": "Get verdict and score breakdown for a completed/scored session.",
         "operationId": "get_session_verdict_api_v1_sessions__id__verdict_get",
         "security": [
           {
@@ -939,7 +983,7 @@
           "avatar_ready": {
             "type": "boolean",
             "title": "Avatar Ready",
-            "description": "Whether a Tavus avatar replica has been initialized."
+            "description": "Whether the voice interview agent stack is configured and ready."
           },
           "has_calendar": {
             "type": "boolean",
@@ -997,75 +1041,31 @@
             "title": "Session Id",
             "description": "Created interview session UUID."
           },
-          "heart_id": {
+          "livekit_url": {
             "type": "string",
-            "format": "uuid",
-            "title": "Heart Id",
-            "description": "Heart UUID for the interview."
-          },
-          "suitor_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Suitor Id",
-            "description": "Authenticated suitor UUID for the interview."
-          },
-          "status": {
-            "$ref": "#/components/schemas/SessionStatus",
-            "description": "Current session lifecycle state."
-          },
-          "livekit_room_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Livekit Room Name",
-            "description": "LiveKit room name if allocated."
+            "title": "Livekit Url",
+            "description": "LiveKit server URL used by the frontend client."
           },
           "livekit_token": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Livekit Token",
-            "description": "LiveKit access token placeholder for Milestone 1."
-          },
-          "created_at": {
             "type": "string",
-            "format": "date-time",
-            "title": "Created At",
-            "description": "Session creation timestamp."
+            "title": "Livekit Token",
+            "description": "LiveKit JWT for authenticated suitor join."
+          },
+          "room_name": {
+            "type": "string",
+            "title": "Room Name",
+            "description": "LiveKit room name for this interview session."
           }
         },
         "type": "object",
         "required": [
           "session_id",
-          "heart_id",
-          "suitor_id",
-          "status",
-          "created_at"
+          "livekit_url",
+          "livekit_token",
+          "room_name"
         ],
         "title": "SessionStartResponse",
         "description": "Session initialization response payload."
-      },
-      "SessionStatus": {
-        "type": "string",
-        "enum": [
-          "pending",
-          "in_progress",
-          "completed",
-          "failed",
-          "cancelled"
-        ],
-        "title": "SessionStatus",
-        "description": "Interview session lifecycle status."
       },
       "SessionStatusResponse": {
         "properties": {
@@ -1076,8 +1076,9 @@
             "description": "Session UUID."
           },
           "status": {
-            "$ref": "#/components/schemas/SessionStatus",
-            "description": "Current session processing status."
+            "type": "string",
+            "title": "Status",
+            "description": "Session state: pending, in_progress, completed, scoring, scored, failed, cancelled."
           },
           "started_at": {
             "anyOf": [
@@ -1104,6 +1105,18 @@
             ],
             "title": "Ended At",
             "description": "Timestamp when interview ended."
+          },
+          "duration_seconds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Seconds",
+            "description": "Duration from start to end/current time."
           }
         },
         "type": "object",
@@ -1123,73 +1136,31 @@
             "description": "Session UUID."
           },
           "verdict": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/Verdict"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Date/no-date verdict when ready."
+            "$ref": "#/components/schemas/Verdict",
+            "description": "Date/no-date verdict."
           },
           "weighted_total": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "number",
             "title": "Weighted Total",
             "description": "Overall weighted score (0-100)."
           },
           "effort_score": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "number",
             "title": "Effort Score",
             "description": "Effort score (0-100)."
           },
           "creativity_score": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "number",
             "title": "Creativity Score",
             "description": "Creativity score (0-100)."
           },
           "intent_clarity_score": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "number",
             "title": "Intent Clarity Score",
             "description": "Intent clarity score (0-100)."
           },
           "emotional_intelligence_score": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "number",
             "title": "Emotional Intelligence Score",
             "description": "Emotional intelligence score (0-100)."
           },
@@ -1205,27 +1176,21 @@
             "description": "Emotion-based score modifiers."
           },
           "feedback_text": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
             "title": "Feedback Text",
             "description": "Personalized feedback for the suitor."
-          },
-          "ready": {
-            "type": "boolean",
-            "title": "Ready",
-            "description": "Whether verdict and scoring are ready."
           }
         },
         "type": "object",
         "required": [
           "session_id",
-          "ready"
+          "verdict",
+          "weighted_total",
+          "effort_score",
+          "creativity_score",
+          "intent_clarity_score",
+          "emotional_intelligence_score",
+          "feedback_text"
         ],
         "title": "SessionVerdictResponse",
         "description": "Final verdict payload returned to suitor."

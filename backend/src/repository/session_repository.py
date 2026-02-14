@@ -39,3 +39,32 @@ class SessionRepository(BaseRepository):
             await session.commit()
             await session.refresh(db_obj)
             return db_obj
+
+    async def find_active_by_suitor_heart(
+        self, suitor_id: uuid.UUID, heart_id: uuid.UUID
+    ) -> SessionDb | None:
+        """Find any pending/in-progress session for one suitor-heart pair."""
+        async with self.session_factory() as session:
+            result = await session.execute(
+                select(self.model).where(
+                    self.model.suitor_id == suitor_id,
+                    self.model.heart_id == heart_id,
+                    self.model.status.in_(
+                        [SessionStatus.PENDING, SessionStatus.IN_PROGRESS]
+                    ),
+                )
+            )
+            return result.scalars().first()
+
+    async def find_active_by_suitor(self, suitor_id: uuid.UUID) -> SessionDb | None:
+        """Find any active pending/in-progress session for one suitor."""
+        async with self.session_factory() as session:
+            result = await session.execute(
+                select(self.model).where(
+                    self.model.suitor_id == suitor_id,
+                    self.model.status.in_(
+                        [SessionStatus.PENDING, SessionStatus.IN_PROGRESS]
+                    ),
+                )
+            )
+            return result.scalars().first()

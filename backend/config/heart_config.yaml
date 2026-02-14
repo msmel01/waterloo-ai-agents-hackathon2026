@@ -71,6 +71,3 @@ shareable_slug: "meet-luna"
 calendar:
   calcom_api_key: "${CALCOM_API_KEY}"
   calcom_event_type_id: "${CALCOM_EVENT_TYPE_ID}"
-
-avatar:
-  tavus_api_key: "${TAVUS_API_KEY}"

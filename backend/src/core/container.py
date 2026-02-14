@@ -1,6 +1,6 @@
 from dependency_injector import containers, providers
 
-from src.core.config import get_config
+from src.core.config import Config, get_config
 from src.core.database import Database
 from src.repository.booking_repository import BookingRepository
 from src.repository.conversation_turn_repository import ConversationTurnRepository
@@ -27,7 +27,7 @@ class Container(containers.DeclarativeContainer):
         ]
     )
 
-    config = providers.Singleton(get_config)
+    config: Config = providers.Singleton(get_config)
 
     database = providers.Singleton(Database, config=config)
 

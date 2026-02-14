@@ -9,6 +9,8 @@ class SessionStatus(str, Enum):
     PENDING = "pending"
     IN_PROGRESS = "in_progress"
     COMPLETED = "completed"
+    SCORING = "scoring"
+    SCORED = "scored"
     FAILED = "failed"
     CANCELLED = "cancelled"
 

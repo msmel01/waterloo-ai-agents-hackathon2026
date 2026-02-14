@@ -5,7 +5,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from src.models.domain_enums import SessionStatus, Verdict
+from src.models.domain_enums import Verdict
 from src.schemas.heart_schema import EmotionModifiers
 
 
@@ -23,18 +23,11 @@ class SessionStartResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     session_id: uuid.UUID = Field(description="Created interview session UUID.")
-    heart_id: uuid.UUID = Field(description="Heart UUID for the interview.")
-    suitor_id: uuid.UUID = Field(
-        description="Authenticated suitor UUID for the interview."
+    livekit_url: str = Field(
+        description="LiveKit server URL used by the frontend client."
     )
-    status: SessionStatus = Field(description="Current session lifecycle state.")
-    livekit_room_name: str | None = Field(
-        default=None, description="LiveKit room name if allocated."
-    )
-    livekit_token: str | None = Field(
-        default=None, description="LiveKit access token placeholder for Milestone 1."
-    )
-    created_at: datetime = Field(description="Session creation timestamp.")
+    livekit_token: str = Field(description="LiveKit JWT for authenticated suitor join.")
+    room_name: str = Field(description="LiveKit room name for this interview session.")
 
 
 class SessionStatusResponse(BaseModel):
@@ -43,12 +36,17 @@ class SessionStatusResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     session_id: uuid.UUID = Field(description="Session UUID.")
-    status: SessionStatus = Field(description="Current session processing status.")
+    status: str = Field(
+        description="Session state: pending, in_progress, completed, scoring, scored, failed, cancelled."
+    )
     started_at: datetime | None = Field(
         default=None, description="Timestamp when interview started."
     )
     ended_at: datetime | None = Field(
         default=None, description="Timestamp when interview ended."
+    )
+    duration_seconds: float | None = Field(
+        default=None, description="Duration from start to end/current time."
     )
 
 
@@ -58,31 +56,18 @@ class SessionVerdictResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     session_id: uuid.UUID = Field(description="Session UUID.")
-    verdict: Verdict | None = Field(
-        default=None, description="Date/no-date verdict when ready."
-    )
-    weighted_total: float | None = Field(
-        default=None, description="Overall weighted score (0-100)."
-    )
-    effort_score: float | None = Field(
-        default=None, description="Effort score (0-100)."
-    )
-    creativity_score: float | None = Field(
-        default=None, description="Creativity score (0-100)."
-    )
-    intent_clarity_score: float | None = Field(
-        default=None, description="Intent clarity score (0-100)."
-    )
-    emotional_intelligence_score: float | None = Field(
-        default=None, description="Emotional intelligence score (0-100)."
+    verdict: Verdict = Field(description="Date/no-date verdict.")
+    weighted_total: float = Field(description="Overall weighted score (0-100).")
+    effort_score: float = Field(description="Effort score (0-100).")
+    creativity_score: float = Field(description="Creativity score (0-100).")
+    intent_clarity_score: float = Field(description="Intent clarity score (0-100).")
+    emotional_intelligence_score: float = Field(
+        description="Emotional intelligence score (0-100)."
     )
     emotion_modifiers: EmotionModifiers | None = Field(
         default=None, description="Emotion-based score modifiers."
     )
-    feedback_text: str | None = Field(
-        default=None, description="Personalized feedback for the suitor."
-    )
-    ready: bool = Field(description="Whether verdict and scoring are ready.")
+    feedback_text: str = Field(description="Personalized feedback for the suitor.")
 
 
 # Backward-compatible aliases

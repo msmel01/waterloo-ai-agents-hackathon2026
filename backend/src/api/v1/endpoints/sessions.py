@@ -1,34 +1,57 @@
 """Session endpoints."""
 
+import json
+import logging
 import uuid
+from datetime import datetime, timezone
 from typing import Annotated
 
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, HTTPException, status
 
+from src.core.config import config
 from src.core.container import Container
 from src.core.exceptions import NotFoundError
-from src.dependencies import get_current_suitor
+from src.dependencies import (
+    get_current_suitor,
+    get_current_suitor_optional,
+    get_livekit_service,
+)
 from src.models.domain_enums import SessionStatus
 from src.models.suitor_model import SuitorDb
 from src.repository.heart_repository import HeartRepository
 from src.repository.score_repository import ScoreRepository
 from src.repository.session_repository import SessionRepository
+from src.repository.suitor_repository import SuitorRepository
+from src.schemas.common_schema import SuccessResponse
 from src.schemas.session_schema import (
     SessionStartRequest,
     SessionStartResponse,
     SessionStatusResponse,
     SessionVerdictResponse,
 )
+from src.services.livekit_service import LiveKitService
 
 router = APIRouter(prefix="/sessions", tags=["Sessions"])
+logger = logging.getLogger(__name__)
+
+try:
+    from livekit.api import TwirpError
+except ImportError:  # pragma: no cover - optional dependency guard
+    TwirpError = RuntimeError  # type: ignore[assignment]
 
 CurrentSuitor = Annotated[SuitorDb, Depends(get_current_suitor)]
+OptionalSuitor = Annotated[SuitorDb | None, Depends(get_current_suitor_optional)]
 HeartRepoDep = Annotated[HeartRepository, Depends(Provide[Container.heart_repository])]
 SessionRepoDep = Annotated[
     SessionRepository, Depends(Provide[Container.session_repository])
 ]
 ScoreRepoDep = Annotated[ScoreRepository, Depends(Provide[Container.score_repository])]
+SuitorRepoDep = Annotated[
+    SuitorRepository, Depends(Provide[Container.suitor_repository])
+]
+LiveKitDep = Annotated[LiveKitService, Depends(get_livekit_service)]
+AGENT_NAME = "valentine-interview-agent"
 
 
 @router.post(
@@ -37,34 +60,102 @@ ScoreRepoDep = Annotated[ScoreRepository, Depends(Provide[Container.score_reposi
 @inject
 async def start_session(
     payload: SessionStartRequest,
-    suitor: CurrentSuitor,
+    suitor: OptionalSuitor,
+    suitor_repo: SuitorRepoDep,
     heart_repo: HeartRepoDep,
     session_repo: SessionRepoDep,
+    livekit: LiveKitDep,
 ):
-    """Initialize a new interview session for the authenticated suitor."""
+    """Start a new interview session and return LiveKit join credentials."""
+    if suitor is None:
+        # Temporary local-dev bypass when JWT auth is not wired yet.
+        suitor = await suitor_repo.find_by_clerk_id("local-dev-suitor")
+        if not suitor:
+            suitor = await suitor_repo.create(
+                suitor_repo.model(
+                    clerk_user_id="local-dev-suitor",
+                    name="Local Test Suitor",
+                    email=None,
+                    age=25,
+                    gender="unspecified",
+                    orientation="unspecified",
+                    intro_message="Local development test user",
+                )
+            )
+
+    if suitor.age is None or suitor.gender is None or suitor.orientation is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Complete your profile first (age, gender, orientation required)",
+        )
+
     heart = await heart_repo.find_by_slug(payload.heart_slug)
-    if not heart or not heart.is_active:
+    if not heart:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Heart link not found"
         )
-
-    created = await session_repo.create(
-        session_repo.model(
-            heart_id=heart.id,
-            suitor_id=suitor.id,
-            status=SessionStatus.PENDING,
-            livekit_room_name=f"vh_{heart.id}_{suitor.id}"[:255],
+    if not heart.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_410_GONE,
+            detail="This Heart link is currently inactive",
         )
+    active = await session_repo.find_active_by_suitor(suitor.id)
+    if active:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="You already have an active session",
+        )
+
+    draft = session_repo.model(
+        heart_id=heart.id,
+        suitor_id=suitor.id,
+        status=SessionStatus.PENDING,
+        livekit_room_name=None,
     )
+    created = await session_repo.create(draft)
+    room_name = f"session-{created.id}"
+    created = await session_repo.update_attr(created.id, "livekit_room_name", room_name)
+
+    room_metadata = json.dumps(
+        {
+            "session_id": str(created.id),
+            "heart_id": str(heart.id),
+            "suitor_id": str(suitor.id),
+        }
+    )
+    try:
+        room = await livekit.create_room(
+            room_name=room_name,
+            max_participants=2,
+            metadata=room_metadata,
+        )
+        await livekit.create_agent_dispatch(
+            room_name=room_name,
+            agent_name=AGENT_NAME,
+            metadata=room_metadata,
+        )
+        await session_repo.update_attr(created.id, "livekit_room_sid", room.get("sid"))
+        suitor_name = suitor.name or "Suitor"
+        livekit_token = livekit.generate_suitor_token(
+            room_name=room_name,
+            suitor_id=str(suitor.id),
+            suitor_name=suitor_name,
+        )
+    except (RuntimeError, TwirpError) as exc:
+        logger.exception("Failed to initialize LiveKit room for session %s", created.id)
+        await session_repo.update_status(created.id, SessionStatus.FAILED)
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Unable to initialize LiveKit room",
+        ) from exc
+    finally:
+        await livekit.close()
 
     return SessionStartResponse(
         session_id=created.id,
-        heart_id=created.heart_id,
-        suitor_id=created.suitor_id,
-        status=created.status,
-        livekit_room_name=created.livekit_room_name,
-        livekit_token=None,
-        created_at=created.created_at,
+        livekit_url=config.LIVEKIT_URL or "",
+        livekit_token=livekit_token,
+        room_name=room_name,
     )
 
 
@@ -74,6 +165,7 @@ async def get_session_status(
     id: uuid.UUID,
     suitor: CurrentSuitor,
     session_repo: SessionRepoDep,
+    score_repo: ScoreRepoDep,
 ):
     """Get current processing state for a session owned by the authenticated suitor."""
     try:
@@ -87,12 +179,60 @@ async def get_session_status(
     if session.suitor_id != suitor.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
 
+    score = await score_repo.find_by_session_id(session.id)
+    status_value = session.status.value
+    if session.status == SessionStatus.COMPLETED:
+        status_value = "scoring"
+    if score:
+        status_value = "scored"
+
+    duration_seconds = None
+    if session.started_at:
+        end_ref = session.ended_at or datetime.now(timezone.utc)
+        duration_seconds = max(0.0, (end_ref - session.started_at).total_seconds())
+
     return SessionStatusResponse(
         session_id=session.id,
-        status=session.status,
+        status=status_value,
         started_at=session.started_at,
         ended_at=session.ended_at,
+        duration_seconds=duration_seconds,
     )
+
+
+@router.post("/{id}/end", response_model=SuccessResponse)
+@inject
+async def end_session(
+    id: uuid.UUID,
+    suitor: CurrentSuitor,
+    session_repo: SessionRepoDep,
+    livekit: LiveKitDep,
+):
+    """End an active session and clean up the LiveKit room."""
+    try:
+        session = await session_repo.read_by_id(id)
+    except NotFoundError:
+        session = None
+    if session is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Session not found"
+        )
+    if session.suitor_id != suitor.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+
+    now = datetime.now(timezone.utc)
+    await session_repo.update_attr(id, "ended_at", now)
+    await session_repo.update_attr(id, "end_reason", "manual_end")
+    if session.status in {SessionStatus.PENDING, SessionStatus.IN_PROGRESS}:
+        await session_repo.update_status(id, SessionStatus.COMPLETED)
+
+    if session.livekit_room_name:
+        try:
+            await livekit.delete_room(session.livekit_room_name)
+        finally:
+            await livekit.close()
+
+    return SuccessResponse(message="Session ended")
 
 
 @router.get("/{id}/verdict", response_model=SessionVerdictResponse)
@@ -103,7 +243,7 @@ async def get_session_verdict(
     session_repo: SessionRepoDep,
     score_repo: ScoreRepoDep,
 ):
-    """Poll final verdict and score breakdown for a session owned by the authenticated suitor."""
+    """Get verdict and score breakdown for a completed/scored session."""
     try:
         session = await session_repo.read_by_id(id)
     except NotFoundError:
@@ -118,7 +258,10 @@ async def get_session_verdict(
     score = await score_repo.find_by_session_id(session.id)
 
     if not score:
-        return SessionVerdictResponse(session_id=session.id, ready=False)
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Session has not been scored yet",
+        )
 
     return SessionVerdictResponse(
         session_id=session.id,
@@ -130,5 +273,4 @@ async def get_session_verdict(
         emotional_intelligence_score=score.emotional_intelligence_score,
         emotion_modifiers=score.emotion_modifiers,
         feedback_text=score.feedback_text,
-        ready=True,
     )

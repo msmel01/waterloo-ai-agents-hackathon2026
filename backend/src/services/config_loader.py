@@ -59,9 +59,10 @@ class CalendarConfig(BaseModel):
 
 
 class AvatarConfig(BaseModel):
-    """Tavus config section."""
+    """Optional avatar config section (legacy Tavus support)."""
 
-    tavus_api_key: str
+    tavus_api_key: str | None = None
+    tavus_persona_id: str | None = None
 
 
 class HeartConfig(BaseModel):
@@ -73,7 +74,7 @@ class HeartConfig(BaseModel):
     screening_questions: list[QuestionConfig] = Field(..., min_length=1, max_length=15)
     shareable_slug: str = Field(..., pattern=r"^[a-z0-9\-]+$", max_length=50)
     calendar: CalendarConfig
-    avatar: AvatarConfig
+    avatar: AvatarConfig = Field(default_factory=AvatarConfig)
 
 
 class HeartConfigLoader:
@@ -148,6 +149,7 @@ class HeartConfigLoader:
             heart.expectations = cfg.expectations.model_dump()
             heart.shareable_slug = cfg.shareable_slug
             heart.calcom_event_type_id = cfg.calendar.calcom_event_type_id
+            heart.tavus_persona_id = cfg.avatar.tavus_persona_id
             heart.is_active = True
             db_session.add(heart)
         else:
@@ -162,6 +164,7 @@ class HeartConfigLoader:
                 expectations=cfg.expectations.model_dump(),
                 shareable_slug=cfg.shareable_slug,
                 calcom_event_type_id=cfg.calendar.calcom_event_type_id,
+                tavus_persona_id=cfg.avatar.tavus_persona_id,
                 is_active=True,
             )
             db_session.add(heart)
