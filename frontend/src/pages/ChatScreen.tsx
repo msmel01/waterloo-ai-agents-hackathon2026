@@ -59,5 +59,5 @@ export function ChatScreen() {
     return null;
   }
 
-  return <ScreeningRoom auth={auth} onLeave={handleLeave} />;
+  return <ScreeningRoom auth={auth} onLeave={handleLeave} dateName={dateName} />;
 }

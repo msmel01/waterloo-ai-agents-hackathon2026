@@ -73,7 +73,7 @@ The app uses a **placeholder token** stub in `src/lib/livekitToken.ts`. To conne
 
 ## Project structure
 
-- `src/components/` — ConnectScreen, ScreeningRoom
+- `src/components/` — Window, ScreeningRoom
 - `src/pages/` — OnboardingScreen, DatesGrid, ProfileScreen, ChatScreen
 - `src/hooks/` — useLivekitRoom
 - `src/lib/` — clerk (auth headers), livekitClient, livekitToken
