@@ -2,48 +2,89 @@
 
 import uuid
 from datetime import datetime
-from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
+
+from src.models.domain_enums import SessionStatus, Verdict
+from src.schemas.heart_schema import EmotionModifiers
 
 
-class StartSessionRequest(BaseModel):
+class SessionStartRequest(BaseModel):
     """Session initialization payload."""
 
-    heart_slug: str
-    suitor_id: uuid.UUID
+    heart_slug: str = Field(
+        description="Shareable heart slug used to identify interview target."
+    )
+    suitor_id: uuid.UUID = Field(description="Suitor UUID created during registration.")
 
 
-class StartSessionResponse(BaseModel):
-    """Session start response."""
+class SessionStartResponse(BaseModel):
+    """Session initialization response payload."""
 
-    session_id: uuid.UUID
-    heart_id: uuid.UUID
-    suitor_id: uuid.UUID
-    status: str
-    livekit_room_name: str | None = None
-    created_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+    session_id: uuid.UUID = Field(description="Created interview session UUID.")
+    heart_id: uuid.UUID = Field(description="Heart UUID for the interview.")
+    suitor_id: uuid.UUID = Field(description="Suitor UUID for the interview.")
+    status: SessionStatus = Field(description="Current session lifecycle state.")
+    livekit_room_name: str | None = Field(
+        default=None, description="LiveKit room name if allocated."
+    )
+    livekit_token: str | None = Field(
+        default=None, description="LiveKit access token placeholder for Milestone 1."
+    )
+    created_at: datetime = Field(description="Session creation timestamp.")
 
 
 class SessionStatusResponse(BaseModel):
     """Polling response for session status."""
 
-    session_id: uuid.UUID
-    status: str
-    started_at: datetime | None = None
-    ended_at: datetime | None = None
+    model_config = ConfigDict(from_attributes=True)
+
+    session_id: uuid.UUID = Field(description="Session UUID.")
+    status: SessionStatus = Field(description="Current session processing status.")
+    started_at: datetime | None = Field(
+        default=None, description="Timestamp when interview started."
+    )
+    ended_at: datetime | None = Field(
+        default=None, description="Timestamp when interview ended."
+    )
 
 
-class VerdictResponse(BaseModel):
+class SessionVerdictResponse(BaseModel):
     """Final verdict payload returned to suitor."""
 
-    session_id: uuid.UUID
-    verdict: str | None = None
-    weighted_total: float | None = None
-    effort_score: float | None = None
-    creativity_score: float | None = None
-    intent_clarity_score: float | None = None
-    emotional_intelligence_score: float | None = None
-    emotion_modifiers: dict[str, Any] | None = None
-    feedback_text: str | None = None
-    ready: bool
+    model_config = ConfigDict(from_attributes=True)
+
+    session_id: uuid.UUID = Field(description="Session UUID.")
+    verdict: Verdict | None = Field(
+        default=None, description="Date/no-date verdict when ready."
+    )
+    weighted_total: float | None = Field(
+        default=None, description="Overall weighted score (0-100)."
+    )
+    effort_score: float | None = Field(
+        default=None, description="Effort score (0-100)."
+    )
+    creativity_score: float | None = Field(
+        default=None, description="Creativity score (0-100)."
+    )
+    intent_clarity_score: float | None = Field(
+        default=None, description="Intent clarity score (0-100)."
+    )
+    emotional_intelligence_score: float | None = Field(
+        default=None, description="Emotional intelligence score (0-100)."
+    )
+    emotion_modifiers: EmotionModifiers | None = Field(
+        default=None, description="Emotion-based score modifiers."
+    )
+    feedback_text: str | None = Field(
+        default=None, description="Personalized feedback for the suitor."
+    )
+    ready: bool = Field(description="Whether verdict and scoring are ready.")
+
+
+# Backward-compatible aliases
+StartSessionRequest = SessionStartRequest
+StartSessionResponse = SessionStartResponse
+VerdictResponse = SessionVerdictResponse

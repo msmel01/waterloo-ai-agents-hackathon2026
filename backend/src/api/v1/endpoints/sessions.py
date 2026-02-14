@@ -13,13 +13,13 @@ from src.repository.score_repository import ScoreRepository
 from src.repository.session_repository import SessionRepository
 from src.repository.suitor_repository import SuitorRepository
 from src.schemas.session_schema import (
+    SessionStartRequest,
+    SessionStartResponse,
     SessionStatusResponse,
-    StartSessionRequest,
-    StartSessionResponse,
-    VerdictResponse,
+    SessionVerdictResponse,
 )
 
-router = APIRouter(prefix="/sessions", tags=["sessions"])
+router = APIRouter(prefix="/sessions", tags=["Sessions"])
 
 HeartRepoDep = Annotated[HeartRepository, Depends(Provide[Container.heart_repository])]
 SuitorRepoDep = Annotated[
@@ -32,16 +32,16 @@ ScoreRepoDep = Annotated[ScoreRepository, Depends(Provide[Container.score_reposi
 
 
 @router.post(
-    "/start", response_model=StartSessionResponse, status_code=status.HTTP_201_CREATED
+    "/start", response_model=SessionStartResponse, status_code=status.HTTP_201_CREATED
 )
 @inject
 async def start_session(
-    payload: StartSessionRequest,
+    payload: SessionStartRequest,
     heart_repo: HeartRepoDep,
     suitor_repo: SuitorRepoDep,
     session_repo: SessionRepoDep,
 ):
-    """Create an interview session for a suitor and heart."""
+    """Initialize a new interview session for a suitor and heart."""
     heart = await heart_repo.find_by_slug(payload.heart_slug)
     if not heart or not heart.is_active:
         raise HTTPException(
@@ -63,46 +63,47 @@ async def start_session(
         )
     )
 
-    return StartSessionResponse(
+    return SessionStartResponse(
         session_id=created.id,
         heart_id=created.heart_id,
         suitor_id=created.suitor_id,
-        status=created.status.value,
+        status=created.status,
         livekit_room_name=created.livekit_room_name,
+        livekit_token=None,
         created_at=created.created_at,
     )
 
 
-@router.get("/{session_id}/status", response_model=SessionStatusResponse)
+@router.get("/{id}/status", response_model=SessionStatusResponse)
 @inject
-async def get_session_status(session_id: uuid.UUID, session_repo: SessionRepoDep):
-    """Get interview session processing status."""
-    session = await session_repo.read_by_id(session_id)
+async def get_session_status(id: uuid.UUID, session_repo: SessionRepoDep):
+    """Get current processing state for a session."""
+    session = await session_repo.read_by_id(id)
     return SessionStatusResponse(
         session_id=session.id,
-        status=session.status.value,
+        status=session.status,
         started_at=session.started_at,
         ended_at=session.ended_at,
     )
 
 
-@router.get("/{session_id}/verdict", response_model=VerdictResponse)
+@router.get("/{id}/verdict", response_model=SessionVerdictResponse)
 @inject
 async def get_session_verdict(
-    session_id: uuid.UUID,
+    id: uuid.UUID,
     session_repo: SessionRepoDep,
     score_repo: ScoreRepoDep,
 ):
-    """Poll for final verdict and scoring feedback."""
-    session = await session_repo.read_by_id(session_id)
+    """Poll final verdict and score breakdown for a completed session."""
+    session = await session_repo.read_by_id(id)
     score = await score_repo.find_by_session_id(session.id)
 
     if not score:
-        return VerdictResponse(session_id=session.id, ready=False)
+        return SessionVerdictResponse(session_id=session.id, ready=False)
 
-    return VerdictResponse(
+    return SessionVerdictResponse(
         session_id=session.id,
-        verdict=score.verdict.value,
+        verdict=score.verdict,
         weighted_total=score.weighted_total,
         effort_score=score.effort_score,
         creativity_score=score.creativity_score,

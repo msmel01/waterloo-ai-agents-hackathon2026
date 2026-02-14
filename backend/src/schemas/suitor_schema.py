@@ -3,22 +3,25 @@
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class SuitorRegisterRequest(BaseModel):
     """Suitor registration payload."""
 
-    name: str
-    email: str | None = None
-    intro_message: str | None = None
+    name: str = Field(description="Suitor full name.")
+    email: str | None = Field(
+        default=None, description="Optional suitor email address."
+    )
+    intro_message: str | None = Field(
+        default=None, description="Optional intro message before interview starts."
+    )
 
 
 class SuitorRegisterResponse(BaseModel):
     """Suitor registration response."""
 
-    id: uuid.UUID
-    name: str
-    email: str | None = None
-    intro_message: str | None = None
-    created_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+    suitor_id: uuid.UUID = Field(description="Newly created suitor UUID.")
+    created_at: datetime = Field(description="Suitor creation timestamp.")

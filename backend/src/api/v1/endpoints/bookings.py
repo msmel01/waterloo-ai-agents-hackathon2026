@@ -12,13 +12,13 @@ from src.models.domain_enums import BookingStatus
 from src.repository.booking_repository import BookingRepository
 from src.repository.session_repository import SessionRepository
 from src.schemas.booking_schema import (
-    BookingSlotItem,
-    BookingSlotsResponse,
-    CreateBookingRequest,
-    CreateBookingResponse,
+    AvailableSlot,
+    AvailableSlotsResponse,
+    BookingConfirmationResponse,
+    BookingCreateRequest,
 )
 
-router = APIRouter(prefix="/bookings", tags=["bookings"])
+router = APIRouter(prefix="/bookings", tags=["Bookings"])
 
 BookingRepoDep = Annotated[
     BookingRepository, Depends(Provide[Container.booking_repository])
@@ -28,12 +28,12 @@ SessionRepoDep = Annotated[
 ]
 
 
-@router.get("/slots", response_model=BookingSlotsResponse)
+@router.get("/slots", response_model=AvailableSlotsResponse)
 async def get_slots():
-    """Return placeholder cal.com slots for local development."""
+    """Get available date booking slots (placeholder data for Milestone 1)."""
     now = datetime.now(timezone.utc)
     slots = [
-        BookingSlotItem(
+        AvailableSlot(
             slot_id=f"slot-{index + 1}",
             starts_at=now + timedelta(days=1, hours=index),
             ends_at=now + timedelta(days=1, hours=index + 1),
@@ -41,19 +41,21 @@ async def get_slots():
         )
         for index in range(3)
     ]
-    return BookingSlotsResponse(slots=slots)
+    return AvailableSlotsResponse(slots=slots)
 
 
 @router.post(
-    "/create", response_model=CreateBookingResponse, status_code=status.HTTP_201_CREATED
+    "/create",
+    response_model=BookingConfirmationResponse,
+    status_code=status.HTTP_201_CREATED,
 )
 @inject
 async def create_booking(
-    payload: CreateBookingRequest,
+    payload: BookingCreateRequest,
     booking_repo: BookingRepoDep,
     session_repo: SessionRepoDep,
 ):
-    """Create a placeholder booking for a successful session."""
+    """Create a booking confirmation for a successful suitor session."""
     session = await session_repo.read_by_id(payload.session_id)
     if not session:
         raise HTTPException(
@@ -66,18 +68,18 @@ async def create_booking(
             heart_id=session.heart_id,
             suitor_id=session.suitor_id,
             calcom_booking_id=f"cal_{uuid.uuid4().hex[:16]}",
-            scheduled_at=datetime.now(timezone.utc) + timedelta(days=2),
+            scheduled_at=payload.slot_datetime,
             status=BookingStatus.CONFIRMED,
         )
     )
 
-    return CreateBookingResponse(
+    return BookingConfirmationResponse(
         booking_id=created.id,
         session_id=created.session_id,
         heart_id=created.heart_id,
         suitor_id=created.suitor_id,
         calcom_booking_id=created.calcom_booking_id,
         scheduled_at=created.scheduled_at,
-        status=created.status.value,
+        status=created.status,
         created_at=created.created_at,
     )

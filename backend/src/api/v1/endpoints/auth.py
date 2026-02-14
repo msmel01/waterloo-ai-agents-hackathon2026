@@ -6,14 +6,16 @@ import uuid
 from typing import Annotated
 
 from dependency_injector.wiring import Provide, inject
-from fastapi import APIRouter, Depends, Header, HTTPException, Request
+from fastapi import APIRouter, Body, Depends, Header, HTTPException, Request
 from svix.webhooks import Webhook, WebhookVerificationError
 
 from src.core.config import config
 from src.core.container import Container as DIContainer
 from src.repository.heart_repository import HeartRepository
+from src.schemas.auth_schema import ClerkWebhookEventRequest
+from src.schemas.common_schema import ErrorResponse, SuccessResponse
 
-router = APIRouter(prefix="/auth", tags=["auth"])
+router = APIRouter(prefix="/auth", tags=["Auth"])
 logger = logging.getLogger(__name__)
 
 
@@ -48,25 +50,29 @@ def _slugify(value: str) -> str:
     return normalized or "heart"
 
 
-@router.post("/webhook")
+@router.post(
+    "/webhook",
+    response_model=SuccessResponse,
+    responses={
+        400: {"model": ErrorResponse, "description": "Invalid webhook signature."},
+        500: {"model": ErrorResponse, "description": "Unexpected processing error."},
+    },
+)
 @inject
 async def clerk_webhook(
     request: Request,
     svix_id: Annotated[str, Header(alias="svix-id")],
     svix_timestamp: Annotated[str, Header(alias="svix-timestamp")],
     svix_signature: Annotated[str, Header(alias="svix-signature")],
+    webhook_payload: ClerkWebhookEventRequest = Body(...),
     heart_repository: HeartRepository = Depends(Provide[DIContainer.heart_repository]),
 ):
-    """
-    Handle Clerk webhooks for user lifecycle events.
-    Verifies the webhook signature using Svix and syncs the user to the database.
-    """
+    """Verify Clerk Svix signature and synchronize heart records for user lifecycle events."""
     webhook_secret = config.CLERK_WEBHOOK_SECRET_VALUE
     if not webhook_secret:
         logger.warning("CLERK_WEBHOOK_SECRET is not set, ignoring webhook")
-        return {"status": "ignored", "reason": "secret_not_set"}
+        return SuccessResponse(message="Webhook secret not configured; event ignored.")
 
-    # Get the request body as bytes
     payload = await request.body()
     headers = {
         "svix-id": svix_id,
@@ -74,7 +80,6 @@ async def clerk_webhook(
         "svix-signature": svix_signature,
     }
 
-    # Verify the signature
     try:
         wh = Webhook(webhook_secret)
         evt = wh.verify(payload, headers)
@@ -82,11 +87,9 @@ async def clerk_webhook(
         logger.error(f"Webhook verification failed: {e}")
         raise HTTPException(status_code=400, detail="Invalid signature")
 
-    # Handle event
     event_type = evt.get("type")
     data = evt.get("data")
-
-    logger.info(f"Received Clerk webhook: {event_type}")
+    _ = webhook_payload
 
     if event_type in ["user.created", "user.updated"]:
         user_id = data.get("id")
@@ -121,12 +124,10 @@ async def clerk_webhook(
                         is_active=True,
                     )
                 )
-            logger.info(f"Synced heart {user_id} ({email}) from webhook")
 
     elif event_type == "user.deleted":
         user_id = data.get("id")
         if user_id:
             await heart_repository.delete_by_clerk_id(user_id)
-            logger.info(f"Deleted heart {user_id} from webhook")
 
-    return {"status": "ok", "event": event_type}
+    return SuccessResponse(message=f"Webhook processed: {event_type}")

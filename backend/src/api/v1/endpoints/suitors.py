@@ -9,7 +9,7 @@ from src.core.container import Container
 from src.repository.suitor_repository import SuitorRepository
 from src.schemas.suitor_schema import SuitorRegisterRequest, SuitorRegisterResponse
 
-router = APIRouter(prefix="/suitors", tags=["suitors"])
+router = APIRouter(prefix="/suitors", tags=["Suitors"])
 
 SuitorRepoDep = Annotated[
     SuitorRepository, Depends(Provide[Container.suitor_repository])
@@ -23,7 +23,7 @@ SuitorRepoDep = Annotated[
 )
 @inject
 async def register_suitor(payload: SuitorRegisterRequest, suitor_repo: SuitorRepoDep):
-    """Register a suitor before interview starts."""
+    """Register a suitor before starting the interview flow."""
     suitor = await suitor_repo.create(
         suitor_repo.model(
             name=payload.name,
@@ -31,4 +31,4 @@ async def register_suitor(payload: SuitorRegisterRequest, suitor_repo: SuitorRep
             intro_message=payload.intro_message,
         )
     )
-    return SuitorRegisterResponse.model_validate(suitor)
+    return SuitorRegisterResponse(suitor_id=suitor.id, created_at=suitor.created_at)
