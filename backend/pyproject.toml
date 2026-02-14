@@ -54,3 +54,19 @@ lint = [
 testpaths = ["src/tests"]
 asyncio_mode = "auto"
 pythonpath = ["."]
+
+[tool.coverage.run]
+branch = true
+source = ["src", "agent", "workers"]
+omit = [
+    "*/site-packages/*",
+    "*/dependency_injector/*",
+    "src/dependency_injector/*",
+]
+
+[tool.coverage.report]
+omit = [
+    "*/site-packages/*",
+    "*/dependency_injector/*",
+    "src/dependency_injector/*",
+]
