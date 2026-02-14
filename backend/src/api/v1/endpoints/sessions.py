@@ -11,12 +11,17 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from src.core.config import config
 from src.core.container import Container
 from src.core.exceptions import NotFoundError
-from src.dependencies import get_current_suitor, get_livekit_service
+from src.dependencies import (
+    get_current_suitor,
+    get_current_suitor_optional,
+    get_livekit_service,
+)
 from src.models.domain_enums import SessionStatus
 from src.models.suitor_model import SuitorDb
 from src.repository.heart_repository import HeartRepository
 from src.repository.score_repository import ScoreRepository
 from src.repository.session_repository import SessionRepository
+from src.repository.suitor_repository import SuitorRepository
 from src.schemas.common_schema import SuccessResponse
 from src.schemas.session_schema import (
     SessionStartRequest,
@@ -29,11 +34,15 @@ from src.services.livekit_service import LiveKitService
 router = APIRouter(prefix="/sessions", tags=["Sessions"])
 
 CurrentSuitor = Annotated[SuitorDb, Depends(get_current_suitor)]
+OptionalSuitor = Annotated[SuitorDb | None, Depends(get_current_suitor_optional)]
 HeartRepoDep = Annotated[HeartRepository, Depends(Provide[Container.heart_repository])]
 SessionRepoDep = Annotated[
     SessionRepository, Depends(Provide[Container.session_repository])
 ]
 ScoreRepoDep = Annotated[ScoreRepository, Depends(Provide[Container.score_repository])]
+SuitorRepoDep = Annotated[
+    SuitorRepository, Depends(Provide[Container.suitor_repository])
+]
 LiveKitDep = Annotated[LiveKitService, Depends(get_livekit_service)]
 AGENT_NAME = "valentine-interview-agent"
 
@@ -44,12 +53,29 @@ AGENT_NAME = "valentine-interview-agent"
 @inject
 async def start_session(
     payload: SessionStartRequest,
-    suitor: CurrentSuitor,
+    suitor: OptionalSuitor,
+    suitor_repo: SuitorRepoDep,
     heart_repo: HeartRepoDep,
     session_repo: SessionRepoDep,
     livekit: LiveKitDep,
 ):
     """Start a new interview session and return LiveKit join credentials."""
+    if suitor is None:
+        # Temporary local-dev bypass when JWT auth is not wired yet.
+        suitor = await suitor_repo.find_by_clerk_id("local-dev-suitor")
+        if not suitor:
+            suitor = await suitor_repo.create(
+                suitor_repo.model(
+                    clerk_user_id="local-dev-suitor",
+                    name="Local Test Suitor",
+                    email=None,
+                    age=25,
+                    gender="unspecified",
+                    orientation="unspecified",
+                    intro_message="Local development test user",
+                )
+            )
+
     if suitor.age is None or suitor.gender is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

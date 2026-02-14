@@ -9,7 +9,7 @@ from fastapi.security import APIKeyHeader
 
 from src.core.config import config
 from src.core.container import Container
-from src.core.security import get_current_user
+from src.core.security import get_current_user, verify_clerk_token
 from src.models.suitor_model import SuitorDb
 from src.repository.suitor_repository import SuitorRepository
 from src.services.calcom_service import CalcomService
@@ -47,6 +47,32 @@ async def get_current_suitor(
         )
 
     return suitor
+
+
+@inject
+async def get_current_suitor_optional(
+    request: Request,
+    suitor_repo: SuitorRepository = Depends(Provide[Container.suitor_repository]),
+) -> SuitorDb | None:
+    """Best-effort suitor auth for temporary local development flows."""
+    auth_header = request.headers.get("Authorization")
+    if not auth_header:
+        return None
+    if not auth_header.lower().startswith("bearer "):
+        return None
+
+    token = auth_header.split(" ", 1)[1].strip()
+    if not token:
+        return None
+
+    try:
+        decoded = await verify_clerk_token(token)
+        clerk_user_id = decoded.get("sub")
+        if not clerk_user_id:
+            return None
+        return await suitor_repo.find_by_clerk_id(clerk_user_id)
+    except Exception:
+        return None
 
 
 async def get_db_session(request: Request):
