@@ -63,14 +63,18 @@ async def _get_heart_or_404(
 
 
 def _map_tavus_status(raw_status: str | None) -> str:
+    normalized = (raw_status or "").lower()
     mapping = {
         "training": "processing",
         "processing": "processing",
         "ready": "ready",
+        "completed": "ready",
+        "active": "ready",
+        "succeeded": "ready",
         "error": "failed",
         "failed": "failed",
     }
-    return mapping.get((raw_status or "").lower(), "processing")
+    return mapping.get(normalized, normalized or "processing")
 
 
 @router.post("/avatar/create", response_model=AvatarCreateResponse)
