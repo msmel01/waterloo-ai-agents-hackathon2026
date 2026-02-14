@@ -14,6 +14,7 @@ class ConversationTurn:
     question_text: str
     response_summary: str
     response_quality: str
+    emotions: dict | None
     timestamp: float
 
 
@@ -77,7 +78,11 @@ class SessionManager:
         }
 
     def record_response(
-        self, question_index: int, response_summary: str, response_quality: str
+        self,
+        question_index: int,
+        response_summary: str,
+        response_quality: str,
+        emotions: dict | None = None,
     ):
         """Store summarized answer and advance question index."""
         turn = ConversationTurn(
@@ -85,6 +90,7 @@ class SessionManager:
             question_text=self.questions[question_index]["text"],
             response_summary=response_summary,
             response_quality=response_quality,
+            emotions=emotions,
             timestamp=time.time(),
         )
         self.turns.append(turn)
@@ -95,12 +101,15 @@ class SessionManager:
         """Return number of unasked screening questions."""
         return max(0, len(self.questions) - self.current_question_index)
 
-    def add_transcript_entry(self, speaker: str, text: str):
+    def add_transcript_entry(
+        self, speaker: str, text: str, emotions: dict | None = None
+    ):
         """Append raw transcript event."""
         self.full_transcript.append(
             {
                 "speaker": speaker,
                 "text": text,
+                "emotions": emotions,
                 "timestamp": time.time(),
                 "index": len(self.full_transcript),
             }
@@ -127,6 +136,7 @@ class SessionManager:
                     "question_text": t.question_text,
                     "response_summary": t.response_summary,
                     "response_quality": t.response_quality,
+                    "emotions": t.emotions,
                     "timestamp": t.timestamp,
                 }
                 for t in self.turns

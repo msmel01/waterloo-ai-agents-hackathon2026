@@ -138,6 +138,7 @@ class Config(BaseSettings):
     SMALLEST_AI_API_KEY: Optional[SecretStr] = None
     HUME_API_KEY: Optional[SecretStr] = None
     HUME_SECRET_KEY: Optional[SecretStr] = None
+    HUME_VOICE_ID: Optional[str] = None
     ANTHROPIC_API_KEY: Optional[SecretStr] = None
     CALCOM_API_KEY: Optional[SecretStr] = None
     CALCOM_EVENT_TYPE_ID: Optional[str] = None

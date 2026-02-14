@@ -14,7 +14,7 @@ class PublicHeartProfileResponse(BaseModel):
         default=None, description="Public profile photo URL for the heart."
     )
     avatar_ready: bool = Field(
-        description="Whether a Tavus avatar replica has been initialized."
+        description="Whether the voice interview agent stack is configured and ready."
     )
     has_calendar: bool = Field(
         description="Whether date booking is configured via cal.com."

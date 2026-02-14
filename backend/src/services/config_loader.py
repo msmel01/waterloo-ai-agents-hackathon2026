@@ -59,9 +59,9 @@ class CalendarConfig(BaseModel):
 
 
 class AvatarConfig(BaseModel):
-    """Tavus config section."""
+    """Optional avatar config section (legacy Tavus support)."""
 
-    tavus_api_key: str
+    tavus_api_key: str | None = None
     tavus_persona_id: str | None = None
 
 
@@ -74,7 +74,7 @@ class HeartConfig(BaseModel):
     screening_questions: list[QuestionConfig] = Field(..., min_length=1, max_length=15)
     shareable_slug: str = Field(..., pattern=r"^[a-z0-9\-]+$", max_length=50)
     calendar: CalendarConfig
-    avatar: AvatarConfig
+    avatar: AvatarConfig = Field(default_factory=AvatarConfig)
 
 
 class HeartConfigLoader:

@@ -289,8 +289,6 @@ async def health(
         overall = "unhealthy"
     elif redis_status == "error" or calcom_status == "error":
         overall = "degraded"
-    elif tavus_info.status in {"failed", "not_started"}:
-        overall = "degraded"
 
     return SystemHealthResponse(
         status=overall,

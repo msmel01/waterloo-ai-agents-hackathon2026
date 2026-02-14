@@ -76,10 +76,10 @@ async def start_session(
                 )
             )
 
-    if suitor.age is None or suitor.gender is None:
+    if suitor.age is None or suitor.gender is None or suitor.orientation is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Complete your profile first (age, gender required)",
+            detail="Complete your profile first (age, gender, orientation required)",
         )
 
     heart = await heart_repo.find_by_slug(payload.heart_slug)
@@ -92,12 +92,6 @@ async def start_session(
             status_code=status.HTTP_410_GONE,
             detail="This Heart link is currently inactive",
         )
-    if not heart.tavus_avatar_id:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Avatar is not ready yet. Try again later.",
-        )
-
     active = await session_repo.find_active_by_suitor(suitor.id)
     if active:
         raise HTTPException(
@@ -125,7 +119,7 @@ async def start_session(
     try:
         room = await livekit.create_room(
             room_name=room_name,
-            max_participants=3,
+            max_participants=2,
             metadata=room_metadata,
         )
         await livekit.create_agent_dispatch(

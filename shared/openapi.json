@@ -378,12 +378,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
+        }
       }
     },
     "/api/v1/sessions/{id}/status": {
@@ -988,7 +983,7 @@
           "avatar_ready": {
             "type": "boolean",
             "title": "Avatar Ready",
-            "description": "Whether a Tavus avatar replica has been initialized."
+            "description": "Whether the voice interview agent stack is configured and ready."
           },
           "has_calendar": {
             "type": "boolean",

@@ -5,6 +5,7 @@ from typing import Annotated
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 
+from src.core.config import config
 from src.core.container import Container
 from src.repository.heart_repository import HeartRepository
 from src.repository.screening_question_repository import ScreeningQuestionRepository
@@ -45,11 +46,19 @@ async def get_public_profile(
     if heart_config:
         has_calendar = bool(heart_config.calendar.calcom_event_type_id)
 
+    agent_ready = bool(
+        config.LIVEKIT_URL
+        and config.LIVEKIT_API_KEY
+        and config.LIVEKIT_API_SECRET
+        and (config.SMALLEST_AI_API_KEY or config.OPENAI_API_KEY)
+        and config.HUME_API_KEY
+    )
+
     return PublicHeartProfileResponse(
         display_name=heart.display_name,
         bio=heart.bio,
         photo_url=heart.photo_url,
-        avatar_ready=heart.tavus_avatar_id is not None,
+        avatar_ready=agent_ready,
         has_calendar=has_calendar,
         question_count=len(questions),
         persona_preview=_build_persona_preview(heart.persona),

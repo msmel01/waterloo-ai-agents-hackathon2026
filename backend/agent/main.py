@@ -1,9 +1,4 @@
-"""Valentine Hotline LiveKit Agent server.
-
-Run:
-    python -m livekit.agents dev agent.main
-    python -m livekit.agents start agent.main
-"""
+"""Valentine Hotline LiveKit Agent server (voice-only, emotion-aware)."""
 
 from __future__ import annotations
 
@@ -17,29 +12,91 @@ from agent.db import (
     save_conversation_data,
     update_session_status,
 )
+from agent.hume_tracker import HumeEmotionTracker
 from agent.interview_agent import InterviewAgent
 from agent.prompt_builder import build_system_prompt
 from agent.session_manager import SessionManager
+from src.core.config import config
 
 logger = logging.getLogger("valentine-agent")
 
 try:
-    from livekit.agents import AgentServer, AgentSession, JobContext, RoomOutputOptions
-    from livekit.plugins import silero, smallestai, tavus
+    from livekit.agents import AgentServer, AgentSession, JobContext
+    from livekit.plugins import silero, smallestai
 except Exception as exc:  # pragma: no cover - dependency guard
     AgentServer = None  # type: ignore[assignment]
     AgentSession = None  # type: ignore[assignment]
     JobContext = object  # type: ignore[assignment]
-    RoomOutputOptions = None  # type: ignore[assignment]
     silero = None  # type: ignore[assignment]
     smallestai = None  # type: ignore[assignment]
-    tavus = None  # type: ignore[assignment]
     _IMPORT_ERROR = exc
 else:
     _IMPORT_ERROR = None
+    try:
+        from livekit.plugins import deepgram
+    except Exception:  # pragma: no cover - optional plugin
+        deepgram = None  # type: ignore[assignment]
+    try:
+        from livekit.plugins import hume
+    except Exception:  # pragma: no cover - optional plugin
+        hume = None  # type: ignore[assignment]
+    try:
+        from livekit.plugins import openai as lk_openai
+    except Exception:  # pragma: no cover - optional plugin
+        lk_openai = None  # type: ignore[assignment]
 
 server = AgentServer() if AgentServer else None
 AGENT_NAME = "valentine-interview-agent"
+
+
+def _build_stt():
+    """Prefer SmallestAI STT when available; otherwise use Deepgram."""
+    if smallestai is not None and hasattr(smallestai, "STT"):
+        return smallestai.STT(model="pulse", language="en")
+    if deepgram is None:
+        raise RuntimeError(
+            "No STT provider available. Install `livekit-plugins-deepgram` or "
+            "upgrade `livekit-plugins-smallestai` to a version exposing STT."
+        )
+    return deepgram.STT(model="nova-3", language="en-US")
+
+
+def _build_llm():
+    """Prefer SmallestAI LLM when available; fallback to OpenAI-compatible endpoint."""
+    if smallestai is not None and hasattr(smallestai, "LLM"):
+        return smallestai.LLM(model="electron")
+
+    if lk_openai is None:
+        raise RuntimeError(
+            "LLM plugin unavailable. Install `livekit-plugins-openai` or enable the "
+            "`openai` extra in `livekit-agents`."
+        )
+
+    if config.SMALLEST_AI_API_KEY:
+        return lk_openai.LLM(
+            model="electron-v2",
+            api_key=config.SMALLEST_AI_API_KEY.get_secret_value(),
+            base_url="https://api.smallest.ai/v1",
+        )
+    if config.OPENAI_API_KEY:
+        return lk_openai.LLM(
+            model="gpt-4o-mini",
+            api_key=config.OPENAI_API_KEY.get_secret_value(),
+        )
+    raise RuntimeError(
+        "No LLM credentials found. Set `SMALLEST_AI_API_KEY` or `OPENAI_API_KEY`."
+    )
+
+
+def _build_tts():
+    """Use Hume Octave TTS when available; fallback to SmallestAI TTS."""
+    if hume is not None:
+        voice = config.HUME_VOICE_ID or "ITO"
+        return hume.TTS(voice=voice, instant_mode=True)
+    logger.warning(
+        "livekit-plugins-hume not installed; falling back to SmallestAI TTS."
+    )
+    return smallestai.TTS(model="lightning", voice_id="irisha", sample_rate=24000)
 
 
 if server:
@@ -72,31 +129,68 @@ if server:
             questions=heart_config["screening_questions"],
             max_duration_seconds=600,
         )
+        hume_tracker = HumeEmotionTracker(
+            api_key=config.HUME_API_KEY.get_secret_value()
+            if config.HUME_API_KEY
+            else ""
+        )
         interview_agent = InterviewAgent(
             instructions=prompt,
             session_manager=session_mgr,
+            hume_tracker=hume_tracker,
         )
 
         session = AgentSession(
             vad=silero.VAD.load(),
-            stt=smallestai.STT(model="pulse", language="en"),
-            llm=smallestai.LLM(model="electron"),
-            tts=smallestai.TTS(model="lightning", voice="emily", sample_rate=24000),
+            stt=_build_stt(),
+            llm=_build_llm(),
+            tts=_build_tts(),
             allow_interruptions=True,
             min_endpointing_delay=0.5,
             max_endpointing_delay=3.0,
         )
 
+        already_saved = False
+        save_lock = asyncio.Lock()
+
+        async def save_once(reason: str) -> None:
+            nonlocal already_saved
+            async with save_lock:
+                if already_saved:
+                    return
+                if session_mgr.end_reason is None:
+                    session_mgr.end(reason)
+                data = session_mgr.get_session_data()
+                data["emotion_timeline"] = hume_tracker.get_full_timeline()
+                await save_conversation_data(session_id, data)
+                already_saved = True
+                logger.info(
+                    "Session %s completed. duration=%.0fs turns=%s",
+                    session_id,
+                    data["duration_seconds"],
+                    len(data["turns"]),
+                )
+
         @session.on("user_input_transcribed")
         async def on_user_speech(event):
             text = getattr(event, "text", "").strip()
-            if text:
-                session_mgr.add_transcript_entry(speaker="suitor", text=text)
-                if session_mgr.ramble_detector.should_interrupt():
-                    session_mgr.add_transcript_entry(
-                        speaker="avatar",
-                        text="I appreciate the detail, but let's keep moving.",
-                    )
+            if not text:
+                return
+            session_mgr.add_transcript_entry(
+                speaker="suitor",
+                text=text,
+                emotions=hume_tracker.get_current_state(),
+            )
+            tts_instruction = hume_tracker.get_tts_instruction()
+            try:
+                session.tts.update_options(description=tts_instruction)
+            except Exception as exc:
+                logger.debug("Could not update Hume TTS description: %s", exc)
+            if session_mgr.ramble_detector.should_interrupt():
+                session_mgr.add_transcript_entry(
+                    speaker="avatar",
+                    text="I appreciate the detail, but let's keep moving.",
+                )
 
         @session.on("agent_speech_committed")
         async def on_agent_speech(event):
@@ -106,39 +200,20 @@ if server:
 
         @session.on("close")
         async def on_session_close():
-            if session_mgr.end_reason is None:
-                session_mgr.end("session_closed")
-            data = session_mgr.get_session_data()
-            await save_conversation_data(session_id, data)
-            logger.info(
-                "Session %s completed. duration=%.0fs turns=%s",
-                session_id,
-                data["duration_seconds"],
-                len(data["turns"]),
-            )
+            await hume_tracker.stop()
+            await save_once("session_closed")
 
         @ctx.room.on("participant_disconnected")
         async def on_participant_disconnected(participant):
             identity = getattr(participant, "identity", "")
             if identity.startswith("suitor-"):
                 logger.warning("Suitor disconnected in session %s", session_id)
-                session_mgr.end("suitor_disconnected")
-                await on_session_close()
+                await hume_tracker.stop()
+                await save_once("suitor_disconnected")
 
+        await session.start(room=ctx.room, agent=interview_agent)
+        await hume_tracker.start(ctx.room)
         await update_session_status(session_id, "in_progress")
-
-        if heart_config.get("tavus_replica_id"):
-            avatar_session = tavus.AvatarSession(
-                replica_id=heart_config["tavus_replica_id"],
-                persona_id=heart_config.get("tavus_persona_id"),
-            )
-            await avatar_session.start(session, room=ctx.room)
-
-        await session.start(
-            room=ctx.room,
-            agent=interview_agent,
-            room_output_options=RoomOutputOptions(audio_enabled=False),
-        )
 
         while session_mgr.end_reason is None and not session_mgr.is_overtime():
             await asyncio.sleep(1)
