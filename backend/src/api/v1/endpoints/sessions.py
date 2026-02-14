@@ -84,10 +84,13 @@ async def start_session(
                 )
             )
 
-    if suitor.age is None or suitor.gender is None:
+    if suitor.age is None or suitor.gender is None or suitor.orientation is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Please complete your profile before starting an interview.",
+            detail=(
+                "Please complete your profile before starting an interview "
+                "(age, gender, orientation required)."
+            ),
         )
 
     heart = await heart_repo.find_by_slug(payload.heart_slug)
@@ -364,7 +367,7 @@ async def get_session_verdict(
         )
 
     return SessionVerdictResponse(
-        session_id=session.id,
+        session_id=str(session.id),
         verdict=score.verdict,
         weighted_total=score.weighted_total,
         effort_score=score.effort_score,

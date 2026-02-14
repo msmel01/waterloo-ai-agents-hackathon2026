@@ -15,7 +15,7 @@ from src.core.config import config
 from src.core.database import Database
 from src.models.domain_enums import SessionStatus
 from src.models.heart_model import HeartDb
-from src.models.session_model import SessionDb
+from src.repository.session_repository import SessionRepository
 from src.services.tavus_service import TavusService
 
 logger = logging.getLogger(__name__)
@@ -96,38 +96,22 @@ async def cleanup_stale_sessions(ctx: dict) -> dict[str, int]:
     pending_cutoff = now - timedelta(seconds=config.SESSION_PENDING_TIMEOUT)
     in_progress_cutoff = now - timedelta(seconds=config.SESSION_MAX_DURATION)
 
-    expired_pending = 0
-    expired_in_progress = 0
+    repo = SessionRepository(session_factory=database.session)
+    stale_pending = await repo.find_stale_pending(pending_cutoff)
+    stale_in_progress = await repo.find_stale_in_progress(in_progress_cutoff)
 
-    async with database.session() as session:
-        pending_result = await session.execute(
-            select(SessionDb).where(
-                SessionDb.status == SessionStatus.PENDING,
-                SessionDb.created_at < pending_cutoff,
-            )
-        )
-        for stale in pending_result.scalars().all():
-            stale.status = SessionStatus.EXPIRED
-            stale.end_reason = "connection_timeout"
-            stale.ended_at = now
-            session.add(stale)
-            expired_pending += 1
+    for stale in stale_pending:
+        await repo.update_status(stale.id, SessionStatus.EXPIRED)
+        await repo.update_attr(stale.id, "end_reason", "connection_timeout")
+        await repo.update_attr(stale.id, "ended_at", now)
 
-        progress_result = await session.execute(
-            select(SessionDb).where(
-                SessionDb.status == SessionStatus.IN_PROGRESS,
-                SessionDb.started_at.is_not(None),
-                SessionDb.started_at < in_progress_cutoff,
-            )
-        )
-        for stale in progress_result.scalars().all():
-            stale.status = SessionStatus.EXPIRED
-            stale.end_reason = "max_duration_exceeded"
-            stale.ended_at = now
-            session.add(stale)
-            expired_in_progress += 1
+    for stale in stale_in_progress:
+        await repo.update_status(stale.id, SessionStatus.EXPIRED)
+        await repo.update_attr(stale.id, "end_reason", "max_duration_exceeded")
+        await repo.update_attr(stale.id, "ended_at", now)
 
-        await session.commit()
+    expired_pending = len(stale_pending)
+    expired_in_progress = len(stale_in_progress)
 
     if expired_pending or expired_in_progress:
         logger.info(

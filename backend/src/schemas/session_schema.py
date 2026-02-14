@@ -1,6 +1,5 @@
 """Schemas for interview session APIs."""
 
-import uuid
 from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -73,7 +72,7 @@ class SessionVerdictResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
-    session_id: uuid.UUID = Field(description="Session UUID.")
+    session_id: str = Field(description="Session UUID.")
     verdict: Verdict = Field(description="Date/no-date verdict.")
     weighted_total: float = Field(description="Overall weighted score (0-100).")
     effort_score: float = Field(description="Effort score (0-100).")
