@@ -47,7 +47,12 @@ jobs:
       DB_SSL: disable
       REDIS_URL: redis://localhost:6379/0
       CLERK_JWKS_URL: https://example.com/.well-known/jwks.json
+      CLERK_SECRET_KEY: sk_test_dummy
+      CLERK_WEBHOOK_SECRET: whsec_dummy
       CLERK_ISSUER: https://example.com
+      CALCOM_API_KEY: cal_dummy
+      CALCOM_EVENT_TYPE_ID: "123456"
+      TAVUS_API_KEY: tavus_dummy
 
     steps:
       - uses: actions/checkout@v4
@@ -105,7 +110,12 @@ jobs:
       REDIS_URL: redis://localhost:6379/0
 
       CLERK_JWKS_URL: https://example.com/.well-known/jwks.json
+      CLERK_SECRET_KEY: sk_test_dummy
+      CLERK_WEBHOOK_SECRET: whsec_dummy
       CLERK_ISSUER: https://example.com
+      CALCOM_API_KEY: cal_dummy
+      CALCOM_EVENT_TYPE_ID: "123456"
+      TAVUS_API_KEY: tavus_dummy
 
     steps:
       - uses: actions/checkout@v4

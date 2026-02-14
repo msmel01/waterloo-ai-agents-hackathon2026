@@ -15,7 +15,6 @@ class SessionStartRequest(BaseModel):
     heart_slug: str = Field(
         description="Shareable heart slug used to identify interview target."
     )
-    suitor_id: uuid.UUID = Field(description="Suitor UUID created during registration.")
 
 
 class SessionStartResponse(BaseModel):
@@ -25,7 +24,9 @@ class SessionStartResponse(BaseModel):
 
     session_id: uuid.UUID = Field(description="Created interview session UUID.")
     heart_id: uuid.UUID = Field(description="Heart UUID for the interview.")
-    suitor_id: uuid.UUID = Field(description="Suitor UUID for the interview.")
+    suitor_id: uuid.UUID = Field(
+        description="Authenticated suitor UUID for the interview."
+    )
     status: SessionStatus = Field(description="Current session lifecycle state.")
     livekit_room_name: str | None = Field(
         default=None, description="LiveKit room name if allocated."

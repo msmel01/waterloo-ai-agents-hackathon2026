@@ -11,11 +11,17 @@ Fixture inventory:
 
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 from typing import Any, Callable
 from unittest.mock import AsyncMock, Mock
 
 import pytest
+
+# Ensure required settings exist during test collection before src.core.config imports.
+os.environ.setdefault("CLERK_JWKS_URL", "https://example.com/.well-known/jwks.json")
+os.environ.setdefault("CLERK_SECRET_KEY", "sk_test_dummy")
+os.environ.setdefault("CLERK_WEBHOOK_SECRET", "whsec_dummy")
 
 
 @dataclass

@@ -58,6 +58,7 @@ class Config(BaseSettings):
     DB_SSL: Optional[str] = None
     DB_FORCE_ROLL_BACK: bool = False
     REDIS_URL: str = "redis://localhost:6379/0"
+    ADMIN_API_KEY: Optional[str] = None
 
     @model_validator(mode="after")
     def set_debug_default(self):
@@ -109,7 +110,6 @@ class Config(BaseSettings):
             if ssl_mode in {"disable", "false", "0", "no"}:
                 args["ssl"] = False
             else:
-                # asyncpg accepts bool/SSLContext; map common modes to enabled TLS.
                 args["ssl"] = True
 
         return args
@@ -121,13 +121,14 @@ class Config(BaseSettings):
     OPENAI_API_KEY: Optional[SecretStr] = None
     HUGGINGFACE_API_TOKEN: Optional[SecretStr] = None
 
-    # Clerk Authentication
+    # Clerk Authentication (Suitor auth)
     CLERK_JWKS_URL: str
-    CLERK_SECRET_KEY: Optional[SecretStr] = None
-    CLERK_WEBHOOK_SECRET: Optional[SecretStr] = None
+    CLERK_SECRET_KEY: SecretStr
+    CLERK_WEBHOOK_SECRET: SecretStr
     CLERK_ISSUER: Optional[str] = None
     CLERK_AUDIENCE: Optional[str] = None
     CLERK_AUTHORIZED_PARTIES: Optional[str] = None
+    CLERK_PUBLISHABLE_KEY: Optional[str] = None
 
     # Milestone placeholders for future integrations
     LIVEKIT_API_KEY: Optional[SecretStr] = None
@@ -139,11 +140,10 @@ class Config(BaseSettings):
     HUME_SECRET_KEY: Optional[SecretStr] = None
     ANTHROPIC_API_KEY: Optional[SecretStr] = None
     CALCOM_API_KEY: Optional[SecretStr] = None
+    CALCOM_EVENT_TYPE_ID: Optional[str] = None
 
     @property
     def CLERK_WEBHOOK_SECRET_VALUE(self) -> Optional[str]:
-        if not self.CLERK_WEBHOOK_SECRET:
-            return None
         return self.CLERK_WEBHOOK_SECRET.get_secret_value()
 
     @property
@@ -162,7 +162,6 @@ class Config(BaseSettings):
             if party.strip()
         ]
 
-    # find query
     PAGE: int = 1
     PAGE_SIZE: int = 10
     ORDERING: str = "-id"

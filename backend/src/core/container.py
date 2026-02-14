@@ -17,10 +17,9 @@ from src.services.user_service import UserService
 class Container(containers.DeclarativeContainer):
     wiring_config = containers.WiringConfiguration(
         modules=[
-            "src.api.v1.endpoints.users",
+            "src.dependencies",
             "src.api.v1.endpoints.auth",
-            "src.api.v1.endpoints.chat",
-            "src.api.v1.endpoints.hearts",
+            "src.api.v1.endpoints.admin",
             "src.api.v1.endpoints.public",
             "src.api.v1.endpoints.suitors",
             "src.api.v1.endpoints.sessions",
