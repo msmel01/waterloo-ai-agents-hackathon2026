@@ -17,22 +17,12 @@ export function ScreeningRoom({ auth, onLeave }: ScreeningRoomProps) {
   const useDummyRoom = isPlaceholderToken(token) || isPlaceholderUrl(serverUrl);
 
   return (
-    <div className="min-h-screen bg-y2k flex flex-col relative">
-      {/* Decorative sparkles */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <span className="absolute top-24 left-[10%] text-y2k-hotpink/30 text-xl">✦</span>
-        <span className="absolute top-40 right-[12%] text-y2k-cyan/40 text-2xl">⋆</span>
-        <span className="absolute bottom-1/3 left-[8%] text-y2k-lime/25 text-xl">✧</span>
-        <span className="absolute bottom-1/4 right-[10%] text-y2k-hotpink/30 text-2xl">✦</span>
-      </div>
-
-      <header
-        className="flex items-center justify-center px-4 py-5 border-b-4 border-y2k-hotpink relative z-10"
-        style={{ boxShadow: '0 4px 0 rgba(255,20,147,0.3)' }}
-      >
-        <h1 className="font-rochester text-4xl text-y2k-hotpink text-glow-pink">
+    <div className="min-h-screen bg-win-bg flex flex-col">
+      <header className="border-b border-win-border px-4 py-4">
+        <h1 className="text-win-textMuted text-sm font-medium uppercase tracking-wider">
           Valentine Hotline
         </h1>
+        <div className="h-px bg-win-border mt-1" />
       </header>
 
       {useDummyRoom ? (
@@ -49,16 +39,9 @@ export function ScreeningRoom({ auth, onLeave }: ScreeningRoomProps) {
   );
 }
 
-function Panel({ children, cyan = false }: { children: React.ReactNode; cyan?: boolean }) {
+function Panel({ children, accent = false }: { children: React.ReactNode; accent?: boolean }) {
   return (
-    <div
-      className={`border-4 bg-black/60 p-6 flex flex-col items-center relative ${cyan ? 'border-y2k-cyan' : 'border-y2k-hotpink'}`}
-      style={{ boxShadow: '0 0 15px rgba(255,20,147,0.3), inset 0 0 30px rgba(255,20,147,0.05)' }}
-    >
-      <div className="absolute -top-1 -left-1 w-3 h-3 border-l-2 border-t-2 border-y2k-cyan" />
-      <div className="absolute -top-1 -right-1 w-3 h-3 border-r-2 border-t-2 border-y2k-cyan" />
-      <div className="absolute -bottom-1 -left-1 w-3 h-3 border-l-2 border-b-2 border-y2k-cyan" />
-      <div className="absolute -bottom-1 -right-1 w-3 h-3 border-r-2 border-b-2 border-y2k-cyan" />
+    <div className={`border border-win-border bg-win-content p-6 flex flex-col items-center ${accent ? 'border-win-titlebar' : ''}`}>
       {children}
     </div>
   );
@@ -75,35 +58,35 @@ function DummyRoomContent({
   const [isMuted, setIsMuted] = useState(false);
 
   return (
-    <div className="flex-1 flex flex-col p-4 md:p-6 relative z-10">
-      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 max-w-4xl mx-auto w-full">
+    <div className="flex-1 flex flex-col p-4 md:p-6">
+      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 max-w-4xl mx-auto w-full">
         <Panel>
-          <h2 className="font-rochester text-3xl text-y2k-hotpink text-glow-pink mb-2">Suitor</h2>
-          <p className="font-pixel text-xl text-y2k-cyan mb-4">{displayName || 'You'}</p>
-          <div className="h-14 w-28 border-4 border-y2k-cyan/50 bg-black/50 flex items-center justify-center mb-4">
-            <div className="h-3 w-3 bg-y2k-hotpink animate-pulse" style={{ boxShadow: '0 0 10px #ff1493' }} />
+          <h2 className="text-win-titlebar text-lg font-semibold mb-2">Suitor</h2>
+          <p className="text-win-text text-sm mb-4">{displayName || 'You'}</p>
+          <div className="h-14 w-28 border border-win-border bg-win-bg flex items-center justify-center mb-4">
+            <div className="h-3 w-3 bg-win-titlebar" />
           </div>
-          <p className="font-pixel text-sm text-y2k-cyan/70">Demo mode — awaiting backend</p>
+          <p className="text-win-textMuted text-xs">Demo mode — awaiting backend</p>
         </Panel>
-        <Panel cyan>
-          <h2 className="font-rochester text-3xl text-y2k-cyan text-glow-cyan mb-2">Cindy&apos;s Gatekeeper</h2>
-          <p className="font-rochester text-xl text-y2k-hotpink/90 mb-4">Valentine Hotline AI</p>
-          <div className="h-14 w-28 border-4 border-y2k-hotpink/50 bg-black/50 flex items-center justify-center mb-4">
-            <div className="h-3 w-3 bg-stone-500" />
+        <Panel accent>
+          <h2 className="text-win-titlebar text-lg font-semibold mb-2">Cindy&apos;s Gatekeeper</h2>
+          <p className="text-win-text text-sm mb-4">Valentine Hotline AI</p>
+          <div className="h-14 w-28 border border-win-border bg-win-bg flex items-center justify-center mb-4">
+            <div className="h-3 w-3 bg-win-textMuted" />
           </div>
-          <p className="font-pixel text-sm text-y2k-cyan/70">Waiting for AI…</p>
+          <p className="text-win-textMuted text-xs">Waiting for AI…</p>
         </Panel>
       </div>
       <div className="flex justify-center gap-4 py-6">
         <button
           onClick={() => setIsMuted((m) => !m)}
-          className="px-8 py-4 border-4 border-y2k-cyan bg-black/80 text-y2k-cyan font-pixel text-xl hover:shadow-neon-cyan hover:bg-y2k-cyan/20 transition-all"
+          className="px-6 py-2.5 border border-win-border bg-win-content text-win-text text-sm hover:bg-win-titlebar hover:text-white hover:border-win-titlebar transition-colors"
         >
           {isMuted ? 'Unmute' : 'Mute'}
         </button>
         <button
           onClick={onLeave}
-          className="px-8 py-4 border-4 border-y2k-lime bg-y2k-hotpink text-black font-pixel text-xl hover:shadow-neon-lime hover:bg-y2k-magenta transition-all"
+          className="px-6 py-2.5 bg-win-titlebar text-white text-sm font-medium hover:bg-win-titlebarLight transition-colors"
         >
           Leave Hotline
         </button>
@@ -141,48 +124,42 @@ function LiveKitRoomWrapper({
   const remoteArray = Array.from(remoteParticipants.values());
 
   return (
-    <div className="flex-1 flex flex-col p-4 md:p-6 relative z-10">
-      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 max-w-4xl mx-auto w-full">
+    <div className="flex-1 flex flex-col p-4 md:p-6">
+      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 max-w-4xl mx-auto w-full">
         <Panel>
-          <h2 className="font-rochester text-3xl text-y2k-hotpink text-glow-pink mb-2">Suitor</h2>
-          <p className="font-pixel text-xl text-y2k-cyan mb-4">
+          <h2 className="text-win-titlebar text-lg font-semibold mb-2">Suitor</h2>
+          <p className="text-win-text text-sm mb-4">
             {displayName || localParticipant?.name || 'You'}
           </p>
-          <div className="h-14 w-28 border-4 border-y2k-cyan/50 bg-black/50 flex items-center justify-center mb-4">
-            <div className="h-3 w-3 bg-y2k-hotpink animate-pulse" style={{ boxShadow: '0 0 10px #ff1493' }} />
+          <div className="h-14 w-28 border border-win-border bg-win-bg flex items-center justify-center mb-4">
+            <div className="h-3 w-3 bg-win-titlebar" />
           </div>
-          <p className="font-pixel text-sm text-y2k-cyan/70">
+          <p className="text-win-textMuted text-xs">
             {isConnected ? 'Connected' : 'Connecting…'}
           </p>
         </Panel>
 
-        <Panel cyan>
-          <h2 className="font-rochester text-3xl text-y2k-cyan text-glow-cyan mb-2">
+        <Panel accent>
+          <h2 className="text-win-titlebar text-lg font-semibold mb-2">
             Cindy&apos;s Gatekeeper
           </h2>
-          <p className="font-rochester text-xl text-y2k-hotpink/90 mb-4">
-            Valentine Hotline AI
-          </p>
-          <div className="h-14 w-28 border-4 border-y2k-hotpink/50 bg-black/50 flex items-center justify-center mb-4 overflow-hidden">
+          <p className="text-win-text text-sm mb-4">Valentine Hotline AI</p>
+          <div className="h-14 w-28 border border-win-border bg-win-bg flex items-center justify-center mb-4 overflow-hidden">
             {remoteArray.length > 0 ? (
               <div className="flex gap-1 items-end h-6">
                 {[1, 2, 3, 4, 5].map((i) => (
                   <div
                     key={i}
-                    className="w-2 bg-y2k-cyan animate-pulse"
-                    style={{
-                      height: `${6 + i * 3}px`,
-                      animationDelay: `${i * 80}ms`,
-                      boxShadow: '0 0 6px #00ffff',
-                    }}
+                    className="w-2 bg-win-titlebar animate-pulse"
+                    style={{ height: `${6 + i * 3}px` }}
                   />
                 ))}
               </div>
             ) : (
-              <div className="h-3 w-3 bg-stone-500" />
+              <div className="h-3 w-3 bg-win-textMuted" />
             )}
           </div>
-          <p className="font-pixel text-sm text-y2k-cyan/70">
+          <p className="text-win-textMuted text-xs">
             {remoteArray.length > 0 ? 'AI is speaking…' : 'Waiting for AI…'}
           </p>
         </Panel>
@@ -191,13 +168,13 @@ function LiveKitRoomWrapper({
       <div className="flex justify-center gap-4 py-6">
         <button
           onClick={isMuted ? unmuteMic : muteMic}
-          className="px-8 py-4 border-4 border-y2k-cyan bg-black/80 text-y2k-cyan font-pixel text-xl hover:shadow-neon-cyan hover:bg-y2k-cyan/20 transition-all"
+          className="px-6 py-2.5 border border-win-border bg-win-content text-win-text text-sm hover:bg-win-titlebar hover:text-white hover:border-win-titlebar transition-colors"
         >
           {isMuted ? 'Unmute' : 'Mute'}
         </button>
         <button
           onClick={handleLeave}
-          className="px-8 py-4 border-4 border-y2k-lime bg-y2k-hotpink text-black font-pixel text-xl hover:shadow-neon-lime hover:bg-y2k-magenta transition-all"
+          className="px-6 py-2.5 bg-win-titlebar text-white text-sm font-medium hover:bg-win-titlebarLight transition-colors"
         >
           Leave Hotline
         </button>

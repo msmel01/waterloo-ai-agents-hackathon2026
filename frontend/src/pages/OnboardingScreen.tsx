@@ -1,5 +1,6 @@
 import { FormEvent, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Window } from '../components/Window';
 
 export function OnboardingScreen() {
   const navigate = useNavigate();
@@ -23,113 +24,168 @@ export function OnboardingScreen() {
   };
 
   return (
-    <div className="min-h-screen bg-y2k flex items-center justify-center p-4 relative">
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <span className="absolute top-20 left-[15%] text-y2k-hotpink/40 text-2xl">✦</span>
-        <span className="absolute top-32 right-[20%] text-y2k-cyan/50 text-xl">⋆</span>
-      </div>
+    <div className="min-h-screen bg-win-bg flex flex-col items-center py-6 px-4">
+      {/* Header */}
+      <header className="w-full max-w-6xl mb-6">
+        <h1 className="text-win-textMuted text-sm font-medium uppercase tracking-wider">
+          Valentine Hotline
+        </h1>
+        <div className="h-px bg-win-border mt-1" />
+      </header>
 
-      <div className="w-full max-w-md relative z-10">
-        <div
-          className="border-4 border-y2k-hotpink bg-black/60 p-8 relative"
-          style={{ boxShadow: '0 0 20px rgba(255,20,147,0.4)' }}
-        >
-          <h1 className="font-rochester text-5xl text-y2k-hotpink text-glow-pink mb-1 text-center">
-            Valentine Hotline
-          </h1>
-          <p className="font-pixel text-lg text-y2k-cyan/90 mb-6 text-center">
-            Welcome! Let&apos;s get to know you.
-          </p>
+      <div className="w-full max-w-6xl flex flex-col gap-4 flex-1">
+        {/* Welcome window */}
+        <Window title="ValentineHotline.exe" icon="phone">
+          <div className="text-center">
+            <p className="text-win-textMuted text-xs mb-2">EST. 2026</p>
+            <h2 className="text-2xl font-bold">
+              <span className="text-white">Valentine</span>{' '}
+              <span className="text-win-titlebar">Hotline</span>
+            </h2>
+            <p className="text-win-textMuted text-sm mt-2 leading-relaxed max-w-md mx-auto">
+              A virtual voice assistant that plans, books, and perfects your dream date — so you can focus on the butterflies.
+            </p>
+          </div>
+        </Window>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label htmlFor="name" className="block text-sm font-semibold text-y2k-cyan/90 mb-1 uppercase">
-                Name
-              </label>
-              <input
-                id="name"
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Your name"
-                className="w-full px-4 py-3 border-4 border-y2k-hotpink bg-black/80 text-y2k-cyan placeholder-stone-500 focus:outline-none focus:border-y2k-cyan font-pixel text-xl"
-                required
-              />
+        {/* Two-column: Product info + NewUser form */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1">
+          {/* Product info window */}
+          <Window title="About.exe" icon="info">
+            <div className="space-y-3">
+              <h3 className="text-win-text font-semibold text-sm">Product Overview</h3>
+              <p className="text-win-textMuted text-sm leading-relaxed">
+                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+              </p>
+              <p className="text-win-textMuted text-sm leading-relaxed">
+                Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+              </p>
+              <h3 className="text-win-text font-semibold text-sm pt-2">Key Features</h3>
+              <ul className="text-win-textMuted text-sm space-y-1 list-disc list-inside">
+                <li>Placeholder feature one</li>
+                <li>Placeholder feature two</li>
+                <li>Placeholder feature three</li>
+              </ul>
             </div>
-            <div>
-              <label htmlFor="gender" className="block text-sm font-semibold text-y2k-cyan/90 mb-1 uppercase">
-                Gender
-              </label>
-              <input
-                id="gender"
-                type="text"
-                value={gender}
-                onChange={(e) => setGender(e.target.value)}
-                placeholder="e.g. Man, Woman, Non-binary"
-                className="w-full px-4 py-3 border-4 border-y2k-hotpink bg-black/80 text-y2k-cyan placeholder-stone-500 focus:outline-none focus:border-y2k-cyan font-pixel text-xl"
-              />
-            </div>
-            <div>
-              <label htmlFor="age" className="block text-sm font-semibold text-y2k-cyan/90 mb-1 uppercase">
-                Age
-              </label>
-              <input
-                id="age"
-                type="text"
-                value={age}
-                onChange={(e) => setAge(e.target.value)}
-                placeholder="Your age"
-                className="w-full px-4 py-3 border-4 border-y2k-hotpink bg-black/80 text-y2k-cyan placeholder-stone-500 focus:outline-none focus:border-y2k-cyan font-pixel text-xl"
-              />
-            </div>
-            <div>
-              <label htmlFor="orientation" className="block text-sm font-semibold text-y2k-cyan/90 mb-1 uppercase">
-                Sexual orientation
-              </label>
-              <input
-                id="orientation"
-                type="text"
-                value={orientation}
-                onChange={(e) => setOrientation(e.target.value)}
-                placeholder="e.g. Straight, Gay, Bisexual"
-                className="w-full px-4 py-3 border-4 border-y2k-hotpink bg-black/80 text-y2k-cyan placeholder-stone-500 focus:outline-none focus:border-y2k-cyan font-pixel text-xl"
-              />
-            </div>
-            <div>
-              <label htmlFor="username" className="block text-sm font-semibold text-y2k-cyan/90 mb-1 uppercase">
-                Username (Clerk login)
-              </label>
-              <input
-                id="username"
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Choose a username"
-                className="w-full px-4 py-3 border-4 border-y2k-hotpink bg-black/80 text-y2k-cyan placeholder-stone-500 focus:outline-none focus:border-y2k-cyan font-pixel text-xl"
-              />
-            </div>
-            <div>
-              <label htmlFor="password" className="block text-sm font-semibold text-y2k-cyan/90 mb-1 uppercase">
-                Password (Clerk login)
-              </label>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Choose a password"
-                className="w-full px-4 py-3 border-4 border-y2k-hotpink bg-black/80 text-y2k-cyan placeholder-stone-500 focus:outline-none focus:border-y2k-cyan font-pixel text-xl"
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={!name.trim()}
-              className="w-full py-4 border-4 border-y2k-lime bg-y2k-hotpink disabled:bg-stone-800 disabled:border-stone-600 disabled:text-stone-500 disabled:cursor-not-allowed text-black font-pixel text-xl uppercase tracking-wider hover:shadow-neon-lime transition-all"
-            >
-              Continue
-            </button>
-          </form>
+          </Window>
+
+          {/* Form window */}
+          <Window title="NewUser.exe" icon="person">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="name" className="block text-win-textMuted text-sm mb-1">
+                    Name
+                  </label>
+                  <input
+                    id="name"
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Your full name"
+                    className="w-full px-3 py-2 bg-win-bg border border-win-border text-white placeholder-win-textMuted text-sm focus:outline-none focus:border-win-titlebar"
+                    required
+                  />
+                </div>
+                <div>
+                  <label htmlFor="age" className="block text-win-textMuted text-sm mb-1">
+                    Age
+                  </label>
+                  <input
+                    id="age"
+                    type="text"
+                    value={age}
+                    onChange={(e) => setAge(e.target.value)}
+                    placeholder="18+"
+                    className="w-full px-3 py-2 bg-win-bg border border-win-border text-white placeholder-win-textMuted text-sm focus:outline-none focus:border-win-titlebar"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="orientation" className="block text-win-textMuted text-sm mb-1">
+                    Sexual Orientation
+                  </label>
+                  <div className="relative">
+                    <select
+                      id="orientation"
+                      value={orientation}
+                      onChange={(e) => setOrientation(e.target.value)}
+                      className="w-full px-3 py-2 pr-8 bg-win-bg border border-win-border text-white text-sm focus:outline-none focus:border-win-titlebar appearance-none"
+                    >
+                      <option value="">Select</option>
+                      <option value="Straight">Straight</option>
+                      <option value="Gay">Gay</option>
+                      <option value="Bisexual">Bisexual</option>
+                      <option value="Other">Other</option>
+                    </select>
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-win-textMuted pointer-events-none">▾</span>
+                  </div>
+                </div>
+                <div>
+                  <label htmlFor="gender" className="block text-win-textMuted text-sm mb-1">
+                    Gender
+                  </label>
+                  <div className="relative">
+                    <select
+                      id="gender"
+                      value={gender}
+                      onChange={(e) => setGender(e.target.value)}
+                      className="w-full px-3 py-2 pr-8 bg-win-bg border border-win-border text-white text-sm focus:outline-none focus:border-win-titlebar appearance-none"
+                    >
+                      <option value="">Select</option>
+                      <option value="Man">Man</option>
+                      <option value="Woman">Woman</option>
+                      <option value="Non-binary">Non-binary</option>
+                      <option value="Other">Other</option>
+                    </select>
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-win-textMuted pointer-events-none">▾</span>
+                  </div>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                <div>
+                  <label htmlFor="username" className="block text-win-textMuted text-sm mb-1">
+                    Username (Clerk login)
+                  </label>
+                  <input
+                    id="username"
+                    type="text"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    placeholder="Choose a username"
+                    className="w-full px-3 py-2 bg-win-bg border border-win-border text-white placeholder-win-textMuted text-sm focus:outline-none focus:border-win-titlebar"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="password" className="block text-win-textMuted text-sm mb-1">
+                    Password (Clerk login)
+                  </label>
+                  <input
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Choose a password"
+                    className="w-full px-3 py-2 bg-win-bg border border-win-border text-white placeholder-win-textMuted text-sm focus:outline-none focus:border-win-titlebar"
+                  />
+                </div>
+              </div>
+              <button
+                type="submit"
+                disabled={!name.trim()}
+                className="mt-4 w-full py-2.5 bg-win-titlebar text-white text-sm font-medium disabled:bg-win-border disabled:text-win-textMuted disabled:cursor-not-allowed hover:bg-win-titlebarLight transition-colors"
+              >
+                Continue
+              </button>
+            </form>
+          </Window>
         </div>
+
+        {/* Built with - full width */}
+        <Window title="BuiltWith.exe" icon="info">
+          <p className="text-win-textMuted text-sm">
+            Built with [placeholder for logos] — LiveKit, Clerk, Vercel, and more.
+          </p>
+        </Window>
       </div>
     </div>
   );

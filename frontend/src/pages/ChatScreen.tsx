@@ -49,8 +49,8 @@ export function ChatScreen() {
 
   if (isJoining) {
     return (
-      <div className="min-h-screen bg-y2k flex items-center justify-center">
-        <p className="font-pixel text-2xl text-y2k-cyan">Connecting to {dateName}&apos;s hotline…</p>
+      <div className="min-h-screen bg-win-bg flex items-center justify-center">
+        <p className="text-win-text text-sm">Connecting to {dateName}&apos;s hotline…</p>
       </div>
     );
   }

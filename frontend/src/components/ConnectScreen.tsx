@@ -1,4 +1,5 @@
 import { useState, FormEvent } from 'react';
+import { Window } from './Window';
 
 interface ConnectScreenProps {
   onJoin: (displayName: string) => void;
@@ -15,39 +16,22 @@ export function ConnectScreen({ onJoin, isJoining = false }: ConnectScreenProps)
   };
 
   return (
-    <div className="min-h-screen bg-y2k flex items-center justify-center p-4 relative">
-      {/* Decorative sparkles */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <span className="absolute top-20 left-[15%] text-y2k-hotpink/40 text-2xl">✦</span>
-        <span className="absolute top-32 right-[20%] text-y2k-cyan/50 text-xl">⋆</span>
-        <span className="absolute bottom-40 left-[25%] text-y2k-lime/30 text-3xl">✧</span>
-        <span className="absolute bottom-32 right-[15%] text-y2k-hotpink/40 text-xl">✦</span>
-      </div>
+    <div className="min-h-screen bg-win-bg flex flex-col items-center py-6 px-4">
+      <header className="w-full max-w-md mb-6">
+        <h1 className="text-win-textMuted text-sm font-medium uppercase tracking-wider">
+          Valentine Hotline
+        </h1>
+        <div className="h-px bg-win-border mt-1" />
+      </header>
 
-      <div className="w-full max-w-md relative z-10">
-        <div
-          className="border-4 border-y2k-hotpink bg-black/60 p-8 relative"
-          style={{ boxShadow: '0 0 20px rgba(255,20,147,0.4), inset 0 0 40px rgba(255,20,147,0.05)' }}
-        >
-          {/* MySpace-style corner bling */}
-          <div className="absolute -top-1 -left-1 w-4 h-4 border-l-4 border-t-4 border-y2k-cyan" />
-          <div className="absolute -top-1 -right-1 w-4 h-4 border-r-4 border-t-4 border-y2k-cyan" />
-          <div className="absolute -bottom-1 -left-1 w-4 h-4 border-l-4 border-b-4 border-y2k-cyan" />
-          <div className="absolute -bottom-1 -right-1 w-4 h-4 border-r-4 border-b-4 border-y2k-cyan" />
-
-          <h1 className="font-rochester text-5xl text-y2k-hotpink text-glow-pink mb-2 text-center">
-            Valentine Hotline
-          </h1>
-          <p className="font-pixel text-lg text-y2k-cyan/90 mb-6 text-center tracking-wider">
+      <div className="w-full max-w-md">
+        <Window title="ValentineHotline.exe" icon="phone">
+          <p className="text-win-textMuted text-sm mb-4">
             Talk to our AI screener and see if you pass Cindy&apos;s coffee-date test.
           </p>
-
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label
-                htmlFor="displayName"
-                className="block text-sm font-semibold text-y2k-cyan/90 mb-2 uppercase tracking-wider"
-              >
+              <label htmlFor="displayName" className="block text-win-textMuted text-sm mb-1">
                 Your name
               </label>
               <input
@@ -56,8 +40,7 @@ export function ConnectScreen({ onJoin, isJoining = false }: ConnectScreenProps)
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
                 placeholder="Enter your name"
-                className="w-full px-4 py-3 border-4 border-y2k-hotpink bg-black/80 text-y2k-cyan placeholder-stone-500 focus:outline-none focus:border-y2k-cyan font-pixel text-xl"
-                style={{ boxShadow: 'inset 0 0 10px rgba(255,20,147,0.2)' }}
+                className="w-full px-3 py-2 bg-win-bg border border-win-border text-white placeholder-win-textMuted text-sm focus:outline-none focus:border-win-titlebar"
                 disabled={isJoining}
                 autoFocus
               />
@@ -65,16 +48,12 @@ export function ConnectScreen({ onJoin, isJoining = false }: ConnectScreenProps)
             <button
               type="submit"
               disabled={!displayName.trim() || isJoining}
-              className="w-full py-4 px-4 border-4 border-y2k-lime bg-y2k-hotpink disabled:bg-stone-800 disabled:border-stone-600 disabled:text-stone-500 disabled:cursor-not-allowed text-black font-pixel text-xl uppercase tracking-wider hover:shadow-neon-lime hover:bg-y2k-magenta transition-all"
+              className="w-full py-2.5 bg-win-titlebar text-white text-sm font-medium disabled:bg-win-border disabled:text-win-textMuted disabled:cursor-not-allowed hover:bg-win-titlebarLight transition-colors"
             >
-              {isJoining ? 'Connecting…' : '♥ Join Valentine Hotline ♥'}
+              {isJoining ? 'Connecting…' : 'Join Valentine Hotline'}
             </button>
           </form>
-        </div>
-
-        <p className="font-pixel text-y2k-cyan/60 text-center mt-4 text-sm">
-          xoxo est. 2026
-        </p>
+        </Window>
       </div>
     </div>
   );
