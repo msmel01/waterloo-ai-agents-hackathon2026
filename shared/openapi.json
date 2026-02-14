@@ -1393,7 +1393,6 @@
         "properties": {
           "session_id": {
             "type": "string",
-            "format": "uuid",
             "title": "Session Id",
             "description": "Session UUID."
           },
