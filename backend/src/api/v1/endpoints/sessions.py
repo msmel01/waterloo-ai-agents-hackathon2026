@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from typing import Annotated
 
 from dependency_injector.wiring import Provide, inject
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 
 from src.core.config import config
 from src.core.container import Container
@@ -25,6 +25,7 @@ from src.repository.session_repository import SessionRepository
 from src.repository.suitor_repository import SuitorRepository
 from src.schemas.common_schema import SuccessResponse
 from src.schemas.session_schema import (
+    PreCheckResponse,
     SessionStartRequest,
     SessionStartResponse,
     SessionStatusResponse,
@@ -83,10 +84,10 @@ async def start_session(
                 )
             )
 
-    if suitor.age is None or suitor.gender is None or suitor.orientation is None:
+    if suitor.age is None or suitor.gender is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Complete your profile first (age, gender, orientation required)",
+            detail="Please complete your profile before starting an interview.",
         )
 
     heart = await heart_repo.find_by_slug(payload.heart_slug)
@@ -96,14 +97,38 @@ async def start_session(
         )
     if not heart.is_active:
         raise HTTPException(
-            status_code=status.HTTP_410_GONE,
-            detail="This Heart link is currently inactive",
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Interviews are currently paused. Please check back later.",
         )
     active = await session_repo.find_active_by_suitor(suitor.id)
     if active:
+        if not active.livekit_room_name:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="You have an active session that is missing room details.",
+            )
+        livekit_token = livekit.generate_suitor_token(
+            room_name=active.livekit_room_name,
+            suitor_id=str(suitor.id),
+            suitor_name=suitor.name or "Suitor",
+        )
+        return SessionStartResponse(
+            session_id=str(active.id),
+            livekit_url=config.LIVEKIT_URL or "",
+            livekit_token=livekit_token,
+            room_name=active.livekit_room_name,
+            status="reconnecting",
+            message="You have an active session. Reconnecting...",
+        )
+
+    today_count = await session_repo.count_today_by_suitor(suitor.id)
+    if today_count >= config.MAX_SESSIONS_PER_DAY:
         raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="You already have an active session",
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=(
+                f"You've reached the daily limit of {config.MAX_SESSIONS_PER_DAY} "
+                "interviews. Try again tomorrow!"
+            ),
         )
 
     draft = session_repo.model(
@@ -152,16 +177,19 @@ async def start_session(
         await livekit.close()
 
     return SessionStartResponse(
-        session_id=created.id,
+        session_id=str(created.id),
         livekit_url=config.LIVEKIT_URL or "",
         livekit_token=livekit_token,
         room_name=room_name,
+        status="ready",
+        message="Session created. Connect to start your interview!",
     )
 
 
 @router.get("/{id}/status", response_model=SessionStatusResponse)
 @inject
 async def get_session_status(
+    request: Request,
     id: uuid.UUID,
     suitor: CurrentSuitor,
     session_repo: SessionRepoDep,
@@ -180,23 +208,47 @@ async def get_session_status(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
 
     score = await score_repo.find_by_session_id(session.id)
-    status_value = session.status.value
-    if session.status == SessionStatus.COMPLETED:
-        status_value = "scoring"
-    if score:
-        status_value = "scored"
 
-    duration_seconds = None
+    duration_seconds: int | None = None
     if session.started_at:
         end_ref = session.ended_at or datetime.now(timezone.utc)
-        duration_seconds = max(0.0, (end_ref - session.started_at).total_seconds())
+        duration_seconds = int(max(0.0, (end_ref - session.started_at).total_seconds()))
+
+    turns_payload = session.turn_summaries or {}
+    turns = turns_payload.get("turns", []) if isinstance(turns_payload, dict) else []
+    questions_asked = len(turns) if turns else None
+
+    heart_config = getattr(request.app.state, "heart_config", None)
+    questions_total: int | None = None
+    if heart_config and getattr(heart_config, "screening_questions", None) is not None:
+        questions_total = len(heart_config.screening_questions)
+
+    status_value = session.status.value
+    has_verdict = score is not None
+    verdict_status: str | None = None
+    if has_verdict:
+        verdict_status = "ready"
+        status_value = "scored"
+    elif session.status in {SessionStatus.COMPLETED, SessionStatus.SCORING}:
+        verdict_status = "scoring"
+        status_value = "scoring"
+    elif session.status == SessionStatus.SCORED:
+        verdict_status = "ready"
+        status_value = "scored"
+    elif session.status == SessionStatus.EXPIRED:
+        verdict_status = "pending"
 
     return SessionStatusResponse(
-        session_id=session.id,
+        session_id=str(session.id),
         status=status_value,
         started_at=session.started_at,
         ended_at=session.ended_at,
+        end_reason=session.end_reason,
         duration_seconds=duration_seconds,
+        questions_asked=questions_asked,
+        questions_total=questions_total,
+        has_verdict=has_verdict,
+        verdict_status=verdict_status,
     )
 
 
@@ -233,6 +285,54 @@ async def end_session(
             await livekit.close()
 
     return SuccessResponse(message="Session ended")
+
+
+@router.get("/pre-check", response_model=PreCheckResponse)
+@inject
+async def pre_check(
+    request: Request,
+    suitor: CurrentSuitor,
+    heart_repo: HeartRepoDep,
+    session_repo: SessionRepoDep,
+):
+    """Check whether a suitor can start a new interview session."""
+    heart_id = getattr(request.app.state, "heart_id", None)
+    heart = None
+    if heart_id:
+        try:
+            heart = await heart_repo.read_by_id(heart_id)
+        except NotFoundError:
+            heart = None
+    profile_complete = bool(suitor.age is not None and suitor.gender is not None)
+    heart_active = bool(heart and heart.is_active)
+    active_session = await session_repo.find_active_by_suitor(suitor.id)
+
+    today_count = await session_repo.count_today_by_suitor(suitor.id)
+    remaining = max(0, config.MAX_SESSIONS_PER_DAY - today_count)
+
+    can_start = True
+    reason: str | None = None
+    if not profile_complete:
+        can_start = False
+        reason = "Please complete your profile first."
+    elif not heart_active:
+        can_start = False
+        reason = "Interviews are currently paused."
+    elif active_session:
+        can_start = False
+        reason = "You have an active interview session."
+    elif remaining <= 0:
+        can_start = False
+        reason = f"You've reached the daily limit of {config.MAX_SESSIONS_PER_DAY} interviews."
+
+    return PreCheckResponse(
+        can_start=can_start,
+        reason=reason,
+        profile_complete=profile_complete,
+        heart_active=heart_active,
+        remaining_today=remaining,
+        active_session_id=str(active_session.id) if active_session else None,
+    )
 
 
 @router.get("/{id}/verdict", response_model=SessionVerdictResponse)

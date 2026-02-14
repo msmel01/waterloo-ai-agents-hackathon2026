@@ -34,11 +34,6 @@ async def get_public_profile(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Public profile not found"
         )
-    if not heart.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_410_GONE,
-            detail="This link is currently inactive",
-        )
 
     questions = await question_repo.find_by_heart_id(heart.id)
     heart_config = getattr(request.app.state, "heart_config", None)
@@ -46,22 +41,20 @@ async def get_public_profile(
     if heart_config:
         has_calendar = bool(heart_config.calendar.calcom_event_type_id)
 
-    agent_ready = bool(
-        config.LIVEKIT_URL
-        and config.LIVEKIT_API_KEY
-        and config.LIVEKIT_API_SECRET
-        and (config.SMALLEST_AI_API_KEY or config.OPENAI_API_KEY)
-        and config.HUME_API_KEY
-    )
+    agent_ready = await _is_agent_ready()
+    is_accepting = bool(heart.is_active and agent_ready)
+    question_count = len(questions)
 
     return PublicHeartProfileResponse(
         display_name=heart.display_name,
         bio=heart.bio,
         photo_url=heart.photo_url,
-        avatar_ready=agent_ready,
+        agent_ready=agent_ready,
         has_calendar=has_calendar,
-        question_count=len(questions),
+        question_count=question_count,
+        estimated_duration=_estimate_duration(question_count),
         persona_preview=_build_persona_preview(heart.persona),
+        is_accepting=is_accepting,
     )
 
 
@@ -75,3 +68,16 @@ def _build_persona_preview(persona: dict | None) -> str | None:
     if len(traits) == 1:
         return traits[0]
     return f"{', '.join(traits[:-1])}, and {traits[-1]}"
+
+
+def _estimate_duration(question_count: int) -> str:
+    """Rough estimate: ~1-2 minutes per question."""
+    low = max(1, question_count)
+    high = max(2, question_count * 2)
+    return f"{low}-{high} minutes"
+
+
+async def _is_agent_ready() -> bool:
+    """MVP readiness check for agent availability."""
+    _ = config
+    return True
