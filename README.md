@@ -22,13 +22,14 @@ Output directory: `dist/`
 | Variable | Description |
 |----------|-------------|
 | `VITE_LIVEKIT_URL` | LiveKit server URL (e.g. `wss://your-project.livekit.cloud`). Set in `.env` for local dev and in Vercel project settings for production. |
+| `VITE_CLERK_PUBLISHABLE_KEY` | Clerk publishable key (from [Clerk Dashboard](https://dashboard.clerk.com) → API Keys). Required for authentication. Add when connecting your backend. |
 
 ## Deployment (Vercel)
 
 - Vercel auto-detects Vite.
 - **Build command:** `npm run build`
 - **Output directory:** `dist/`
-- Add `VITE_LIVEKIT_URL` in your Vercel project environment variables.
+- Add `VITE_LIVEKIT_URL` and `VITE_CLERK_PUBLISHABLE_KEY` in your Vercel project environment variables.
 
 ## Token fetching
 
@@ -49,16 +50,27 @@ The app currently uses a **placeholder token** in `src/lib/livekitToken.ts`. To 
 
 3. Ensure your AI voice agent is orchestrated elsewhere (e.g. LiveKit Agents) and joins the same room.
 
+## Authentication (Clerk)
+
+The app uses [Clerk](https://clerk.com) for authentication. Auth state and tokens are available via `useAuth()` from `@clerk/clerk-react`. When your backend is connected:
+
+- Use `getToken()` from `useAuth()` to obtain the session JWT.
+- Attach it to API requests via `getAuthHeaders(getToken)` from `src/lib/clerk.ts`.
+- Your backend can verify the JWT and access user data.
+
+No backend is included in this repo; connect your API separately and wire it into `fetchLivekitToken` and any other endpoints.
+
 ## Stack
 
 - **Build:** Vite
 - **Framework:** React + TypeScript
 - **Styling:** Tailwind CSS
+- **Auth:** Clerk
 - **Voice:** LiveKit (WebRTC)
 
 ## Project structure
 
 - `src/components/` — ConnectScreen, ScreeningRoom
 - `src/hooks/` — useLivekitRoom
-- `src/lib/` — livekitClient, livekitToken
+- `src/lib/` — clerk (auth headers), livekitClient, livekitToken
 - `src/types/` — shared types

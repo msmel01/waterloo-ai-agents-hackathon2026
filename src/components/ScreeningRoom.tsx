@@ -1,3 +1,4 @@
+import { SignedIn, UserButton } from '@clerk/clerk-react';
 import { useLivekitRoom } from '../hooks/useLivekitRoom';
 import { getLivekitServerUrl } from '../lib/livekitClient';
 import type { AuthState } from '../types';
@@ -13,8 +14,14 @@ export function ScreeningRoom({ auth, onLeave }: ScreeningRoomProps) {
 
   return (
     <div className="min-h-screen bg-stone-950 flex flex-col">
-      <header className="flex items-center justify-center py-4 border-b border-stone-800">
+      <header className="flex items-center px-4 py-4 border-b border-stone-800">
+        <div className="flex-1" />
         <h1 className="text-xl font-semibold text-rose-400">Valentine Hotline</h1>
+        <div className="flex-1 flex justify-end">
+          <SignedIn>
+            <UserButton afterSignOutUrl="/" />
+          </SignedIn>
+        </div>
       </header>
 
       <LiveKitRoomWrapper
