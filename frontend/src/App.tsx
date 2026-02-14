@@ -5,8 +5,11 @@ import { ProfileScreen } from './pages/ProfileScreen';
 import { ChatScreen } from './pages/ChatScreen';
 import { SignInScreen } from './pages/SignInScreen';
 import { SignUpScreen } from './pages/SignUpScreen';
+import { useAuthSync } from './hooks/useAuthSync';
 
 function App() {
+  useAuthSync();
+
   return (
     <BrowserRouter>
       <Routes>

@@ -1,10 +1,11 @@
 import { FormEvent, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useSignUp } from '@clerk/clerk-react';
+import { useAuth, useSignUp } from '@clerk/clerk-react';
 import { toast } from 'sonner';
+import { setAuthToken } from '../api/axiosInstance';
+import { useCompleteSuitorProfileApiV1SuitorsRegisterPost } from '../api/generated/suitors/suitors';
 import { Window } from '../components/Window';
 import { AppHeader } from '../components/AppHeader';
-import { syncSuitorProfile } from '../api/suitorProfile';
 
 const inputClass =
   'w-full px-3 py-2 bg-white border border-gray-400 text-gray-900 placeholder-gray-500 text-sm focus:outline-none focus:border-win-titlebar';
@@ -12,7 +13,9 @@ const labelClass = 'block text-gray-600 text-sm mb-1';
 
 export function SignUpScreen() {
   const navigate = useNavigate();
+  const { getToken } = useAuth();
   const { isLoaded, signUp, setActive } = useSignUp();
+  const registerSuitor = useCompleteSuitorProfileApiV1SuitorsRegisterPost();
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
@@ -59,15 +62,34 @@ export function SignUpScreen() {
     }
 
     try {
+      const ageNum = parseInt(age, 10);
+      if (isNaN(ageNum) || ageNum < 18) {
+        setError('You must be at least 18 years old to sign up.');
+        return;
+      }
+
       const res = await signUp.attemptEmailAddressVerification({ code });
 
       if (res.status === 'complete' && res.createdSessionId) {
-        await syncSuitorProfile({ name: name.trim(), gender, orientation, age });
-        toast.success('Verification successful');
         await setActive({
           session: res.createdSessionId,
           redirectUrl: `${window.location.origin}/chats`,
         });
+
+        const token = await getToken();
+        setAuthToken(token ?? null);
+
+        await registerSuitor.mutateAsync({
+          data: {
+            name: name.trim(),
+            age: ageNum,
+            gender,
+            orientation,
+            intro_message: null,
+          },
+        });
+
+        toast.success('Verification successful');
         navigate('/chats', { replace: true });
       } else if (res.status === 'missing_requirements') {
         const missing = (res as { missingFields?: string[] }).missingFields ?? [];
