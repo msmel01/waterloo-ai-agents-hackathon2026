@@ -136,6 +136,8 @@ class Config(BaseSettings):
     LIVEKIT_URL: Optional[str] = None
     TAVUS_API_KEY: Optional[SecretStr] = None
     SMALLEST_AI_API_KEY: Optional[SecretStr] = None
+    SMALLEST_LLM_BASE_URL: str = "https://llm-api.smallest.ai/v1"
+    SMALLEST_LLM_MODEL: str = "electron-v2"
     HUME_API_KEY: Optional[SecretStr] = None
     HUME_SECRET_KEY: Optional[SecretStr] = None
     HUME_VOICE_ID: Optional[str] = None

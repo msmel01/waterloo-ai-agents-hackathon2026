@@ -16,7 +16,7 @@ from agent.hume_tracker import HumeEmotionTracker
 from agent.interview_agent import InterviewAgent
 from agent.prompt_builder import build_system_prompt
 from agent.session_manager import SessionManager
-from src.core.config import config
+from src.core.config import LLMProvider, config
 
 logger = logging.getLogger("valentine-agent")
 
@@ -71,8 +71,9 @@ def _build_stt():
 
 
 def _build_llm():
-    """Prefer SmallestAI LLM when available; fallback to OpenAI-compatible endpoint."""
+    """Build an LLM client with stable provider preference."""
     if smallestai is not None and hasattr(smallestai, "LLM"):
+        logger.info("Using native SmallestAI LLM plugin (model=electron)")
         return smallestai.LLM(model="electron")
 
     if lk_openai is None:
@@ -81,30 +82,47 @@ def _build_llm():
             "`openai` extra in `livekit-agents`."
         )
 
-    if config.SMALLEST_AI_API_KEY:
+    # Prefer OpenAI whenever it is configured (unless explicitly set to HuggingFace).
+    if config.OPENAI_API_KEY and config.LLM_PROVIDER != LLMProvider.HUGGINGFACE:
+        model_name = config.MODEL_NAME or "gpt-4o-mini"
+        logger.info("Using OpenAI LLM (model=%s)", model_name)
         return lk_openai.LLM(
-            model="electron-v2",
-            api_key=config.SMALLEST_AI_API_KEY.get_secret_value(),
-            base_url="https://api.smallest.ai/v1",
-        )
-    if config.OPENAI_API_KEY:
-        return lk_openai.LLM(
-            model="gpt-4o-mini",
+            model=model_name,
             api_key=config.OPENAI_API_KEY.get_secret_value(),
         )
+
+    if config.SMALLEST_AI_API_KEY:
+        logger.info(
+            "Using Smallest OpenAI-compatible LLM (base_url=%s, model=%s)",
+            config.SMALLEST_LLM_BASE_URL,
+            config.SMALLEST_LLM_MODEL,
+        )
+        return lk_openai.LLM(
+            model=config.SMALLEST_LLM_MODEL,
+            api_key=config.SMALLEST_AI_API_KEY.get_secret_value(),
+            base_url=config.SMALLEST_LLM_BASE_URL,
+        )
+
+    if config.LLM_PROVIDER == LLMProvider.HUGGINGFACE:
+        raise RuntimeError(
+            "LLM_PROVIDER=huggingface is not supported by the LiveKit voice runtime. "
+            "Set `LLM_PROVIDER=openai` and provide `OPENAI_API_KEY`."
+        )
+
     raise RuntimeError(
-        "No LLM credentials found. Set `SMALLEST_AI_API_KEY` or `OPENAI_API_KEY`."
+        "No LLM credentials found. Set `OPENAI_API_KEY` (preferred) or "
+        "`SMALLEST_AI_API_KEY`."
     )
 
 
 def _build_tts():
-    """Use Hume Octave TTS when available; fallback to SmallestAI TTS."""
-    if hume is not None:
-        voice = config.HUME_VOICE_ID or "ITO"
-        return hume.TTS(voice=voice, instant_mode=True)
-    logger.warning(
-        "livekit-plugins-hume not installed; falling back to SmallestAI TTS."
-    )
+    """Use SmallestAI TTS only."""
+    if smallestai is None or not hasattr(smallestai, "TTS"):
+        raise RuntimeError(
+            "SmallestAI TTS is required but unavailable. Install/enable "
+            "`livekit-plugins-smallestai`."
+        )
+    logger.info("Using SmallestAI TTS (model=lightning, voice_id=irisha)")
     return smallestai.TTS(model="lightning", voice_id="irisha", sample_rate=24000)
 
 
@@ -202,11 +220,8 @@ if server:
                 text=text,
                 emotions=hume_tracker.get_current_state(),
             )
-            tts_instruction = hume_tracker.get_tts_instruction()
-            try:
-                session.tts.update_options(description=tts_instruction)
-            except Exception as exc:
-                logger.debug("Could not update Hume TTS description: %s", exc)
+            # Hume-specific per-turn description updates are disabled because
+            # runtime TTS is pinned to SmallestAI for reliability.
             if session_mgr.ramble_detector.should_interrupt():
                 session_mgr.add_transcript_entry(
                     speaker="avatar",
