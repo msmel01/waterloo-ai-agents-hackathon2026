@@ -28,41 +28,61 @@ const InfoIcon = () => (
 
 const icons = { phone: PhoneIcon, person: PersonIcon, info: InfoIcon };
 
+/** Multi-layer 3D outer frame: light top/left, dark bottom/right */
+const OUTER_BEVEL =
+  'inset 1px 1px 0 rgba(255,255,255,0.12), inset 2px 2px 0 rgba(255,255,255,0.06), inset -1px -1px 0 rgba(0,0,0,0.4), inset -2px -2px 0 rgba(0,0,0,0.25), 0 4px 12px rgba(0,0,0,0.2)';
+
 export function Window({ title, icon, children }: WindowProps) {
   const Icon = icons[icon];
 
   return (
     <div
-      className="border-2 border-win-border overflow-hidden"
-      style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}
+      className="overflow-hidden flex flex-col min-h-0"
+      style={{
+        border: '2px solid',
+        borderColor: '#2D1B4E',
+        boxShadow: OUTER_BEVEL,
+      }}
     >
-      {/* Title bar - raised bevel */}
+      {/* Title bar - solid color, raised */}
       <div
-        className="flex items-center gap-2 bg-win-titlebar px-2 py-1.5 text-white"
+        className="flex items-center gap-2 px-2 py-1.5 text-white flex-shrink-0"
         style={{
+          backgroundColor: '#8301E1',
           boxShadow:
-            'inset 2px 2px 0 rgba(255,255,255,0.2), inset -2px -2px 0 rgba(0,0,0,0.2), 0 2px 0 rgba(0,0,0,0.2)',
+            'inset 2px 2px 0 rgba(255,255,255,0.15), inset -1px -1px 0 rgba(0,0,0,0.2), 0 1px 0 rgba(0,0,0,0.15)',
         }}
       >
         <Icon />
-        <span className="flex-1 text-sm font-medium text-white truncate">{title}</span>
-        <div className="flex gap-1">
-          <button type="button" className="w-4 h-4 border border-win-titlebarLight flex items-center justify-center" aria-label="Minimize">
-            <span className="text-win-titlebarLight text-[10px] leading-none">−</span>
-          </button>
-          <button type="button" className="w-4 h-4 border border-win-titlebarLight flex items-center justify-center" aria-label="Maximize">
-            <span className="text-win-titlebarLight text-[10px] leading-none">□</span>
-          </button>
-          <button type="button" className="w-4 h-4 border border-win-titlebarLight flex items-center justify-center" aria-label="Close">
-            <span className="text-win-titlebarLight text-[10px] leading-none">×</span>
-          </button>
+        <span className="flex-1 text-sm font-medium text-center truncate">{title}</span>
+        <div className="flex gap-0.5">
+          {(['−', '□', '×'] as const).map((symbol, i) => (
+            <button
+              key={symbol}
+              type="button"
+              className="w-5 h-5 flex items-center justify-center border border-win-titlebarLight"
+              style={{
+                backgroundColor: '#8301E1',
+                boxShadow: 'inset 1px 1px 0 rgba(255,255,255,0.2), inset -1px -1px 0 rgba(0,0,0,0.3)',
+                fontSize: '10px',
+                lineHeight: 1,
+                color: 'rgba(255,255,255,0.9)',
+              }}
+              aria-label={i === 0 ? 'Minimize' : i === 1 ? 'Maximize' : 'Close'}
+            >
+              {symbol}
+            </button>
+          ))}
         </div>
       </div>
-      {/* Content - recessed bevel */}
+      {/* Content - recessed white inset (retro style), fills remaining space */}
       <div
-        className="p-4 bg-win-content"
+        className="p-4 text-gray-900 flex-1 min-h-0"
         style={{
-          boxShadow: 'inset 3px 3px 0 rgba(255,255,255,0.12), inset -3px -3px 0 rgba(0,0,0,0.35)',
+          backgroundColor: '#f5f5f5',
+          boxShadow:
+            'inset 2px 2px 0 rgba(0,0,0,0.1), inset -1px -1px 0 rgba(255,255,255,0.8)',
+          borderTop: '1px solid rgba(0,0,0,0.12)',
         }}
       >
         {children}
