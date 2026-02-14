@@ -109,15 +109,18 @@ async def create_avatar(
 
     await heart_repo.update_attr(heart.id, "tavus_avatar_id", str(replica_id))
 
+    redis_pool = None
     try:
         redis_pool = await create_pool(RedisSettings.from_dsn(config.REDIS_URL))
         await redis_pool.enqueue_job(
             "poll_tavus_replica_status", str(heart.id), str(replica_id)
         )
-        await redis_pool.aclose()
     except Exception:
         # Do not fail setup when queue is temporarily unavailable.
         pass
+    finally:
+        if redis_pool is not None:
+            await redis_pool.aclose()
 
     return AvatarCreateResponse(
         replica_id=str(replica_id),
@@ -234,12 +237,15 @@ async def health(
     except Exception:
         db_status = "error"
 
+    redis_pool = None
     try:
         redis_pool = await create_pool(RedisSettings.from_dsn(config.REDIS_URL))
         await redis_pool.ping()
-        await redis_pool.aclose()
     except Exception:
         redis_status = "error"
+    finally:
+        if redis_pool is not None:
+            await redis_pool.aclose()
 
     if heart.tavus_avatar_id:
         try:

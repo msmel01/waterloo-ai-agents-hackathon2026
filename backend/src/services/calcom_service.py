@@ -28,7 +28,7 @@ class CalcomService:
                     timeout=10.0,
                 )
                 return response.status_code == 200
-        except Exception:
+        except httpx.HTTPError:
             return False
 
     async def get_available_slots(self, start_date: str, end_date: str) -> list[dict]:

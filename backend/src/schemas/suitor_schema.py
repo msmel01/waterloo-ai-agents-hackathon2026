@@ -42,7 +42,11 @@ class SuitorProfileResponse(BaseModel):
     @property
     def is_profile_complete(self) -> bool:
         """Whether required suitor profile fields are set."""
-        return self.age is not None and self.gender is not None
+        return (
+            self.age is not None
+            and self.gender is not None
+            and self.orientation is not None
+        )
 
 
 # Backward-compatible alias

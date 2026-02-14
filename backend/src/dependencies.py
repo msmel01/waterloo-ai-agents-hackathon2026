@@ -57,13 +57,13 @@ async def get_db_session(request: Request):
 
 def get_tavus_service(request: Request) -> TavusService:
     """Build Tavus client from loaded heart config."""
-    heart_config = request.app.state.heart_config
+    heart_config = get_heart_config(request)
     return TavusService(heart_config.avatar.tavus_api_key)
 
 
 def get_calcom_service(request: Request) -> CalcomService:
     """Build cal.com client from loaded heart config."""
-    heart_config = request.app.state.heart_config
+    heart_config = get_heart_config(request)
     return CalcomService(
         heart_config.calendar.calcom_api_key,
         heart_config.calendar.calcom_event_type_id,

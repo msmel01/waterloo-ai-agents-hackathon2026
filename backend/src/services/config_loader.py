@@ -118,6 +118,11 @@ class HeartConfigLoader:
 
         with path.open("r", encoding="utf-8") as f:
             raw = yaml.safe_load(f)
+        if not isinstance(raw, dict):
+            raise ValueError(
+                f"Invalid heart config at {path}: expected mapping at root, "
+                f"got {type(raw).__name__} ({raw!r})"
+            )
 
         resolved = self._resolve_env_recursive(raw)
         self.config = HeartConfig(**resolved)

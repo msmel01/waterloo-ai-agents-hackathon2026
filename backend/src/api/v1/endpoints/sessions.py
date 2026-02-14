@@ -7,6 +7,7 @@ from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from src.core.container import Container
+from src.core.exceptions import NotFoundError
 from src.dependencies import get_current_suitor
 from src.models.domain_enums import SessionStatus
 from src.models.suitor_model import SuitorDb
@@ -75,7 +76,14 @@ async def get_session_status(
     session_repo: SessionRepoDep,
 ):
     """Get current processing state for a session owned by the authenticated suitor."""
-    session = await session_repo.read_by_id(id)
+    try:
+        session = await session_repo.read_by_id(id)
+    except NotFoundError:
+        session = None
+    if session is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Session not found"
+        )
     if session.suitor_id != suitor.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
 
@@ -96,7 +104,14 @@ async def get_session_verdict(
     score_repo: ScoreRepoDep,
 ):
     """Poll final verdict and score breakdown for a session owned by the authenticated suitor."""
-    session = await session_repo.read_by_id(id)
+    try:
+        session = await session_repo.read_by_id(id)
+    except NotFoundError:
+        session = None
+    if session is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Session not found"
+        )
     if session.suitor_id != suitor.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
 
