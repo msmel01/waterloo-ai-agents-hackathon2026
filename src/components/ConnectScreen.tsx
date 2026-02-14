@@ -15,10 +15,10 @@ export function ConnectScreen({ onJoin, isJoining = false }: ConnectScreenProps)
   };
 
   return (
-    <div className="min-h-screen bg-stone-950 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-hearts flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="bg-stone-900/80 border border-stone-700/50 rounded-2xl shadow-xl shadow-rose-950/20 p-8">
-          <h1 className="text-3xl font-bold text-rose-400 tracking-tight mb-1">
+          <h1 className="font-rochester text-4xl text-rose-400 mb-1">
             Valentine Hotline
           </h1>
           <p className="text-stone-400 text-sm mb-6">

@@ -6,6 +6,11 @@ module.exports = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['"Noto Sans"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        // Decorative only: page headers, high-level section titles. Not for form labels or body text.
+        rochester: ['Rochester', 'cursive'],
+      },
       colors: {
         valentine: {
           50: '#fdf2f8',
