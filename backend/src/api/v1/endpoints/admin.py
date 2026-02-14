@@ -6,7 +6,7 @@ import uuid
 from typing import Annotated
 
 import redis.asyncio as redis
-from dependency_injector.wiring import Provide, inject
+from dependency_injector.wiring import Provide
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import text
 
@@ -58,7 +58,6 @@ async def _get_primary_heart_or_404(heart_repo: HeartRepository):
 
 
 @router.post("/avatar/create", response_model=AvatarCreateResponse)
-@inject
 async def create_avatar(_admin: AdminKey, heart_repo: HeartRepoDep):
     """Trigger Tavus avatar creation (placeholder stub for static Heart MVP)."""
     heart = await _get_primary_heart_or_404(heart_repo)
@@ -82,7 +81,6 @@ async def create_avatar(_admin: AdminKey, heart_repo: HeartRepoDep):
 
 
 @router.get("/avatar/status", response_model=TavusStatusInfo)
-@inject
 async def avatar_status(_admin: AdminKey, heart_repo: HeartRepoDep):
     """Return Tavus avatar status for the static Heart profile."""
     heart = await _get_primary_heart_or_404(heart_repo)
@@ -92,7 +90,6 @@ async def avatar_status(_admin: AdminKey, heart_repo: HeartRepoDep):
 
 
 @router.get("/calendar/status", response_model=CalendarStatusResponse)
-@inject
 async def calendar_status(_admin: AdminKey, heart_repo: HeartRepoDep):
     """Return cal.com configuration health and slot preview (placeholder)."""
     heart = await _get_primary_heart_or_404(heart_repo)
@@ -112,7 +109,6 @@ async def calendar_status(_admin: AdminKey, heart_repo: HeartRepoDep):
 
 
 @router.post("/link/toggle", response_model=SuccessResponse)
-@inject
 async def toggle_link(
     payload: LinkToggleRequest, _admin: AdminKey, heart_repo: HeartRepoDep
 ):
@@ -126,7 +122,6 @@ async def toggle_link(
 
 
 @router.get("/dashboard/stats", response_model=DashboardStatsResponse)
-@inject
 async def dashboard_stats(
     _admin: AdminKey,
     heart_repo: HeartRepoDep,
@@ -161,7 +156,6 @@ async def dashboard_stats(
 
 
 @router.get("/sessions", response_model=SessionListResponse)
-@inject
 async def list_sessions(
     _admin: AdminKey,
     heart_repo: HeartRepoDep,
@@ -193,7 +187,6 @@ async def list_sessions(
 
 
 @router.get("/sessions/{id}", response_model=SessionDetailResponse)
-@inject
 async def session_detail(
     id: uuid.UUID,
     _admin: AdminKey,
@@ -245,7 +238,6 @@ async def session_detail(
 
 
 @router.get("/health", response_model=SystemHealthResponse)
-@inject
 async def health(_admin: AdminKey, heart_repo: HeartRepoDep):
     """Return system health for database, redis, tavus, cal.com, and heart readiness."""
     db_status = "connected"
