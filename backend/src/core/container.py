@@ -1,5 +1,3 @@
-import os
-
 from dependency_injector import containers, providers
 
 from src.core.config import Config, get_config
@@ -30,7 +28,6 @@ class Container(containers.DeclarativeContainer):
     )
 
     config: Config = providers.Singleton(get_config)
-    os.environ["SMALLEST_API_KEY"] = config.SMALLEST_AI_API_KEY.get_secret_value()
 
     database = providers.Singleton(Database, config=config)
 

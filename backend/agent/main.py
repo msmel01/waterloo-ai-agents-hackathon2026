@@ -16,7 +16,7 @@ from agent.hume_tracker import HumeEmotionTracker
 from agent.interview_agent import InterviewAgent
 from agent.prompt_builder import build_system_prompt
 from agent.session_manager import SessionManager
-from src.core.config import LLMProvider, config
+from src.core.config import LLMProvider, TTSProvider, config
 
 logger = logging.getLogger("valentine-agent")
 
@@ -116,14 +116,41 @@ def _build_llm():
 
 
 def _build_tts():
-    """Use SmallestAI TTS only."""
-    if smallestai is None or not hasattr(smallestai, "TTS"):
-        raise RuntimeError(
-            "SmallestAI TTS is required but unavailable. Install/enable "
-            "`livekit-plugins-smallestai`."
+    """Build TTS from `TTS` env setting (`deepgram` or `smallestai`)."""
+    if config.TTS == TTSProvider.DEEPGRAM:
+        if deepgram is None:
+            raise RuntimeError(
+                "TTS=deepgram requires `livekit-plugins-deepgram` to be installed."
+            )
+        if not config.DEEPGRAM_API_KEY:
+            raise RuntimeError("TTS=deepgram requires `DEEPGRAM_API_KEY`.")
+        logger.info("Using Deepgram TTS (model=%s)", config.DEEPGRAM_TTS_MODEL)
+        return deepgram.TTS(
+            model=config.DEEPGRAM_TTS_MODEL,
+            encoding="linear16",
+            sample_rate=24000,
+            api_key=config.DEEPGRAM_API_KEY.get_secret_value(),
         )
-    logger.info("Using SmallestAI TTS (model=lightning, voice_id=irisha)")
-    return smallestai.TTS(model="lightning", voice_id="irisha", sample_rate=24000)
+
+    if config.TTS == TTSProvider.SMALLESTAI:
+        if smallestai is None or not hasattr(smallestai, "TTS"):
+            raise RuntimeError("TTS=smallestai requires `livekit-plugins-smallestai`.")
+        if not config.SMALLEST_AI_API_KEY:
+            raise RuntimeError("TTS=smallestai requires `SMALLEST_AI_API_KEY`.")
+        logger.info(
+            "Using SmallestAI TTS (model=%s, voice_id=irisha)",
+            config.SMALLEST_TTS_MODEL,
+        )
+        return smallestai.TTS(
+            model=config.SMALLEST_TTS_MODEL,
+            voice_id="irisha",
+            sample_rate=24000,
+            api_key=config.SMALLEST_AI_API_KEY.get_secret_value(),
+        )
+
+    raise RuntimeError(
+        "Unsupported TTS provider. Set `TTS=deepgram` or `TTS=smallestai`."
+    )
 
 
 if server:
