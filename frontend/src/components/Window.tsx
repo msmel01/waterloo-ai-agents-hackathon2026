@@ -28,9 +28,12 @@ const InfoIcon = () => (
 
 const icons = { phone: PhoneIcon, person: PersonIcon, info: InfoIcon };
 
-/** Multi-layer 3D outer frame: light top/left, dark bottom/right */
-const OUTER_BEVEL =
-  'inset 1px 1px 0 rgba(255,255,255,0.12), inset 2px 2px 0 rgba(255,255,255,0.06), inset -1px -1px 0 rgba(0,0,0,0.4), inset -2px -2px 0 rgba(0,0,0,0.25), 0 4px 12px rgba(0,0,0,0.2)';
+/** Palette: Lavender Purple (heading), Orchid Mist / Pink Carnation (bevel), Desert Sand (fill) */
+const DARK_PURPLE = '#905ACA'; // title bar - Lavender Purple
+const LIGHT_PURPLE = '#C566C2'; // border/bevel base - Orchid Mist
+const LIGHT_PURPLE_HIGHLIGHT = '#F487B8'; // top/left of raised bevel - Pink Carnation
+const LIGHT_PURPLE_SHADOW = '#905ACA'; // bottom/right of raised bevel - Lavender
+const INNER_FILL = '#F5E7F0'; // Desert Sand
 
 export function Window({ title, icon, children }: WindowProps) {
   const Icon = icons[icon];
@@ -39,18 +42,18 @@ export function Window({ title, icon, children }: WindowProps) {
     <div
       className="overflow-hidden flex flex-col min-h-0"
       style={{
-        border: '2px solid',
-        borderColor: '#2D1B4E',
-        boxShadow: OUTER_BEVEL,
+        borderTop: `2px solid ${LIGHT_PURPLE_HIGHLIGHT}`,
+        borderLeft: `2px solid ${LIGHT_PURPLE_HIGHLIGHT}`,
+        borderRight: `2px solid ${LIGHT_PURPLE_SHADOW}`,
+        borderBottom: `2px solid ${LIGHT_PURPLE_SHADOW}`,
       }}
     >
-      {/* Title bar - solid color, raised */}
+      {/* Title bar - darker purple, raised */}
       <div
         className="flex items-center gap-2 px-2 py-1.5 text-white flex-shrink-0"
         style={{
-          backgroundColor: '#8301E1',
-          boxShadow:
-            'inset 2px 2px 0 rgba(255,255,255,0.15), inset -1px -1px 0 rgba(0,0,0,0.2), 0 1px 0 rgba(0,0,0,0.15)',
+          backgroundColor: DARK_PURPLE,
+          boxShadow: `inset 1px 1px 0 rgba(255,255,255,0.2), 0 1px 0 ${LIGHT_PURPLE_SHADOW}`,
         }}
       >
         <Icon />
@@ -60,13 +63,14 @@ export function Window({ title, icon, children }: WindowProps) {
             <button
               key={symbol}
               type="button"
-              className="w-5 h-5 flex items-center justify-center border border-win-titlebarLight"
+              className="w-5 h-5 flex items-center justify-center"
               style={{
-                backgroundColor: '#8301E1',
-                boxShadow: 'inset 1px 1px 0 rgba(255,255,255,0.2), inset -1px -1px 0 rgba(0,0,0,0.3)',
+                backgroundColor: DARK_PURPLE,
+                border: `1px solid ${LIGHT_PURPLE}`,
+                boxShadow: `inset 1px 1px 0 ${LIGHT_PURPLE_HIGHLIGHT}, inset -1px -1px 0 ${LIGHT_PURPLE_SHADOW}`,
                 fontSize: '10px',
                 lineHeight: 1,
-                color: 'rgba(255,255,255,0.9)',
+                color: 'rgba(255,255,255,0.95)',
               }}
               aria-label={i === 0 ? 'Minimize' : i === 1 ? 'Maximize' : 'Close'}
             >
@@ -75,14 +79,16 @@ export function Window({ title, icon, children }: WindowProps) {
           ))}
         </div>
       </div>
-      {/* Content - recessed white inset (retro style), fills remaining space */}
+      {/* Content - Desert Sand inner fill, recessed with palette bevel */}
       <div
         className="p-4 text-gray-900 flex-1 min-h-0"
         style={{
-          backgroundColor: '#f5f5f5',
-          boxShadow:
-            'inset 2px 2px 0 rgba(0,0,0,0.1), inset -1px -1px 0 rgba(255,255,255,0.8)',
-          borderTop: '1px solid rgba(0,0,0,0.12)',
+          backgroundColor: INNER_FILL,
+          borderTop: `2px solid ${LIGHT_PURPLE_SHADOW}`,
+          borderLeft: `2px solid ${LIGHT_PURPLE_SHADOW}`,
+          borderRight: `2px solid ${LIGHT_PURPLE_HIGHLIGHT}`,
+          borderBottom: `2px solid ${LIGHT_PURPLE_HIGHLIGHT}`,
+          boxShadow: `inset 2px 2px 0 ${LIGHT_PURPLE_SHADOW}, inset -2px -2px 0 ${LIGHT_PURPLE_HIGHLIGHT}`,
         }}
       >
         {children}

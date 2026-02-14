@@ -1,45 +1,16 @@
-import { FormEvent, useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { useAuth, useUser } from '@clerk/clerk-react';
+import { Link } from 'react-router-dom';
+import { useAuth } from '@clerk/clerk-react';
 import { Window } from '../components/Window';
+import { AppHeader } from '../components/AppHeader';
 
 export function OnboardingScreen() {
-  const navigate = useNavigate();
   const { isSignedIn } = useAuth();
-  const { user } = useUser();
-  const [name, setName] = useState('');
-  const [gender, setGender] = useState('');
-  const [age, setAge] = useState('');
-  const [orientation, setOrientation] = useState('');
-
-  useEffect(() => {
-    if (user?.fullName) {
-      setName(user.fullName);
-    } else if (user?.firstName) {
-      setName(user.firstName);
-    }
-  }, [user]);
-
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    if (name.trim()) {
-      localStorage.setItem('suitor_name', name.trim());
-      localStorage.setItem('suitor_gender', gender);
-      localStorage.setItem('suitor_age', age);
-      localStorage.setItem('suitor_orientation', orientation);
-      navigate('/dates');
-    }
-  };
 
   return (
     <div className="min-h-screen bg-win-bg flex flex-col items-center py-6 px-4">
-      {/* Header */}
-      <header className="w-full max-w-6xl mb-6">
-        <h1 className="text-win-textMuted text-sm font-medium uppercase tracking-wider">
-          Valentine Hotline
-        </h1>
-        <div className="h-px bg-win-border mt-1" />
-      </header>
+      <div className="w-full max-w-6xl">
+        <AppHeader />
+      </div>
 
       <div className="w-full max-w-6xl flex flex-col gap-4 flex-1">
         {/* Welcome window */}
@@ -56,7 +27,7 @@ export function OnboardingScreen() {
           </div>
         </Window>
 
-        {/* Two-column: Product info + NewUser form or Auth CTA */}
+        {/* CTA: Sign up/in or Go To Chats */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1">
           <Window title="About.exe" icon="info">
             <div className="space-y-3">
@@ -77,88 +48,21 @@ export function OnboardingScreen() {
           </Window>
 
           {isSignedIn ? (
-            <Window title="NewUser.exe" icon="person">
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label htmlFor="name" className="block text-gray-600 text-sm mb-1">
-                      Name
-                    </label>
-                    <input
-                      id="name"
-                      type="text"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      placeholder="Your full name"
-                      className="w-full px-3 py-2 bg-white border border-gray-400 text-gray-900 placeholder-gray-500 text-sm focus:outline-none focus:border-win-titlebar"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="age" className="block text-gray-600 text-sm mb-1">
-                      Age
-                    </label>
-                    <input
-                      id="age"
-                      type="text"
-                      value={age}
-                      onChange={(e) => setAge(e.target.value)}
-                      placeholder="18+"
-                      className="w-full px-3 py-2 bg-white border border-gray-400 text-gray-900 placeholder-gray-500 text-sm focus:outline-none focus:border-win-titlebar"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="orientation" className="block text-gray-600 text-sm mb-1">
-                      Sexual Orientation
-                    </label>
-                    <div className="relative">
-                      <select
-                        id="orientation"
-                        value={orientation}
-                        onChange={(e) => setOrientation(e.target.value)}
-                        className="w-full px-3 py-2 pr-8 bg-white border border-gray-400 text-gray-900 text-sm focus:outline-none focus:border-win-titlebar appearance-none"
-                      >
-                        <option value="">Select</option>
-                        <option value="Straight">Straight</option>
-                        <option value="Gay">Gay</option>
-                        <option value="Bisexual">Bisexual</option>
-                        <option value="Other">Other</option>
-                      </select>
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 pointer-events-none">▾</span>
-                    </div>
-                  </div>
-                  <div>
-                    <label htmlFor="gender" className="block text-gray-600 text-sm mb-1">
-                      Gender
-                    </label>
-                    <div className="relative">
-                      <select
-                        id="gender"
-                        value={gender}
-                        onChange={(e) => setGender(e.target.value)}
-                        className="w-full px-3 py-2 pr-8 bg-white border border-gray-400 text-gray-900 text-sm focus:outline-none focus:border-win-titlebar appearance-none"
-                      >
-                        <option value="">Select</option>
-                        <option value="Man">Man</option>
-                        <option value="Woman">Woman</option>
-                        <option value="Non-binary">Non-binary</option>
-                        <option value="Other">Other</option>
-                      </select>
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 pointer-events-none">▾</span>
-                    </div>
-                  </div>
-                </div>
-                <button
-                  type="submit"
-                  disabled={!name.trim()}
-                  className="mt-4 w-full py-2.5 bg-win-titlebar text-white text-sm font-medium disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed hover:bg-win-titlebarLight transition-colors"
+            <Window title="Welcome.exe" icon="person">
+              <div className="flex flex-col gap-4">
+                <p className="text-gray-600 text-sm">
+                  You&apos;re signed in. Browse dates and start a chat.
+                </p>
+                <Link
+                  to="/chats"
+                  className="w-full py-2.5 bg-win-titlebar text-white text-sm font-medium text-center hover:bg-win-titlebarLight transition-colors"
                 >
-                  Continue
-                </button>
-              </form>
+                  Go To Chats
+                </Link>
+              </div>
             </Window>
           ) : (
-            <Window title="NewUser.exe" icon="person">
+            <Window title="Get Started.exe" icon="person">
               <div className="flex flex-col gap-4">
                 <p className="text-gray-600 text-sm">
                   Sign in or create an account to browse dates and book chats.
@@ -174,7 +78,7 @@ export function OnboardingScreen() {
                     to="/sign-up"
                     className="w-full py-2.5 border border-win-titlebar text-win-titlebar text-sm font-medium text-center hover:bg-win-titlebar/10 transition-colors"
                   >
-                    Create account
+                    Sign up
                   </Link>
                 </div>
               </div>
