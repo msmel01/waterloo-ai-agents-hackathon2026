@@ -1,6 +1,8 @@
-"""Auth router for webhook handling."""
+"""Auth router for Clerk webhook handling."""
 
 import logging
+import re
+import uuid
 from typing import Annotated
 
 from dependency_injector.wiring import Provide, inject
@@ -9,10 +11,41 @@ from svix.webhooks import Webhook, WebhookVerificationError
 
 from src.core.config import config
 from src.core.container import Container as DIContainer
-from src.services.user_service import UserService
+from src.repository.heart_repository import HeartRepository
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 logger = logging.getLogger(__name__)
+
+
+def _extract_primary_email(clerk_data: dict) -> str | None:
+    """Extract the primary email from Clerk webhook payload."""
+    email_addresses = clerk_data.get("email_addresses", [])
+    primary_email_id = clerk_data.get("primary_email_address_id")
+    for email_record in email_addresses:
+        if email_record.get("id") == primary_email_id:
+            return email_record.get("email_address")
+    if email_addresses:
+        return email_addresses[0].get("email_address")
+    return None
+
+
+def _build_display_name(clerk_data: dict) -> str:
+    """Build display name from Clerk payload."""
+    first_name = clerk_data.get("first_name") or ""
+    last_name = clerk_data.get("last_name") or ""
+    full_name = f"{first_name} {last_name}".strip()
+    if full_name:
+        return full_name
+    username = clerk_data.get("username")
+    if username:
+        return username
+    return "Heart User"
+
+
+def _slugify(value: str) -> str:
+    """Create URL-safe slug chunk."""
+    normalized = re.sub(r"[^a-zA-Z0-9]+", "-", value).strip("-").lower()
+    return normalized or "heart"
 
 
 @router.post("/webhook")
@@ -22,7 +55,7 @@ async def clerk_webhook(
     svix_id: Annotated[str, Header(alias="svix-id")],
     svix_timestamp: Annotated[str, Header(alias="svix-timestamp")],
     svix_signature: Annotated[str, Header(alias="svix-signature")],
-    user_service: UserService = Depends(Provide[DIContainer.user_service]),
+    heart_repository: HeartRepository = Depends(Provide[DIContainer.heart_repository]),
 ):
     """
     Handle Clerk webhooks for user lifecycle events.
@@ -49,7 +82,7 @@ async def clerk_webhook(
         logger.error(f"Webhook verification failed: {e}")
         raise HTTPException(status_code=400, detail="Invalid signature")
 
-    # Handle the event
+    # Handle event
     event_type = evt.get("type")
     data = evt.get("data")
 
@@ -57,33 +90,43 @@ async def clerk_webhook(
 
     if event_type in ["user.created", "user.updated"]:
         user_id = data.get("id")
-        email_addresses = data.get("email_addresses", [])
-        primary_email_id = data.get("primary_email_address_id")
-
-        # Find primary email
-        email = None
-        for email_record in email_addresses:
-            if email_record.get("id") == primary_email_id:
-                email = email_record.get("email_address")
-                break
-
-        if not email and email_addresses:
-            # Fallback to first email if primary not found
-            email = email_addresses[0].get("email_address")
-
-        # Extract name
-        first_name = data.get("first_name", "")
-        last_name = data.get("last_name", "")
-        name = f"{first_name} {last_name}".strip() or None
+        email = _extract_primary_email(data) or f"{user_id}@clerk.local"
+        display_name = _build_display_name(data)
 
         if user_id:
-            await user_service.sync_clerk_user(clerk_id=user_id, email=email, name=name)
-            logger.info(f"Synced user {user_id} ({email}) from webhook")
+            heart = await heart_repository.find_by_clerk_id(user_id)
+            if heart:
+                heart.email = email
+                heart.display_name = display_name
+                await heart_repository.update(heart.id, heart)
+            else:
+                slug = f"{_slugify(display_name)}-{uuid.uuid4().hex[:8]}"
+                await heart_repository.create(
+                    heart_repository.model(
+                        clerk_user_id=user_id,
+                        email=email,
+                        display_name=display_name,
+                        persona={
+                            "traits": [],
+                            "vibe": "",
+                            "tone": "",
+                            "humor_level": 0,
+                        },
+                        expectations={
+                            "dealbreakers": [],
+                            "green_flags": [],
+                            "must_haves": [],
+                        },
+                        shareable_slug=slug,
+                        is_active=True,
+                    )
+                )
+            logger.info(f"Synced heart {user_id} ({email}) from webhook")
 
     elif event_type == "user.deleted":
         user_id = data.get("id")
         if user_id:
-            await user_service.delete_clerk_user(user_id)
-            logger.info(f"Deleted user {user_id} from webhook")
+            await heart_repository.delete_by_clerk_id(user_id)
+            logger.info(f"Deleted heart {user_id} from webhook")
 
     return {"status": "ok", "event": event_type}
