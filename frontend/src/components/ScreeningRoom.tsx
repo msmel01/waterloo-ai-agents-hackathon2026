@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Window } from './Window';
 import { useLivekitRoom } from '../hooks/useLivekitRoom';
-import { getLivekitServerUrl } from '../lib/livekitClient';
+import { getLivekitServerUrl } from '../api/livekitClient';
 import type { AuthState } from '../types';
 
 interface ScreeningRoomProps {

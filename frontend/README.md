@@ -39,7 +39,7 @@ The app runs a **full dummy UI** with TODO stubs. No login required. With placeh
 
 ## Token fetching
 
-The app uses a **placeholder token** stub in `src/lib/livekitToken.ts`. To connect to a real LiveKit room:
+The app uses a **placeholder token** stub in `src/api/livekitToken.ts`. To connect to a real LiveKit room:
 
 1. Implement a backend endpoint that issues LiveKit access tokens using the [LiveKit Access Token API](https://docs.livekit.io/realtime/token/).
 2. Replace the mock implementation in `fetchLivekitToken()` with a call to your API, e.g.:
@@ -61,7 +61,7 @@ The app uses a **placeholder token** stub in `src/lib/livekitToken.ts`. To conne
 [Clerk](https://clerk.com) is included as a dependency for future use. No login is required for the current dummy UI. When your backend is connected:
 
 - Add `ClerkProvider` and wire `useAuth()` / `getToken()` for authenticated API calls.
-- Use `getAuthHeaders(getToken)` from `src/lib/clerk.ts` to attach the JWT to requests.
+- Use `getAuthHeaders(getToken)` from `src/api/clerk.ts` to attach the JWT to requests.
 
 ## Stack
 
@@ -76,5 +76,5 @@ The app uses a **placeholder token** stub in `src/lib/livekitToken.ts`. To conne
 - `src/components/` — Window, ScreeningRoom
 - `src/pages/` — OnboardingScreen, DatesGrid, ProfileScreen, ChatScreen
 - `src/hooks/` — useLivekitRoom
-- `src/lib/` — clerk (auth headers), livekitClient, livekitToken
+- `src/api/` — clerk (auth headers), livekitClient, livekitToken
 - `src/types/` — shared types

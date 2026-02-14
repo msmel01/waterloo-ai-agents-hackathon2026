@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ScreeningRoom } from '../components/ScreeningRoom';
-import { fetchLivekitToken } from '../lib/livekitToken';
+import { fetchLivekitToken } from '../api/livekitToken';
 import type { AuthState } from '../types';
 
 export function ChatScreen() {
