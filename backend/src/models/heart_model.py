@@ -17,8 +17,14 @@ class HeartDb(SQLModel, table=True):
     id: uuid.UUID = Field(
         sa_column=Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     )
-    clerk_user_id: str = Field(sa_column=Column(String(255), unique=True, index=True))
-    email: str = Field(sa_column=Column(String(320), unique=True, index=True))
+    clerk_user_id: Optional[str] = Field(
+        default=None,
+        sa_column=Column(String(255), unique=True, index=True, nullable=True),
+    )
+    email: Optional[str] = Field(
+        default=None,
+        sa_column=Column(String(320), unique=True, index=True, nullable=True),
+    )
     display_name: str = Field(sa_column=Column(String(255), nullable=False))
     bio: Optional[str] = Field(default=None, sa_column=Column(Text, nullable=True))
     photo_url: Optional[str] = Field(

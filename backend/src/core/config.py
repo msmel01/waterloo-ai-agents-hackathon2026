@@ -140,6 +140,7 @@ class Config(BaseSettings):
     HUME_SECRET_KEY: Optional[SecretStr] = None
     ANTHROPIC_API_KEY: Optional[SecretStr] = None
     CALCOM_API_KEY: Optional[SecretStr] = None
+    CALCOM_EVENT_TYPE_ID: Optional[str] = None
 
     @property
     def CLERK_WEBHOOK_SECRET_VALUE(self) -> Optional[str]:

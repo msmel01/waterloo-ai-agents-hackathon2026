@@ -73,7 +73,7 @@
           "Admin"
         ],
         "summary": "Create Avatar",
-        "description": "Trigger Tavus avatar creation (placeholder stub for static Heart MVP).",
+        "description": "Trigger Tavus replica creation from the configured Heart video URL.",
         "operationId": "create_avatar_api_v1_admin_avatar_create_post",
         "responses": {
           "200": {
@@ -100,7 +100,7 @@
           "Admin"
         ],
         "summary": "Avatar Status",
-        "description": "Return Tavus avatar status for the static Heart profile.",
+        "description": "Check the current Tavus replica status for the static Heart profile.",
         "operationId": "avatar_status_api_v1_admin_avatar_status_get",
         "responses": {
           "200": {
@@ -127,7 +127,7 @@
           "Admin"
         ],
         "summary": "Calendar Status",
-        "description": "Return cal.com configuration health and slot preview (placeholder).",
+        "description": "Check cal.com integration health and return a short slot preview.",
         "operationId": "calendar_status_api_v1_admin_calendar_status_get",
         "responses": {
           "200": {
@@ -195,116 +195,13 @@
         ]
       }
     },
-    "/api/v1/admin/dashboard/stats": {
-      "get": {
-        "tags": [
-          "Admin"
-        ],
-        "summary": "Dashboard Stats",
-        "description": "Get admin dashboard statistics for the static Heart profile.",
-        "operationId": "dashboard_stats_api_v1_admin_dashboard_stats_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DashboardStatsResponse"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "APIKeyHeader": []
-          }
-        ]
-      }
-    },
-    "/api/v1/admin/sessions": {
-      "get": {
-        "tags": [
-          "Admin"
-        ],
-        "summary": "List Sessions",
-        "description": "List all sessions for admin moderation and review.",
-        "operationId": "list_sessions_api_v1_admin_sessions_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SessionListResponse"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "APIKeyHeader": []
-          }
-        ]
-      }
-    },
-    "/api/v1/admin/sessions/{id}": {
-      "get": {
-        "tags": [
-          "Admin"
-        ],
-        "summary": "Session Detail",
-        "description": "Get full transcript and score detail for one session.",
-        "operationId": "session_detail_api_v1_admin_sessions__id__get",
-        "security": [
-          {
-            "APIKeyHeader": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SessionDetailResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/v1/admin/health": {
       "get": {
         "tags": [
           "Admin"
         ],
         "summary": "Health",
-        "description": "Return system health for database, redis, tavus, cal.com, and heart readiness.",
+        "description": "Return overall system health for DB, Redis, Tavus, cal.com, and Heart config.",
         "operationId": "health_api_v1_admin_health_get",
         "responses": {
           "200": {
@@ -331,7 +228,7 @@
           "Public"
         ],
         "summary": "Get Public Profile",
-        "description": "Get limited public profile information for a heart by slug.",
+        "description": "Get the Heart public profile for the suitor landing page.",
         "operationId": "get_public_profile_api_v1_public__slug__get",
         "parameters": [
           {
@@ -403,6 +300,33 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/suitors/me": {
+      "get": {
+        "tags": [
+          "Suitors"
+        ],
+        "summary": "Get My Profile",
+        "description": "Get the authenticated suitor profile.",
+        "operationId": "get_my_profile_api_v1_suitors_me_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuitorProfileResponse"
                 }
               }
             }
@@ -921,116 +845,6 @@
         "title": "CalendarStatusResponse",
         "description": "Calendar status response with lightweight slot preview."
       },
-      "ConversationSpeaker": {
-        "type": "string",
-        "enum": [
-          "avatar",
-          "suitor"
-        ],
-        "title": "ConversationSpeaker",
-        "description": "Speaker labels for transcript turns."
-      },
-      "DashboardStatsResponse": {
-        "properties": {
-          "total_suitors": {
-            "type": "integer",
-            "title": "Total Suitors",
-            "description": "Total suitors that entered screening."
-          },
-          "match_rate": {
-            "type": "number",
-            "title": "Match Rate",
-            "description": "Percentage of sessions with a date verdict."
-          },
-          "avg_scores": {
-            "type": "number",
-            "title": "Avg Scores",
-            "description": "Average weighted score across completed sessions."
-          },
-          "total_sessions": {
-            "type": "integer",
-            "title": "Total Sessions",
-            "description": "Total sessions created."
-          },
-          "completed_sessions": {
-            "type": "integer",
-            "title": "Completed Sessions",
-            "description": "Sessions with completed state."
-          },
-          "upcoming_bookings": {
-            "type": "integer",
-            "title": "Upcoming Bookings",
-            "description": "Count of upcoming date bookings."
-          }
-        },
-        "type": "object",
-        "required": [
-          "total_suitors",
-          "match_rate",
-          "avg_scores",
-          "total_sessions",
-          "completed_sessions",
-          "upcoming_bookings"
-        ],
-        "title": "DashboardStatsResponse",
-        "description": "Dashboard summary card metrics."
-      },
-      "EmotionData": {
-        "properties": {
-          "confidence": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Confidence",
-            "description": "Detected confidence level."
-          },
-          "hesitation": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Hesitation",
-            "description": "Detected hesitation level."
-          },
-          "enthusiasm": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Enthusiasm",
-            "description": "Detected enthusiasm level."
-          },
-          "sarcasm": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Sarcasm",
-            "description": "Detected sarcasm level."
-          }
-        },
-        "additionalProperties": true,
-        "type": "object",
-        "title": "EmotionData",
-        "description": "Emotion analysis data attached to transcript turns."
-      },
       "EmotionModifiers": {
         "properties": {
           "confidence_boost": {
@@ -1098,7 +912,7 @@
             "title": "Display Name",
             "description": "Heart display name shown publicly."
           },
-          "bio_snippet": {
+          "bio": {
             "anyOf": [
               {
                 "type": "string"
@@ -1107,10 +921,10 @@
                 "type": "null"
               }
             ],
-            "title": "Bio Snippet",
-            "description": "Short public bio snippet."
+            "title": "Bio",
+            "description": "Public bio text."
           },
-          "avatar_preview_url": {
+          "photo_url": {
             "anyOf": [
               {
                 "type": "string"
@@ -1119,274 +933,46 @@
                 "type": "null"
               }
             ],
-            "title": "Avatar Preview Url",
-            "description": "Public avatar or photo preview URL."
+            "title": "Photo Url",
+            "description": "Public profile photo URL for the heart."
           },
-          "shareable_slug": {
-            "type": "string",
-            "title": "Shareable Slug",
-            "description": "Public slug used in the URL."
+          "avatar_ready": {
+            "type": "boolean",
+            "title": "Avatar Ready",
+            "description": "Whether a Tavus avatar replica has been initialized."
+          },
+          "has_calendar": {
+            "type": "boolean",
+            "title": "Has Calendar",
+            "description": "Whether date booking is configured via cal.com."
+          },
+          "question_count": {
+            "type": "integer",
+            "title": "Question Count",
+            "description": "Number of screening questions the suitor will answer."
+          },
+          "persona_preview": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Preview",
+            "description": "Short personality teaser generated from top persona traits."
           }
         },
         "type": "object",
         "required": [
           "display_name",
-          "shareable_slug"
+          "avatar_ready",
+          "has_calendar",
+          "question_count"
         ],
         "title": "PublicHeartProfileResponse",
         "description": "Publicly exposed profile data."
-      },
-      "SessionDetailResponse": {
-        "properties": {
-          "session_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Session Id",
-            "description": "Session UUID."
-          },
-          "heart_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Heart Id",
-            "description": "Heart UUID."
-          },
-          "suitor_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Suitor Id",
-            "description": "Suitor UUID."
-          },
-          "suitor_name": {
-            "type": "string",
-            "title": "Suitor Name",
-            "description": "Suitor display name."
-          },
-          "status": {
-            "$ref": "#/components/schemas/SessionStatus",
-            "description": "Current session status."
-          },
-          "started_at": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Started At",
-            "description": "Session start timestamp."
-          },
-          "ended_at": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Ended At",
-            "description": "Session end timestamp."
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Created At",
-            "description": "Session creation timestamp."
-          },
-          "turns": {
-            "items": {
-              "$ref": "#/components/schemas/SessionDetailTurn"
-            },
-            "type": "array",
-            "title": "Turns",
-            "description": "Ordered transcript turns."
-          },
-          "score": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/SessionDetailScore"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Final score payload when available."
-          }
-        },
-        "type": "object",
-        "required": [
-          "session_id",
-          "heart_id",
-          "suitor_id",
-          "suitor_name",
-          "status",
-          "created_at"
-        ],
-        "title": "SessionDetailResponse",
-        "description": "Full session detail response payload."
-      },
-      "SessionDetailScore": {
-        "properties": {
-          "effort_score": {
-            "type": "number",
-            "title": "Effort Score",
-            "description": "Effort score (0-100)."
-          },
-          "creativity_score": {
-            "type": "number",
-            "title": "Creativity Score",
-            "description": "Creativity score (0-100)."
-          },
-          "intent_clarity_score": {
-            "type": "number",
-            "title": "Intent Clarity Score",
-            "description": "Intent clarity score (0-100)."
-          },
-          "emotional_intelligence_score": {
-            "type": "number",
-            "title": "Emotional Intelligence Score",
-            "description": "Emotional intelligence score (0-100)."
-          },
-          "weighted_total": {
-            "type": "number",
-            "title": "Weighted Total",
-            "description": "Weighted total score (0-100)."
-          },
-          "verdict": {
-            "$ref": "#/components/schemas/Verdict",
-            "description": "Final verdict for this session."
-          },
-          "feedback_text": {
-            "type": "string",
-            "title": "Feedback Text",
-            "description": "Personalized feedback summary."
-          },
-          "emotion_modifiers": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/EmotionModifiers"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Emotion-based score modifiers."
-          }
-        },
-        "type": "object",
-        "required": [
-          "effort_score",
-          "creativity_score",
-          "intent_clarity_score",
-          "emotional_intelligence_score",
-          "weighted_total",
-          "verdict",
-          "feedback_text"
-        ],
-        "title": "SessionDetailScore",
-        "description": "Scoring data in session details."
-      },
-      "SessionDetailTurn": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Id",
-            "description": "Conversation turn UUID."
-          },
-          "turn_index": {
-            "type": "integer",
-            "title": "Turn Index",
-            "description": "Sequential turn index."
-          },
-          "speaker": {
-            "$ref": "#/components/schemas/ConversationSpeaker",
-            "description": "Speaker role for the transcript entry."
-          },
-          "content": {
-            "type": "string",
-            "title": "Content",
-            "description": "Transcript content."
-          },
-          "emotion_data": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/EmotionData"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Emotion analysis object for this turn."
-          },
-          "duration_seconds": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Duration Seconds",
-            "description": "Turn duration in seconds."
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Created At",
-            "description": "Turn creation timestamp."
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "turn_index",
-          "speaker",
-          "content",
-          "created_at"
-        ],
-        "title": "SessionDetailTurn",
-        "description": "Turn data in a detailed session response."
-      },
-      "SessionListResponse": {
-        "properties": {
-          "items": {
-            "items": {
-              "$ref": "#/components/schemas/SessionSummaryItem"
-            },
-            "type": "array",
-            "title": "Items",
-            "description": "Session summaries for dashboard list."
-          },
-          "total": {
-            "type": "integer",
-            "title": "Total",
-            "description": "Total items across all pages."
-          },
-          "page": {
-            "type": "integer",
-            "title": "Page",
-            "description": "Current page number (1-indexed)."
-          },
-          "per_page": {
-            "type": "integer",
-            "title": "Per Page",
-            "description": "Maximum items per page."
-          }
-        },
-        "type": "object",
-        "required": [
-          "total",
-          "page",
-          "per_page"
-        ],
-        "title": "SessionListResponse",
-        "description": "Paginated-style session list response for a heart."
       },
       "SessionStartRequest": {
         "properties": {
@@ -1527,70 +1113,6 @@
         ],
         "title": "SessionStatusResponse",
         "description": "Polling response for session status."
-      },
-      "SessionSummaryItem": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Id",
-            "description": "Session UUID."
-          },
-          "suitor_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Suitor Id",
-            "description": "Suitor UUID."
-          },
-          "suitor_name": {
-            "type": "string",
-            "title": "Suitor Name",
-            "description": "Suitor display name."
-          },
-          "status": {
-            "$ref": "#/components/schemas/SessionStatus",
-            "description": "Session lifecycle status."
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Created At",
-            "description": "Session creation timestamp."
-          },
-          "weighted_total": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Weighted Total",
-            "description": "Weighted total score if available."
-          },
-          "verdict": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/Verdict"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Date/no-date verdict if available."
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "suitor_id",
-          "suitor_name",
-          "status",
-          "created_at"
-        ],
-        "title": "SessionSummaryItem",
-        "description": "Compact session listing item for dashboard."
       },
       "SessionVerdictResponse": {
         "properties": {
@@ -1796,11 +1318,6 @@
             "title": "Intro Message",
             "description": "Optional intro message."
           },
-          "is_profile_complete": {
-            "type": "boolean",
-            "title": "Is Profile Complete",
-            "description": "Whether required profile fields are complete."
-          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -1812,15 +1329,21 @@
             "format": "date-time",
             "title": "Updated At",
             "description": "Profile update timestamp."
+          },
+          "is_profile_complete": {
+            "type": "boolean",
+            "title": "Is Profile Complete",
+            "description": "Whether required profile fields are complete.",
+            "readOnly": true
           }
         },
         "type": "object",
         "required": [
           "id",
           "name",
-          "is_profile_complete",
           "created_at",
-          "updated_at"
+          "updated_at",
+          "is_profile_complete"
         ],
         "title": "SuitorProfileResponse",
         "description": "Suitor self-profile response."
@@ -1837,12 +1360,14 @@
           "gender": {
             "type": "string",
             "maxLength": 50,
+            "minLength": 1,
             "title": "Gender",
             "description": "Suitor's gender identity."
           },
           "orientation": {
             "type": "string",
             "maxLength": 50,
+            "minLength": 1,
             "title": "Orientation",
             "description": "Suitor's orientation."
           },

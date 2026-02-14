@@ -9,10 +9,20 @@ class PublicHeartProfileResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     display_name: str = Field(description="Heart display name shown publicly.")
-    bio_snippet: str | None = Field(
-        default=None, description="Short public bio snippet."
+    bio: str | None = Field(default=None, description="Public bio text.")
+    photo_url: str | None = Field(
+        default=None, description="Public profile photo URL for the heart."
     )
-    avatar_preview_url: str | None = Field(
-        default=None, description="Public avatar or photo preview URL."
+    avatar_ready: bool = Field(
+        description="Whether a Tavus avatar replica has been initialized."
     )
-    shareable_slug: str = Field(description="Public slug used in the URL.")
+    has_calendar: bool = Field(
+        description="Whether date booking is configured via cal.com."
+    )
+    question_count: int = Field(
+        description="Number of screening questions the suitor will answer."
+    )
+    persona_preview: str | None = Field(
+        default=None,
+        description="Short personality teaser generated from top persona traits.",
+    )

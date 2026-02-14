@@ -26,6 +26,7 @@ dependencies = [
     "opentelemetry-instrumentation-fastapi>=0.60b1",
     "pydantic-settings>=2.12.0",
     "pyjwt[crypto]>=2.11.0",
+    "pyyaml>=6.0.2",
     "python-json-logger>=4.0.0",
     "redis>=5.0.0,<6.0.0",
     "sqlmodel>=0.0.31",

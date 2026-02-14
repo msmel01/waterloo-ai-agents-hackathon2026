@@ -321,10 +321,13 @@ class BaseRepository:
 
     async def create(self, schema: T):
         async with self.session_factory() as session:
-            db_obj = self.model.model_validate(schema)
-
             try:
-                db_obj = self.model(**schema.model_dump())
+                if isinstance(schema, self.model):
+                    db_obj = schema
+                else:
+                    db_obj = self.model(
+                        **schema.model_dump(exclude_unset=True, exclude_none=True)
+                    )
                 session.add(db_obj)
                 await session.commit()
                 await session.refresh(db_obj)

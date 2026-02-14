@@ -39,17 +39,10 @@ async def complete_suitor_profile(
     if not updated:
         updated = suitor
 
-    return SuitorProfileResponse(
-        id=updated.id,
-        name=updated.name,
-        email=updated.email,
-        age=updated.age,
-        gender=updated.gender,
-        orientation=updated.orientation,
-        intro_message=updated.intro_message,
-        is_profile_complete=bool(
-            updated.age and updated.gender and updated.orientation
-        ),
-        created_at=updated.created_at,
-        updated_at=updated.updated_at,
-    )
+    return SuitorProfileResponse.model_validate(updated)
+
+
+@router.get("/me", response_model=SuitorProfileResponse)
+async def get_my_profile(suitor: CurrentSuitor):
+    """Get the authenticated suitor profile."""
+    return SuitorProfileResponse.model_validate(suitor)
