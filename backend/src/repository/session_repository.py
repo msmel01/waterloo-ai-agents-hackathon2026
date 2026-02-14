@@ -55,3 +55,16 @@ class SessionRepository(BaseRepository):
                 )
             )
             return result.scalars().first()
+
+    async def find_active_by_suitor(self, suitor_id: uuid.UUID) -> SessionDb | None:
+        """Find any active pending/in-progress session for one suitor."""
+        async with self.session_factory() as session:
+            result = await session.execute(
+                select(self.model).where(
+                    self.model.suitor_id == suitor_id,
+                    self.model.status.in_(
+                        [SessionStatus.PENDING, SessionStatus.IN_PROGRESS]
+                    ),
+                )
+            )
+            return result.scalars().first()

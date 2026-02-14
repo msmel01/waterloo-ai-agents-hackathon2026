@@ -136,7 +136,6 @@ class Config(BaseSettings):
     LIVEKIT_URL: Optional[str] = None
     TAVUS_API_KEY: Optional[SecretStr] = None
     SMALLEST_AI_API_KEY: Optional[SecretStr] = None
-    DEEPGRAM_API_KEY: Optional[SecretStr] = None
     HUME_API_KEY: Optional[SecretStr] = None
     HUME_SECRET_KEY: Optional[SecretStr] = None
     ANTHROPIC_API_KEY: Optional[SecretStr] = None

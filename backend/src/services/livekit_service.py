@@ -33,7 +33,10 @@ class LiveKitService:
             )
 
     async def create_room(
-        self, room_name: str, max_participants: int = 3
+        self,
+        room_name: str,
+        max_participants: int = 3,
+        metadata: str | None = None,
     ) -> dict[str, Any]:
         """Create a LiveKit room used by one interview session."""
         self._require_sdk()
@@ -42,6 +45,7 @@ class LiveKitService:
                 name=room_name,
                 empty_timeout=300,
                 max_participants=max_participants,
+                metadata=metadata,
             )
         except TypeError:
             # Compatibility path for SDK versions expecting a request object.
@@ -52,6 +56,7 @@ class LiveKitService:
                     name=room_name,
                     empty_timeout=300,
                     max_participants=max_participants,
+                    metadata=metadata,
                 )
             )
         return {"name": room.name, "sid": room.sid}
@@ -78,7 +83,11 @@ class LiveKitService:
     async def delete_room(self, room_name: str) -> None:
         """Delete a LiveKit room when a session is fully complete."""
         self._require_sdk()
-        await self._api.room.delete_room(room_name)  # type: ignore[union-attr]
+        try:
+            await self._api.room.delete_room(room_name)  # type: ignore[union-attr]
+        except Exception:
+            # Room may already be cleaned up by timeout/egress flows.
+            return
 
     async def close(self) -> None:
         """Close API client resources if the SDK provides an async close hook."""

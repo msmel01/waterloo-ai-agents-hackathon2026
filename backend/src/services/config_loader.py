@@ -62,6 +62,7 @@ class AvatarConfig(BaseModel):
     """Tavus config section."""
 
     tavus_api_key: str
+    tavus_persona_id: str | None = None
 
 
 class HeartConfig(BaseModel):
@@ -148,6 +149,7 @@ class HeartConfigLoader:
             heart.expectations = cfg.expectations.model_dump()
             heart.shareable_slug = cfg.shareable_slug
             heart.calcom_event_type_id = cfg.calendar.calcom_event_type_id
+            heart.tavus_persona_id = cfg.avatar.tavus_persona_id
             heart.is_active = True
             db_session.add(heart)
         else:
@@ -162,6 +164,7 @@ class HeartConfigLoader:
                 expectations=cfg.expectations.model_dump(),
                 shareable_slug=cfg.shareable_slug,
                 calcom_event_type_id=cfg.calendar.calcom_event_type_id,
+                tavus_persona_id=cfg.avatar.tavus_persona_id,
                 is_active=True,
             )
             db_session.add(heart)

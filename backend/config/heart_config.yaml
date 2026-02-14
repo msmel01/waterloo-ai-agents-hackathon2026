@@ -74,3 +74,4 @@ calendar:
 
 avatar:
   tavus_api_key: "${TAVUS_API_KEY}"
+  tavus_persona_id: null

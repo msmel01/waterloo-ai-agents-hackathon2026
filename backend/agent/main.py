@@ -1,8 +1,7 @@
-"""Valentine Hotline LiveKit Agent server entrypoint.
+"""Valentine Hotline LiveKit Agent server.
 
-Run in development:
+Run:
     python -m livekit.agents dev agent.main
-Run in production:
     python -m livekit.agents start agent.main
 """
 
@@ -18,23 +17,20 @@ from agent.db import (
     save_conversation_data,
     update_session_status,
 )
-from agent.hume_tracker import HumeEmotionTracker
 from agent.interview_agent import InterviewAgent
 from agent.prompt_builder import build_system_prompt
 from agent.session_manager import SessionManager
-from src.core.config import config
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("valentine-agent")
 
 try:
     from livekit.agents import AgentServer, AgentSession, JobContext, RoomOutputOptions
-    from livekit.plugins import deepgram, silero, smallestai, tavus
-except Exception as exc:  # pragma: no cover - runtime dependency guard
-    AgentSession = None  # type: ignore[assignment]
+    from livekit.plugins import silero, smallestai, tavus
+except Exception as exc:  # pragma: no cover - dependency guard
     AgentServer = None  # type: ignore[assignment]
+    AgentSession = None  # type: ignore[assignment]
     JobContext = object  # type: ignore[assignment]
     RoomOutputOptions = None  # type: ignore[assignment]
-    deepgram = None  # type: ignore[assignment]
     silero = None  # type: ignore[assignment]
     smallestai = None  # type: ignore[assignment]
     tavus = None  # type: ignore[assignment]
@@ -42,37 +38,31 @@ except Exception as exc:  # pragma: no cover - runtime dependency guard
 else:
     _IMPORT_ERROR = None
 
-if AgentServer:
-    server = AgentServer()
-else:  # pragma: no cover
-    server = None
+server = AgentServer() if AgentServer else None
 
 
 if server:
 
     @server.rtc_session()
     async def entrypoint(ctx: JobContext):  # type: ignore[misc]
-        """Handle one interview room session."""
+        """Handle one room interview session lifecycle."""
         await ctx.connect()
 
         room_name = ctx.room.name
-        if not room_name.startswith("session-"):
-            logger.error("Invalid room name format: %s", room_name)
-            return
         session_id = room_name.removeprefix("session-")
         try:
             uuid.UUID(session_id)
         except ValueError:
-            logger.error("Invalid session UUID in room name: %s", room_name)
+            logger.error("Invalid room name/session id: %s", room_name)
             return
 
         heart_config = await get_heart_config()
         session_data = await get_session_by_room(session_id)
         if not session_data:
-            logger.error("No session found for room=%s", room_name)
+            logger.error("No DB session found for room %s", room_name)
             return
 
-        instructions = build_system_prompt(
+        prompt = build_system_prompt(
             heart_config=heart_config,
             suitor_name=session_data["suitor_name"],
         )
@@ -81,26 +71,15 @@ if server:
             questions=heart_config["screening_questions"],
             max_duration_seconds=600,
         )
-        hume_tracker = HumeEmotionTracker(
-            api_key=(
-                config.HUME_API_KEY.get_secret_value() if config.HUME_API_KEY else ""
-            ),
-            session_id=session_id,
-        )
-
-        agent = InterviewAgent(
-            instructions=instructions,
+        interview_agent = InterviewAgent(
+            instructions=prompt,
             session_manager=session_mgr,
-            hume_tracker=hume_tracker,
         )
 
-        # SmallestAI may not expose an LLM plugin in some installs; use OpenAI-compatible
-        # fallback model endpoint if needed by your deployment.
-        llm_component = smallestai.LLM(model="smallest-llm-model")
         session = AgentSession(
             vad=silero.VAD.load(),
-            stt=deepgram.STT(model="nova-3", language="en"),
-            llm=llm_component,
+            stt=smallestai.STT(model="pulse", language="en"),
+            llm=smallestai.LLM(model="electron"),
             tts=smallestai.TTS(model="lightning", voice="emily", sample_rate=24000),
             allow_interruptions=True,
             min_endpointing_delay=0.5,
@@ -108,60 +87,58 @@ if server:
         )
 
         @session.on("user_input_transcribed")
-        def on_user_input(event):
+        async def on_user_speech(event):
             text = getattr(event, "text", "").strip()
-            if not text:
-                return
-            session_mgr.add_transcript_entry(
-                speaker="suitor",
-                text=text,
-                emotions=hume_tracker.get_latest_emotions(),
-            )
-            if session_mgr.ramble_detector.should_interrupt():
-                # Nudge model behavior via transcript marker for next response turn.
-                session_mgr.add_transcript_entry(
-                    speaker="avatar",
-                    text="Alright, I get the picture. Let me move us forward.",
-                )
+            if text:
+                session_mgr.add_transcript_entry(speaker="suitor", text=text)
+                if session_mgr.ramble_detector.should_interrupt():
+                    session_mgr.add_transcript_entry(
+                        speaker="avatar",
+                        text="I appreciate the detail, but let's keep moving.",
+                    )
 
         @session.on("agent_speech_committed")
-        def on_agent_output(event):
+        async def on_agent_speech(event):
             text = getattr(event, "text", "").strip()
             if text:
                 session_mgr.add_transcript_entry(speaker="avatar", text=text)
 
         @session.on("close")
-        async def on_close():
-            await hume_tracker.stop()
+        async def on_session_close():
             if session_mgr.end_reason is None:
                 session_mgr.end("session_closed")
-            session_payload = session_mgr.get_session_data()
-            session_payload["emotion_timeline"] = hume_tracker.get_emotion_timeline()
-            await save_conversation_data(session_id, session_payload)
-            logger.info("Session %s persisted after close event", session_id)
+            data = session_mgr.get_session_data()
+            await save_conversation_data(session_id, data)
+            logger.info(
+                "Session %s completed. duration=%.0fs turns=%s",
+                session_id,
+                data["duration_seconds"],
+                len(data["turns"]),
+            )
 
         @ctx.room.on("participant_disconnected")
         async def on_participant_disconnected(participant):
             identity = getattr(participant, "identity", "")
             if identity.startswith("suitor-"):
-                logger.warning("Suitor disconnected for session=%s", session_id)
+                logger.warning("Suitor disconnected in session %s", session_id)
                 session_mgr.end("suitor_disconnected")
-                await on_close()
+                await on_session_close()
 
         await update_session_status(session_id, "in_progress")
 
         if heart_config.get("tavus_replica_id"):
-            avatar = tavus.AvatarSession(replica_id=heart_config["tavus_replica_id"])
-            await avatar.start(session, room=ctx.room)
+            avatar_session = tavus.AvatarSession(
+                replica_id=heart_config["tavus_replica_id"],
+                persona_id=heart_config.get("tavus_persona_id"),
+            )
+            await avatar_session.start(session, room=ctx.room)
 
-        await hume_tracker.start(ctx.room)
         await session.start(
             room=ctx.room,
-            agent=agent,
+            agent=interview_agent,
             room_output_options=RoomOutputOptions(audio_enabled=False),
         )
 
-        # Session runs until room/session closes.
         while session_mgr.end_reason is None and not session_mgr.is_overtime():
             await asyncio.sleep(1)
         if session_mgr.end_reason is None:
@@ -171,6 +148,5 @@ else:
 
     def _missing_server(*_args, **_kwargs):  # pragma: no cover
         raise RuntimeError(
-            "LiveKit agent dependencies are missing. "
-            "Install livekit-agents plugins first."
+            "LiveKit agent dependencies are missing. Install livekit-agents v1.x plugins."
         ) from _IMPORT_ERROR

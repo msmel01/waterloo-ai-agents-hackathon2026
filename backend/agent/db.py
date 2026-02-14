@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
+import logging
 import uuid
 from datetime import datetime, timezone
 
-from arq import create_pool
-from arq.connections import RedisSettings
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlmodel import select
 
@@ -17,6 +16,9 @@ from src.models.heart_model import HeartDb
 from src.models.screening_question_model import ScreeningQuestionDb
 from src.models.session_model import SessionDb
 from src.models.suitor_model import SuitorDb
+from src.workers.tasks import enqueue_scoring_job
+
+logger = logging.getLogger(__name__)
 
 engine = create_async_engine(config.SQLALCHEMY_DATABASE_URI, echo=False)
 AsyncSessionLocal = async_sessionmaker(engine, expire_on_commit=False)
@@ -59,6 +61,7 @@ async def get_heart_config() -> dict:
             ],
             "shareable_slug": heart.shareable_slug,
             "tavus_replica_id": heart.tavus_avatar_id,
+            "tavus_persona_id": heart.tavus_persona_id,
             "calcom_event_type_id": heart.calcom_event_type_id,
         }
 
@@ -134,10 +137,10 @@ async def save_conversation_data(session_id: str, session_data: dict) -> None:
             db.add(
                 ConversationTurnDb(
                     session_id=session_uuid,
-                    turn_index=index,
+                    turn_index=int(turn.get("index", index)),
                     speaker=speaker,
                     content=turn.get("text", ""),
-                    emotion_data=turn.get("emotions"),
+                    emotion_data=None,
                     duration_seconds=turn.get("duration"),
                 )
             )
@@ -152,16 +155,15 @@ async def save_conversation_data(session_id: str, session_data: dict) -> None:
         else:
             session.ended_at = datetime.now(timezone.utc)
         session.status = SessionStatus.COMPLETED
+        session.end_reason = session_data.get("end_reason")
+        session.turn_summaries = {"turns": session_data.get("turns", [])}
+        session.audio_recording_url = session_data.get("audio_recording_url")
         db.add(session)
         await db.commit()
 
-    await enqueue_scoring_job(session_id)
-
-
-async def enqueue_scoring_job(session_id: str) -> None:
-    """Queue async scoring pipeline job (implemented in M5)."""
-    redis_pool = await create_pool(RedisSettings.from_dsn(config.REDIS_URL))
     try:
-        await redis_pool.enqueue_job("score_session", session_id)
-    finally:
-        await redis_pool.aclose()
+        await enqueue_scoring_job(session_id)
+    except Exception as exc:
+        logger.warning(
+            "Failed to enqueue scoring job for session %s: %s", session_id, exc
+        )

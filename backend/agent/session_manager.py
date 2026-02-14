@@ -13,7 +13,7 @@ class ConversationTurn:
     question_index: int
     question_text: str
     response_summary: str
-    emotions: dict | None
+    response_quality: str
     timestamp: float
 
 
@@ -77,30 +77,32 @@ class SessionManager:
         }
 
     def record_response(
-        self, question_index: int, response_summary: str, emotions: dict | None
+        self, question_index: int, response_summary: str, response_quality: str
     ):
         """Store summarized answer and advance question index."""
         turn = ConversationTurn(
             question_index=question_index,
             question_text=self.questions[question_index]["text"],
             response_summary=response_summary,
-            emotions=emotions,
+            response_quality=response_quality,
             timestamp=time.time(),
         )
         self.turns.append(turn)
         self.current_question_index = question_index + 1
         self.ramble_detector.reset()
 
-    def add_transcript_entry(
-        self, speaker: str, text: str, emotions: dict | None = None
-    ):
+    def questions_remaining(self) -> int:
+        """Return number of unasked screening questions."""
+        return max(0, len(self.questions) - self.current_question_index)
+
+    def add_transcript_entry(self, speaker: str, text: str):
         """Append raw transcript event."""
         self.full_transcript.append(
             {
                 "speaker": speaker,
                 "text": text,
-                "emotions": emotions,
                 "timestamp": time.time(),
+                "index": len(self.full_transcript),
             }
         )
         if speaker == "suitor":
@@ -124,14 +126,16 @@ class SessionManager:
                     "question_index": t.question_index,
                     "question_text": t.question_text,
                     "response_summary": t.response_summary,
-                    "emotions": t.emotions,
+                    "response_quality": t.response_quality,
                     "timestamp": t.timestamp,
                 }
                 for t in self.turns
             ],
             "full_transcript": self.full_transcript,
             "started_at": self.started_at,
-            "ended_at": self.ended_at,
-            "end_reason": self.end_reason,
+            "ended_at": self.ended_at or time.time(),
+            "end_reason": self.end_reason or "unknown",
             "duration_seconds": (self.ended_at or time.time()) - self.started_at,
+            "questions_asked": self.current_question_index,
+            "total_questions": len(self.questions),
         }

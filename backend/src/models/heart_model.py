@@ -36,6 +36,9 @@ class HeartDb(SQLModel, table=True):
     tavus_avatar_id: Optional[str] = Field(
         default=None, sa_column=Column(String(255), nullable=True)
     )
+    tavus_persona_id: Optional[str] = Field(
+        default=None, sa_column=Column(String(255), nullable=True)
+    )
     persona: dict[str, Any] = Field(
         default_factory=dict, sa_column=Column(JSONB, nullable=False)
     )

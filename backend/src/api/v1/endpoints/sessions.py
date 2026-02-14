@@ -1,5 +1,6 @@
 """Session endpoints."""
 
+import json
 import uuid
 from datetime import datetime, timezone
 from typing import Annotated
@@ -16,6 +17,7 @@ from src.models.suitor_model import SuitorDb
 from src.repository.heart_repository import HeartRepository
 from src.repository.score_repository import ScoreRepository
 from src.repository.session_repository import SessionRepository
+from src.schemas.common_schema import SuccessResponse
 from src.schemas.session_schema import (
     SessionStartRequest,
     SessionStartResponse,
@@ -47,10 +49,10 @@ async def start_session(
     livekit: LiveKitDep,
 ):
     """Start a new interview session and return LiveKit join credentials."""
-    if suitor.age is None or suitor.gender is None or suitor.orientation is None:
+    if suitor.age is None or suitor.gender is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Suitor profile is incomplete. Complete /api/v1/suitors/register first.",
+            detail="Complete your profile first (age, gender required)",
         )
 
     heart = await heart_repo.find_by_slug(payload.heart_slug)
@@ -65,15 +67,15 @@ async def start_session(
         )
     if not heart.tavus_avatar_id:
         raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Heart avatar is not ready yet",
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Avatar is not ready yet. Try again later.",
         )
 
-    active = await session_repo.find_active_by_suitor_heart(suitor.id, heart.id)
+    active = await session_repo.find_active_by_suitor(suitor.id)
     if active:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="An active session already exists for this suitor",
+            detail="You already have an active session",
         )
 
     draft = session_repo.model(
@@ -86,8 +88,20 @@ async def start_session(
     room_name = f"session-{created.id}"
     created = await session_repo.update_attr(created.id, "livekit_room_name", room_name)
 
+    room_metadata = json.dumps(
+        {
+            "session_id": str(created.id),
+            "heart_id": str(heart.id),
+            "suitor_id": str(suitor.id),
+        }
+    )
     try:
-        await livekit.create_room(room_name=room_name, max_participants=3)
+        room = await livekit.create_room(
+            room_name=room_name,
+            max_participants=3,
+            metadata=room_metadata,
+        )
+        await session_repo.update_attr(created.id, "livekit_room_sid", room.get("sid"))
         suitor_name = suitor.name or "Suitor"
         livekit_token = livekit.generate_suitor_token(
             room_name=room_name,
@@ -150,6 +164,41 @@ async def get_session_status(
         ended_at=session.ended_at,
         duration_seconds=duration_seconds,
     )
+
+
+@router.post("/{id}/end", response_model=SuccessResponse)
+@inject
+async def end_session(
+    id: uuid.UUID,
+    suitor: CurrentSuitor,
+    session_repo: SessionRepoDep,
+    livekit: LiveKitDep,
+):
+    """End an active session and clean up the LiveKit room."""
+    try:
+        session = await session_repo.read_by_id(id)
+    except NotFoundError:
+        session = None
+    if session is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Session not found"
+        )
+    if session.suitor_id != suitor.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+
+    now = datetime.now(timezone.utc)
+    await session_repo.update_attr(id, "ended_at", now)
+    await session_repo.update_attr(id, "end_reason", "manual_end")
+    if session.status in {SessionStatus.PENDING, SessionStatus.IN_PROGRESS}:
+        await session_repo.update_status(id, SessionStatus.COMPLETED)
+
+    if session.livekit_room_name:
+        try:
+            await livekit.delete_room(session.livekit_room_name)
+        finally:
+            await livekit.close()
+
+    return SuccessResponse(message="Session ended")
 
 
 @router.get("/{id}/verdict", response_model=SessionVerdictResponse)

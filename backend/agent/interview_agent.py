@@ -12,7 +12,6 @@ except Exception:  # pragma: no cover - optional dependency guard
         return fn
 
 
-from agent.hume_tracker import HumeEmotionTracker
 from agent.session_manager import SessionManager
 
 
@@ -23,12 +22,10 @@ class InterviewAgent(Agent):
         self,
         instructions: str,
         session_manager: SessionManager,
-        hume_tracker: HumeEmotionTracker,
         **kwargs,
     ):
         super().__init__(instructions=instructions, **kwargs)
         self.session_mgr = session_manager
-        self.hume_tracker = hume_tracker
 
     @function_tool
     async def get_next_question(self, context: RunContext) -> str:
@@ -44,13 +41,21 @@ class InterviewAgent(Agent):
 
     @function_tool
     async def record_suitor_response(
-        self, context: RunContext, question_index: int, response_summary: str
+        self,
+        context: RunContext,
+        question_index: int,
+        response_summary: str,
+        response_quality: str,
     ) -> str:
-        """Record one summarized suitor answer with latest emotion snapshot."""
+        """Record one summarized suitor answer with quality label."""
         _ = context
-        emotions = self.hume_tracker.get_latest_emotions()
-        self.session_mgr.record_response(question_index, response_summary, emotions)
-        return "Response recorded. Move to follow-up or next question."
+        self.session_mgr.record_response(
+            question_index, response_summary, response_quality
+        )
+        remaining = self.session_mgr.questions_remaining()
+        if remaining == 0:
+            return "All questions answered. Wrap up warmly and call end_interview."
+        return f"Response recorded. {remaining} questions remaining."
 
     @function_tool
     async def end_interview(self, context: RunContext, reason: str) -> str:
