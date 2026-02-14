@@ -13,6 +13,7 @@ export function SignUpScreen() {
   const navigate = useNavigate();
   const { isLoaded, signUp, setActive } = useSignUp();
   const [email, setEmail] = useState('');
+  const [name, setName] = useState('');
   const [password, setPassword] = useState('');
   const [gender, setGender] = useState('');
   const [orientation, setOrientation] = useState('');
@@ -50,7 +51,7 @@ export function SignUpScreen() {
       const res = await signUp.attemptEmailAddressVerification({ code });
 
       if (res.status === 'complete' && res.createdSessionId) {
-        await syncSuitorProfile({ gender, orientation, age });
+        await syncSuitorProfile({ name: name.trim(), gender, orientation, age });
         toast.success('Verification successful');
         await setActive({
           session: res.createdSessionId,
@@ -135,6 +136,20 @@ export function SignUpScreen() {
                     onChange={(e) => setEmail(e.target.value)}
                     className={inputClass}
                     placeholder="your@email.com"
+                    required
+                  />
+                </div>
+                <div>
+                  <label htmlFor="name" className={labelClass}>
+                    Name
+                  </label>
+                  <input
+                    id="name"
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className={inputClass}
+                    placeholder="Your full name"
                     required
                   />
                 </div>
