@@ -1,0 +1,60 @@
+version: "3.9"
+
+services:
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: valentine-hotline-api
+    env_file:
+      - ./backend/.env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/valentine_hotline
+      REDIS_URL: redis://redis:6379/0
+      DB_SSL: disable
+      APP_ENV: development
+      ENV: dev
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+      - redis
+
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: valentine-hotline-worker
+    env_file:
+      - ./backend/.env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/valentine_hotline
+      REDIS_URL: redis://redis:6379/0
+      DB_SSL: disable
+      APP_ENV: development
+      ENV: dev
+    command: ["uv", "run", "arq", "workers.main.WorkerSettings"]
+    depends_on:
+      - postgres
+      - redis
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: valentine-hotline-postgres
+    environment:
+      POSTGRES_DB: valentine_hotline
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: valentine-hotline-redis
+    ports:
+      - "6379:6379"
+
+volumes:
+  postgres_data:
