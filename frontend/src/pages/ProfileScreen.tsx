@@ -1,5 +1,6 @@
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Window } from '../components/Window';
+import { AppHeader } from '../components/AppHeader';
 import { PLACEHOLDER_DATES } from '../data/placeholders';
 
 export function ProfileScreen() {
@@ -15,12 +16,7 @@ export function ProfileScreen() {
 
   return (
     <div className="min-h-screen bg-win-bg flex flex-col py-6 px-4">
-      <header className="w-full max-w-xl mx-auto mb-6">
-        <h1 className="text-win-textMuted text-sm font-medium uppercase tracking-wider">
-          Valentine Hotline
-        </h1>
-        <div className="h-px bg-win-border mt-1" />
-      </header>
+      <AppHeader />
 
       <main className="flex-1 max-w-xl mx-auto w-full">
         <Link
@@ -32,11 +28,11 @@ export function ProfileScreen() {
         <Window title={`${displayName}Profile.exe`} icon="person">
           {/* TODO: Profile UI - placeholder for now */}
           <div className="flex flex-col items-center">
-            <div className="w-24 h-24 border border-win-border flex items-center justify-center mb-4 bg-win-bg">
+            <div className="w-24 h-24 border border-gray-400 flex items-center justify-center mb-4 bg-gray-200">
               <span className="text-win-titlebar text-3xl font-bold">{displayName[0]}</span>
             </div>
-            <h2 className="text-win-text text-xl font-semibold mb-2">{displayName}</h2>
-            <p className="text-win-textMuted text-sm text-center mb-6">
+            <h2 className="text-gray-800 text-xl font-semibold mb-2">{displayName}</h2>
+            <p className="text-gray-600 text-sm text-center mb-6">
               Profile details coming soon…
             </p>
             <button

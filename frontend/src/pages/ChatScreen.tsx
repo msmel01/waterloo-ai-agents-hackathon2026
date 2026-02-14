@@ -18,7 +18,7 @@ export function ChatScreen() {
 
     async function join() {
       try {
-        // TODO: Wire to backend - pass dateId/slug for room
+        // TODO: Wire to backend - pass dateId/slug for room. Use getToken from useAuth for JWT.
         const token = await fetchLivekitToken(`${displayName}-${slug ?? 'default'}`);
         if (!cancelled) {
           setAuth({ token, displayName });

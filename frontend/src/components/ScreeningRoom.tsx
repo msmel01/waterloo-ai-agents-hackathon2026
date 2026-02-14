@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Window } from './Window';
+import { AppHeader } from './AppHeader';
 import { useLivekitRoom } from '../hooks/useLivekitRoom';
 import { getLivekitServerUrl } from '../api/livekitClient';
 import type { AuthState } from '../types';
@@ -20,12 +21,9 @@ export function ScreeningRoom({ auth, onLeave, dateName = 'Date' }: ScreeningRoo
 
   return (
     <div className="min-h-screen bg-win-bg flex flex-col">
-      <header className="border-b border-win-border px-4 py-4">
-        <h1 className="text-win-textMuted text-sm font-medium uppercase tracking-wider">
-          Valentine Hotline
-        </h1>
-        <div className="h-px bg-win-border mt-1" />
-      </header>
+      <div className="border-b border-win-border px-4 py-4">
+        <AppHeader />
+      </div>
 
       {useDummyRoom ? (
         <DummyRoomContent displayName={displayName} onLeave={onLeave} dateName={dateName} />
@@ -59,27 +57,27 @@ function DummyRoomContent({
       <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 max-w-4xl mx-auto w-full">
         <Window title="Suitor.exe" icon="person">
           <div className="flex flex-col items-center">
-            <p className="text-win-text text-sm mb-4">{displayName || 'You'}</p>
-            <div className="h-14 w-28 border border-win-border bg-win-bg flex items-center justify-center mb-4">
+            <p className="text-gray-800 text-sm mb-4">{displayName || 'You'}</p>
+            <div className="h-14 w-28 border border-gray-400 bg-gray-200 flex items-center justify-center mb-4">
               <div className="h-3 w-3 bg-win-titlebar" />
             </div>
-            <p className="text-win-textMuted text-xs">Demo mode — awaiting backend</p>
+            <p className="text-gray-600 text-xs">Demo mode — awaiting backend</p>
           </div>
         </Window>
         <Window title={`${dateName}'s Gatekeeper.exe`} icon="person">
           <div className="flex flex-col items-center">
-            <p className="text-win-text text-sm mb-4">Valentine Hotline AI</p>
-            <div className="h-14 w-28 border border-win-border bg-win-bg flex items-center justify-center mb-4">
-              <div className="h-3 w-3 bg-win-textMuted" />
+            <p className="text-gray-800 text-sm mb-4">Valentine Hotline AI</p>
+            <div className="h-14 w-28 border border-gray-400 bg-gray-200 flex items-center justify-center mb-4">
+              <div className="h-3 w-3 bg-gray-500" />
             </div>
-            <p className="text-win-textMuted text-xs">Waiting for AI…</p>
+            <p className="text-gray-600 text-xs">Waiting for AI…</p>
           </div>
         </Window>
       </div>
       <div className="flex justify-center gap-4 py-6">
         <button
           onClick={() => setIsMuted((m) => !m)}
-          className="px-6 py-2.5 border border-win-border bg-win-content text-win-text text-sm hover:bg-win-titlebar hover:text-white hover:border-win-titlebar transition-colors"
+          className="px-6 py-2.5 border border-gray-500 bg-gray-200 text-gray-800 text-sm hover:bg-win-titlebar hover:text-white hover:border-win-titlebar transition-colors"
         >
           {isMuted ? 'Unmute' : 'Mute'}
         </button>
@@ -129,13 +127,13 @@ function LiveKitRoomWrapper({
       <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 max-w-4xl mx-auto w-full">
         <Window title="Suitor.exe" icon="person">
           <div className="flex flex-col items-center">
-            <p className="text-win-text text-sm mb-4">
+            <p className="text-gray-800 text-sm mb-4">
               {displayName || localParticipant?.name || 'You'}
             </p>
-            <div className="h-14 w-28 border border-win-border bg-win-bg flex items-center justify-center mb-4">
+            <div className="h-14 w-28 border border-gray-400 bg-gray-200 flex items-center justify-center mb-4">
               <div className="h-3 w-3 bg-win-titlebar" />
             </div>
-            <p className="text-win-textMuted text-xs">
+            <p className="text-gray-600 text-xs">
               {isConnected ? 'Connected' : 'Connecting…'}
             </p>
           </div>
@@ -143,8 +141,8 @@ function LiveKitRoomWrapper({
 
         <Window title={`${dateName}'s Gatekeeper.exe`} icon="person">
           <div className="flex flex-col items-center">
-            <p className="text-win-text text-sm mb-4">Valentine Hotline AI</p>
-            <div className="h-14 w-28 border border-win-border bg-win-bg flex items-center justify-center mb-4 overflow-hidden">
+            <p className="text-gray-800 text-sm mb-4">Valentine Hotline AI</p>
+            <div className="h-14 w-28 border border-gray-400 bg-gray-200 flex items-center justify-center mb-4 overflow-hidden">
               {remoteArray.length > 0 ? (
                 <div className="flex gap-1 items-end h-6">
                   {[1, 2, 3, 4, 5].map((i) => (
@@ -156,10 +154,10 @@ function LiveKitRoomWrapper({
                   ))}
                 </div>
               ) : (
-                <div className="h-3 w-3 bg-win-textMuted" />
+                <div className="h-3 w-3 bg-gray-500" />
               )}
             </div>
-            <p className="text-win-textMuted text-xs">
+            <p className="text-gray-600 text-xs">
               {remoteArray.length > 0 ? 'AI is speaking…' : 'Waiting for AI…'}
             </p>
           </div>
@@ -169,7 +167,7 @@ function LiveKitRoomWrapper({
       <div className="flex justify-center gap-4 py-6">
         <button
           onClick={isMuted ? unmuteMic : muteMic}
-          className="px-6 py-2.5 border border-win-border bg-win-content text-win-text text-sm hover:bg-win-titlebar hover:text-white hover:border-win-titlebar transition-colors"
+          className="px-6 py-2.5 border border-gray-500 bg-gray-200 text-gray-800 text-sm hover:bg-win-titlebar hover:text-white hover:border-win-titlebar transition-colors"
         >
           {isMuted ? 'Unmute' : 'Mute'}
         </button>

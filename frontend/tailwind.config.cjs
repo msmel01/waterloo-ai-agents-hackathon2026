@@ -11,11 +11,13 @@ module.exports = {
       },
       colors: {
         win: {
-          bg: '#10152F',
-          titlebar: '#4C6FF6',
-          titlebarLight: '#6B8AFF',
-          content: '#1A1F3A',
-          border: '#3B4A6B',
+          bg: '#0D0118',
+          titlebar: '#8301E1',
+          titlebarLight: '#9B2EED',
+          titlebarDark: '#5C01A3',
+          content: '#1A1025',
+          border: '#2D1B4E',
+          borderLight: '#4A2D6B',
           text: '#E8EAEF',
           textMuted: '#9CA3AF',
         },
