@@ -39,11 +39,12 @@ else:
     _IMPORT_ERROR = None
 
 server = AgentServer() if AgentServer else None
+AGENT_NAME = "valentine-interview-agent"
 
 
 if server:
 
-    @server.rtc_session()
+    @server.rtc_session(agent_name=AGENT_NAME)
     async def entrypoint(ctx: JobContext):  # type: ignore[misc]
         """Handle one room interview session lifecycle."""
         await ctx.connect()
@@ -150,3 +151,11 @@ else:
         raise RuntimeError(
             "LiveKit agent dependencies are missing. Install livekit-agents v1.x plugins."
         ) from _IMPORT_ERROR
+
+
+if __name__ == "__main__":  # pragma: no cover - local runtime entrypoint
+    if not server:
+        _missing_server()
+    from livekit.agents.cli.cli import run_app
+
+    run_app(server)

@@ -5,9 +5,15 @@ from __future__ import annotations
 from typing import Any
 
 try:
-    from livekit.api import AccessToken, LiveKitAPI, VideoGrants
+    from livekit.api import (
+        AccessToken,
+        CreateAgentDispatchRequest,
+        LiveKitAPI,
+        VideoGrants,
+    )
 except Exception:  # pragma: no cover - optional dependency guard
     AccessToken = None  # type: ignore[assignment]
+    CreateAgentDispatchRequest = None  # type: ignore[assignment]
     LiveKitAPI = None  # type: ignore[assignment]
     VideoGrants = None  # type: ignore[assignment]
 
@@ -93,3 +99,23 @@ class LiveKitService:
         """Close API client resources if the SDK provides an async close hook."""
         if self._api and hasattr(self._api, "aclose"):
             await self._api.aclose()
+
+    async def create_agent_dispatch(
+        self, room_name: str, agent_name: str, metadata: str | None = None
+    ) -> dict[str, Any]:
+        """Explicitly dispatch an agent worker into a room."""
+        self._require_sdk()
+        if not CreateAgentDispatchRequest:
+            raise RuntimeError("CreateAgentDispatchRequest unavailable in livekit-api")
+        dispatch = await self._api.agent_dispatch.create_dispatch(  # type: ignore[union-attr]
+            CreateAgentDispatchRequest(
+                room=room_name,
+                agent_name=agent_name,
+                metadata=metadata or "",
+            )
+        )
+        return {
+            "id": dispatch.id,
+            "agent_name": dispatch.agent_name,
+            "room": dispatch.room,
+        }

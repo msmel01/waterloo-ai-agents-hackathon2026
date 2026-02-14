@@ -35,6 +35,7 @@ SessionRepoDep = Annotated[
 ]
 ScoreRepoDep = Annotated[ScoreRepository, Depends(Provide[Container.score_repository])]
 LiveKitDep = Annotated[LiveKitService, Depends(get_livekit_service)]
+AGENT_NAME = "valentine-interview-agent"
 
 
 @router.post(
@@ -99,6 +100,11 @@ async def start_session(
         room = await livekit.create_room(
             room_name=room_name,
             max_participants=3,
+            metadata=room_metadata,
+        )
+        await livekit.create_agent_dispatch(
+            room_name=room_name,
+            agent_name=AGENT_NAME,
             metadata=room_metadata,
         )
         await session_repo.update_attr(created.id, "livekit_room_sid", room.get("sid"))
