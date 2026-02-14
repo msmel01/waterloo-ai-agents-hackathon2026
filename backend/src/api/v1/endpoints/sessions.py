@@ -306,7 +306,11 @@ async def pre_check(
             heart = await heart_repo.read_by_id(heart_id)
         except NotFoundError:
             heart = None
-    profile_complete = bool(suitor.age is not None and suitor.gender is not None)
+    profile_complete = bool(
+        suitor.age is not None
+        and suitor.gender is not None
+        and suitor.orientation is not None
+    )
     heart_active = bool(heart and heart.is_active)
     active_session = await session_repo.find_active_by_suitor(suitor.id)
 
