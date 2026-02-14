@@ -1,0 +1,1812 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Valentine Hotline API",
+    "description": "AI-powered dating screening system API",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/api/v1/auth/webhook": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Clerk Webhook",
+        "description": "Verify Clerk Svix signature and sync user lifecycle events into suitors table.",
+        "operationId": "clerk_webhook_api_v1_auth_webhook_post",
+        "parameters": [
+          {
+            "name": "svix-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Svix-Id"
+            }
+          },
+          {
+            "name": "svix-timestamp",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Svix-Timestamp"
+            }
+          },
+          {
+            "name": "svix-signature",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Svix-Signature"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/avatar/create": {
+      "post": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Create Avatar",
+        "description": "Trigger Tavus replica creation from the configured Heart video URL.",
+        "operationId": "create_avatar_api_v1_admin_avatar_create_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvatarCreateResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/avatar/status": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Avatar Status",
+        "description": "Check the current Tavus replica status for the static Heart profile.",
+        "operationId": "avatar_status_api_v1_admin_avatar_status_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TavusStatusInfo"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/calendar/status": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Calendar Status",
+        "description": "Check cal.com integration health and return a short slot preview.",
+        "operationId": "calendar_status_api_v1_admin_calendar_status_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalendarStatusResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/link/toggle": {
+      "post": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Toggle Link",
+        "description": "Activate or deactivate the static Heart's public link.",
+        "operationId": "toggle_link_api_v1_admin_link_toggle_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LinkToggleRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/health": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Health",
+        "description": "Return overall system health for DB, Redis, Tavus, cal.com, and Heart config.",
+        "operationId": "health_api_v1_admin_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemHealthResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ]
+      }
+    },
+    "/api/v1/public/{slug}": {
+      "get": {
+        "tags": [
+          "Public"
+        ],
+        "summary": "Get Public Profile",
+        "description": "Get the Heart public profile for the suitor landing page.",
+        "operationId": "get_public_profile_api_v1_public__slug__get",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Slug"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicHeartProfileResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/suitors/register": {
+      "post": {
+        "tags": [
+          "Suitors"
+        ],
+        "summary": "Complete Suitor Profile",
+        "description": "Complete authenticated suitor profile before interview starts.",
+        "operationId": "complete_suitor_profile_api_v1_suitors_register_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SuitorRegisterRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuitorProfileResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/suitors/me": {
+      "get": {
+        "tags": [
+          "Suitors"
+        ],
+        "summary": "Get My Profile",
+        "description": "Get the authenticated suitor profile.",
+        "operationId": "get_my_profile_api_v1_suitors_me_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuitorProfileResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/suitors/me/sessions": {
+      "get": {
+        "tags": [
+          "Suitors"
+        ],
+        "summary": "Get My Sessions",
+        "description": "List authenticated suitor's recent sessions and remaining daily quota.",
+        "operationId": "get_my_sessions_api_v1_suitors_me_sessions_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuitorSessionsResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/sessions/start": {
+      "post": {
+        "tags": [
+          "Sessions"
+        ],
+        "summary": "Start Session",
+        "description": "Start a new interview session and return LiveKit join credentials.",
+        "operationId": "start_session_api_v1_sessions_start_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SessionStartRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionStartResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/sessions/{id}/status": {
+      "get": {
+        "tags": [
+          "Sessions"
+        ],
+        "summary": "Get Session Status",
+        "description": "Get current processing state for a session owned by the authenticated suitor.",
+        "operationId": "get_session_status_api_v1_sessions__id__status_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionStatusResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/sessions/{id}/end": {
+      "post": {
+        "tags": [
+          "Sessions"
+        ],
+        "summary": "End Session",
+        "description": "End an active session and clean up the LiveKit room.",
+        "operationId": "end_session_api_v1_sessions__id__end_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/sessions/pre-check": {
+      "get": {
+        "tags": [
+          "Sessions"
+        ],
+        "summary": "Pre Check",
+        "description": "Check whether a suitor can start a new interview session.",
+        "operationId": "pre_check_api_v1_sessions_pre_check_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreCheckResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/sessions/{id}/verdict": {
+      "get": {
+        "tags": [
+          "Sessions"
+        ],
+        "summary": "Get Session Verdict",
+        "description": "Get verdict and score breakdown for a completed/scored session.",
+        "operationId": "get_session_verdict_api_v1_sessions__id__verdict_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionVerdictResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/bookings/slots": {
+      "get": {
+        "tags": [
+          "Bookings"
+        ],
+        "summary": "Get Slots",
+        "description": "Get available date booking slots for authenticated suitors (placeholder).",
+        "operationId": "get_slots_api_v1_bookings_slots_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvailableSlotsResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/bookings/create": {
+      "post": {
+        "tags": [
+          "Bookings"
+        ],
+        "summary": "Create Booking",
+        "description": "Create a booking confirmation for an authenticated suitor's session.",
+        "operationId": "create_booking_api_v1_bookings_create_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BookingCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingConfirmationResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/tools/add": {
+      "post": {
+        "tags": [
+          "tools"
+        ],
+        "summary": "Addition",
+        "description": "Adds two numbers",
+        "operationId": "addition_api_v1_tools_add_post",
+        "parameters": [
+          {
+            "name": "a",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "A"
+            }
+          },
+          {
+            "name": "b",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "B"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AvailableSlot": {
+        "properties": {
+          "slot_id": {
+            "type": "string",
+            "title": "Slot Id",
+            "description": "Provider slot identifier."
+          },
+          "starts_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Starts At",
+            "description": "Slot start datetime in ISO 8601."
+          },
+          "ends_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Ends At",
+            "description": "Slot end datetime in ISO 8601."
+          },
+          "timezone": {
+            "type": "string",
+            "title": "Timezone",
+            "description": "Timezone for this slot."
+          }
+        },
+        "type": "object",
+        "required": [
+          "slot_id",
+          "starts_at",
+          "ends_at",
+          "timezone"
+        ],
+        "title": "AvailableSlot",
+        "description": "Available booking slot."
+      },
+      "AvailableSlotsResponse": {
+        "properties": {
+          "slots": {
+            "items": {
+              "$ref": "#/components/schemas/AvailableSlot"
+            },
+            "type": "array",
+            "title": "Slots",
+            "description": "Available booking slots."
+          }
+        },
+        "type": "object",
+        "title": "AvailableSlotsResponse",
+        "description": "List of open booking slots."
+      },
+      "AvatarCreateResponse": {
+        "properties": {
+          "replica_id": {
+            "type": "string",
+            "title": "Replica Id",
+            "description": "Replica ID created or reused."
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "processing | ready | failed"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Human-readable status message."
+          }
+        },
+        "type": "object",
+        "required": [
+          "replica_id",
+          "status",
+          "message"
+        ],
+        "title": "AvatarCreateResponse",
+        "description": "Response for avatar creation trigger endpoint."
+      },
+      "BookingConfirmationResponse": {
+        "properties": {
+          "booking_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Booking Id",
+            "description": "Booking UUID."
+          },
+          "session_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Session Id",
+            "description": "Related session UUID."
+          },
+          "heart_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Heart Id",
+            "description": "Heart UUID."
+          },
+          "suitor_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Suitor Id",
+            "description": "Suitor UUID."
+          },
+          "calcom_booking_id": {
+            "type": "string",
+            "title": "Calcom Booking Id",
+            "description": "External calendar provider booking ID."
+          },
+          "scheduled_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Scheduled At",
+            "description": "Scheduled date-time for the booking."
+          },
+          "status": {
+            "$ref": "#/components/schemas/BookingStatus",
+            "description": "Booking lifecycle state."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At",
+            "description": "Booking creation timestamp."
+          }
+        },
+        "type": "object",
+        "required": [
+          "booking_id",
+          "session_id",
+          "heart_id",
+          "suitor_id",
+          "calcom_booking_id",
+          "scheduled_at",
+          "status",
+          "created_at"
+        ],
+        "title": "BookingConfirmationResponse",
+        "description": "Created booking payload."
+      },
+      "BookingCreateRequest": {
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Session Id",
+            "description": "Session UUID being converted to a date booking."
+          },
+          "slot_datetime": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Slot Datetime",
+            "description": "Selected slot datetime in ISO 8601."
+          }
+        },
+        "type": "object",
+        "required": [
+          "session_id",
+          "slot_datetime"
+        ],
+        "title": "BookingCreateRequest",
+        "description": "Create booking payload."
+      },
+      "BookingStatus": {
+        "type": "string",
+        "enum": [
+          "confirmed",
+          "cancelled",
+          "rescheduled"
+        ],
+        "title": "BookingStatus",
+        "description": "Booking lifecycle status."
+      },
+      "CalcomStatusInfo": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "connected | not_configured | error"
+          },
+          "event_type_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Type Id",
+            "description": "Configured cal.com event type ID."
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "CalcomStatusInfo",
+        "description": "cal.com integration health information."
+      },
+      "CalendarStatusResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "connected | not_configured | error"
+          },
+          "event_type_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Type Id",
+            "description": "Configured event type ID."
+          },
+          "slot_preview": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Slot Preview",
+            "description": "Preview list of upcoming slot timestamps."
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "CalendarStatusResponse",
+        "description": "Calendar status response with lightweight slot preview."
+      },
+      "EmotionModifiers": {
+        "properties": {
+          "confidence_boost": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confidence Boost",
+            "description": "Positive weighting from confidence signals."
+          },
+          "hesitation_penalty": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hesitation Penalty",
+            "description": "Negative weighting from hesitation signals."
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "title": "EmotionModifiers",
+        "description": "Emotion-based score modifiers."
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "LinkToggleRequest": {
+        "properties": {
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active",
+            "description": "Whether the public heart link should be active."
+          }
+        },
+        "type": "object",
+        "required": [
+          "is_active"
+        ],
+        "title": "LinkToggleRequest",
+        "description": "Payload to activate/deactivate heart link."
+      },
+      "PreCheckResponse": {
+        "properties": {
+          "can_start": {
+            "type": "boolean",
+            "title": "Can Start"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "profile_complete": {
+            "type": "boolean",
+            "title": "Profile Complete"
+          },
+          "heart_active": {
+            "type": "boolean",
+            "title": "Heart Active"
+          },
+          "remaining_today": {
+            "type": "integer",
+            "title": "Remaining Today"
+          },
+          "active_session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active Session Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "can_start",
+          "profile_complete",
+          "heart_active",
+          "remaining_today"
+        ],
+        "title": "PreCheckResponse",
+        "description": "Readiness pre-check before creating a session."
+      },
+      "PublicHeartProfileResponse": {
+        "properties": {
+          "display_name": {
+            "type": "string",
+            "title": "Display Name",
+            "description": "Heart display name shown publicly."
+          },
+          "bio": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bio",
+            "description": "Public bio text."
+          },
+          "photo_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Photo Url",
+            "description": "Public profile photo URL for the heart."
+          },
+          "agent_ready": {
+            "type": "boolean",
+            "title": "Agent Ready",
+            "description": "Whether the voice interview agent is ready to accept sessions."
+          },
+          "has_calendar": {
+            "type": "boolean",
+            "title": "Has Calendar",
+            "description": "Whether date booking is configured via cal.com."
+          },
+          "question_count": {
+            "type": "integer",
+            "title": "Question Count",
+            "description": "Number of screening questions the suitor will answer."
+          },
+          "estimated_duration": {
+            "type": "string",
+            "title": "Estimated Duration",
+            "description": "Estimated interview duration from screening question count."
+          },
+          "persona_preview": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Preview",
+            "description": "Short personality teaser generated from top persona traits."
+          },
+          "is_accepting": {
+            "type": "boolean",
+            "title": "Is Accepting",
+            "description": "Whether interview entry is currently accepting new suitors."
+          }
+        },
+        "type": "object",
+        "required": [
+          "display_name",
+          "agent_ready",
+          "has_calendar",
+          "question_count",
+          "estimated_duration",
+          "is_accepting"
+        ],
+        "title": "PublicHeartProfileResponse",
+        "description": "Publicly exposed profile data."
+      },
+      "SessionStartRequest": {
+        "properties": {
+          "heart_slug": {
+            "type": "string",
+            "title": "Heart Slug",
+            "description": "Shareable heart slug used to identify interview target."
+          }
+        },
+        "type": "object",
+        "required": [
+          "heart_slug"
+        ],
+        "title": "SessionStartRequest",
+        "description": "Session initialization payload."
+      },
+      "SessionStartResponse": {
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "title": "Session Id",
+            "description": "Created interview session UUID."
+          },
+          "livekit_url": {
+            "type": "string",
+            "title": "Livekit Url",
+            "description": "LiveKit server URL used by the frontend client."
+          },
+          "livekit_token": {
+            "type": "string",
+            "title": "Livekit Token",
+            "description": "LiveKit JWT for authenticated suitor join."
+          },
+          "room_name": {
+            "type": "string",
+            "title": "Room Name",
+            "description": "LiveKit room name for this interview session."
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "Session start status: ready or reconnecting."
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Human-readable start/reconnect message."
+          }
+        },
+        "type": "object",
+        "required": [
+          "session_id",
+          "livekit_url",
+          "livekit_token",
+          "room_name",
+          "status",
+          "message"
+        ],
+        "title": "SessionStartResponse",
+        "description": "Session initialization response payload."
+      },
+      "SessionStatusResponse": {
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "title": "Session Id",
+            "description": "Session UUID."
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "Session state: pending, in_progress, completed, scoring, scored, expired, failed, cancelled."
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At",
+            "description": "Timestamp when interview started."
+          },
+          "ended_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ended At",
+            "description": "Timestamp when interview ended."
+          },
+          "end_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Reason",
+            "description": "End reason when the session has finished."
+          },
+          "duration_seconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Seconds",
+            "description": "Duration from start to end/current time."
+          },
+          "questions_asked": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Questions Asked",
+            "description": "Number of questions asked so far."
+          },
+          "questions_total": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Questions Total",
+            "description": "Total configured screening questions."
+          },
+          "has_verdict": {
+            "type": "boolean",
+            "title": "Has Verdict",
+            "description": "Whether a final verdict exists."
+          },
+          "verdict_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Verdict Status",
+            "description": "Verdict pipeline status: pending, scoring, ready."
+          }
+        },
+        "type": "object",
+        "required": [
+          "session_id",
+          "status",
+          "has_verdict"
+        ],
+        "title": "SessionStatusResponse",
+        "description": "Polling response for session status."
+      },
+      "SessionSummary": {
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "title": "Session Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "ended_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ended At"
+          },
+          "duration_seconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Seconds"
+          },
+          "end_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Reason"
+          },
+          "has_verdict": {
+            "type": "boolean",
+            "title": "Has Verdict"
+          },
+          "verdict": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Verdict"
+          }
+        },
+        "type": "object",
+        "required": [
+          "session_id",
+          "status",
+          "has_verdict"
+        ],
+        "title": "SessionSummary",
+        "description": "Session summary item for suitor history."
+      },
+      "SessionVerdictResponse": {
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "title": "Session Id",
+            "description": "Session UUID."
+          },
+          "verdict": {
+            "$ref": "#/components/schemas/Verdict",
+            "description": "Date/no-date verdict."
+          },
+          "weighted_total": {
+            "type": "number",
+            "title": "Weighted Total",
+            "description": "Overall weighted score (0-100)."
+          },
+          "effort_score": {
+            "type": "number",
+            "title": "Effort Score",
+            "description": "Effort score (0-100)."
+          },
+          "creativity_score": {
+            "type": "number",
+            "title": "Creativity Score",
+            "description": "Creativity score (0-100)."
+          },
+          "intent_clarity_score": {
+            "type": "number",
+            "title": "Intent Clarity Score",
+            "description": "Intent clarity score (0-100)."
+          },
+          "emotional_intelligence_score": {
+            "type": "number",
+            "title": "Emotional Intelligence Score",
+            "description": "Emotional intelligence score (0-100)."
+          },
+          "emotion_modifiers": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EmotionModifiers"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Emotion-based score modifiers."
+          },
+          "feedback_text": {
+            "type": "string",
+            "title": "Feedback Text",
+            "description": "Personalized feedback for the suitor."
+          }
+        },
+        "type": "object",
+        "required": [
+          "session_id",
+          "verdict",
+          "weighted_total",
+          "effort_score",
+          "creativity_score",
+          "intent_clarity_score",
+          "emotional_intelligence_score",
+          "feedback_text"
+        ],
+        "title": "SessionVerdictResponse",
+        "description": "Final verdict payload returned to suitor."
+      },
+      "SuccessResponse": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Human-readable success message."
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "SuccessResponse",
+        "description": "Generic success message payload."
+      },
+      "SuitorProfileResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id",
+            "description": "Suitor UUID."
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "Suitor display name from Clerk profile."
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email",
+            "description": "Suitor email."
+          },
+          "age": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Age",
+            "description": "Suitor age."
+          },
+          "gender": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gender",
+            "description": "Suitor gender identity."
+          },
+          "orientation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Orientation",
+            "description": "Suitor orientation."
+          },
+          "intro_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Intro Message",
+            "description": "Optional intro message."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At",
+            "description": "Profile creation timestamp."
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At",
+            "description": "Profile update timestamp."
+          },
+          "is_profile_complete": {
+            "type": "boolean",
+            "title": "Is Profile Complete",
+            "description": "Whether required profile fields are complete.",
+            "readOnly": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "created_at",
+          "updated_at",
+          "is_profile_complete"
+        ],
+        "title": "SuitorProfileResponse",
+        "description": "Suitor self-profile response."
+      },
+      "SuitorRegisterRequest": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name",
+            "description": "Suitor display name for the interview."
+          },
+          "age": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 18.0,
+            "title": "Age",
+            "description": "Suitor's age (must be 18+)."
+          },
+          "gender": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 1,
+            "title": "Gender",
+            "description": "Suitor's gender identity."
+          },
+          "orientation": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 1,
+            "title": "Orientation",
+            "description": "Suitor's orientation."
+          },
+          "intro_message": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Intro Message",
+            "description": "Optional intro message."
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "age",
+          "gender",
+          "orientation"
+        ],
+        "title": "SuitorRegisterRequest",
+        "description": "Suitor profile completion payload after Clerk authentication."
+      },
+      "SuitorSessionsResponse": {
+        "properties": {
+          "sessions": {
+            "items": {
+              "$ref": "#/components/schemas/SessionSummary"
+            },
+            "type": "array",
+            "title": "Sessions"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "daily_limit": {
+            "type": "integer",
+            "title": "Daily Limit"
+          },
+          "remaining_today": {
+            "type": "integer",
+            "title": "Remaining Today"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sessions",
+          "total",
+          "daily_limit",
+          "remaining_today"
+        ],
+        "title": "SuitorSessionsResponse",
+        "description": "Authenticated suitor session history response."
+      },
+      "SystemHealthResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "healthy | degraded | unhealthy"
+          },
+          "heart_loaded": {
+            "type": "boolean",
+            "title": "Heart Loaded",
+            "description": "Whether a Heart record is available in DB."
+          },
+          "heart_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Heart Name",
+            "description": "Current heart display name."
+          },
+          "heart_slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Heart Slug",
+            "description": "Current heart shareable slug."
+          },
+          "database": {
+            "type": "string",
+            "title": "Database",
+            "description": "connected | error"
+          },
+          "redis": {
+            "type": "string",
+            "title": "Redis",
+            "description": "connected | error"
+          },
+          "tavus": {
+            "$ref": "#/components/schemas/TavusStatusInfo",
+            "description": "Tavus subsystem health details."
+          },
+          "calcom": {
+            "$ref": "#/components/schemas/CalcomStatusInfo",
+            "description": "cal.com subsystem health details."
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "heart_loaded",
+          "database",
+          "redis",
+          "tavus",
+          "calcom"
+        ],
+        "title": "SystemHealthResponse",
+        "description": "Top-level system health response."
+      },
+      "TavusStatusInfo": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "not_started | processing | ready | failed"
+          },
+          "replica_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Replica Id",
+            "description": "Current Tavus replica ID if available."
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "TavusStatusInfo",
+        "description": "Tavus replica health information."
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "Verdict": {
+        "type": "string",
+        "enum": [
+          "date",
+          "no_date"
+        ],
+        "title": "Verdict",
+        "description": "Final matchmaking verdict."
+      }
+    },
+    "securitySchemes": {
+      "APIKeyHeader": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Admin-Key"
+      },
+      "HTTPBearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  }
+}
