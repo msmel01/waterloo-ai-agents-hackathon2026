@@ -14,7 +14,10 @@ export function SignInScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [showCode, setShowCode] = useState(false);
+  const [showSecondFactor, setShowSecondFactor] = useState(false);
+  const [secondFactorStrategy, setSecondFactorStrategy] = useState<
+    'totp' | 'phone_code' | 'backup_code' | null
+  >(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [code, setCode] = useState('');
@@ -41,15 +44,36 @@ export function SignInScreen() {
       }
 
       if (res.status === 'needs_second_factor') {
-        const emailFactor = res.supportedSecondFactors?.find(
-          (f) => f.strategy === 'email_code'
+        const factors = res.supportedSecondFactors ?? [];
+        const totpFactor = factors.find((f) => f.strategy === 'totp');
+        const phoneFactor = factors.find(
+          (f) => f.strategy === 'phone_code' && 'phoneNumberId' in f
         );
-        if (emailFactor && 'emailAddressId' in emailFactor) {
-          await signIn.prepareSecondFactor({
-            strategy: 'email_code',
-            emailAddressId: emailFactor.emailAddressId,
-          });
-          setShowCode(true);
+        const backupFactor = factors.find((f) => f.strategy === 'backup_code');
+
+        if (totpFactor) {
+          setSecondFactorStrategy('totp');
+          setShowSecondFactor(true);
+        } else if (phoneFactor && 'phoneNumberId' in phoneFactor) {
+          try {
+            await signIn.prepareSecondFactor({
+              strategy: 'phone_code',
+              phoneNumberId: phoneFactor.phoneNumberId,
+            });
+            setSecondFactorStrategy('phone_code');
+            setShowSecondFactor(true);
+          } catch (prepErr) {
+            setError(
+              prepErr instanceof Error ? prepErr.message : 'Could not send SMS code'
+            );
+          }
+        } else if (backupFactor) {
+          setSecondFactorStrategy('backup_code');
+          setShowSecondFactor(true);
+        } else {
+          setError(
+            'Sign-in requires a second factor (authenticator app or SMS), but none is available. Please contact support.'
+          );
         }
       }
     } catch (err: unknown) {
@@ -60,18 +84,18 @@ export function SignInScreen() {
     }
   };
 
-  const handleCodeSubmit = async (e: FormEvent) => {
+  const handleSecondFactorSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
     setIsVerifying(true);
-    if (!isLoaded || !signIn) {
+    if (!isLoaded || !signIn || !secondFactorStrategy) {
       setIsVerifying(false);
       return;
     }
 
     try {
       const res = await signIn.attemptSecondFactor({
-        strategy: 'email_code',
+        strategy: secondFactorStrategy,
         code,
       });
 
@@ -110,7 +134,7 @@ export function SignInScreen() {
       <div className="w-full max-w-md">
         <Window title="SignIn.exe" icon="person">
           <form
-            onSubmit={showCode ? handleCodeSubmit : handleSubmit}
+            onSubmit={showSecondFactor ? handleSecondFactorSubmit : handleSubmit}
             className="space-y-4"
           >
             {error && (
@@ -119,14 +143,20 @@ export function SignInScreen() {
               </p>
             )}
 
-            {showCode ? (
+            {showSecondFactor ? (
               <>
                 <p className="text-gray-600 text-sm">
-                  A verification code has been sent to your email.
+                  {secondFactorStrategy === 'totp'
+                    ? 'Enter the code from your authenticator app.'
+                    : secondFactorStrategy === 'phone_code'
+                      ? 'Enter the code sent to your phone.'
+                      : 'Enter your backup code.'}
                 </p>
                 <div>
                   <label htmlFor="code" className={labelClass}>
-                    Verification code
+                    {secondFactorStrategy === 'totp'
+                      ? 'Authenticator code'
+                      : 'Verification code'}
                   </label>
                   <input
                     id="code"
@@ -182,7 +212,7 @@ export function SignInScreen() {
                 ? 'Verifying…'
                 : isSubmitting
                   ? 'Signing in…'
-                  : showCode
+                  : showSecondFactor
                     ? 'Verify'
                     : 'Sign in'}
             </button>

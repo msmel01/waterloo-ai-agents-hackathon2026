@@ -20,6 +20,7 @@ export function SignUpScreen() {
   const [age, setAge] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [verifying, setVerifying] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [code, setCode] = useState('');
 
@@ -28,6 +29,13 @@ export function SignUpScreen() {
     setError(null);
     if (!isLoaded || !signUp) return;
 
+    const ageNum = parseInt(age, 10);
+    if (isNaN(ageNum) || ageNum < 18) {
+      setError('You must be at least 18 years old to sign up.');
+      return;
+    }
+
+    setIsSubmitting(true);
     try {
       await signUp.create({ emailAddress: email, password });
       await signUp.prepareEmailAddressVerification({ strategy: 'email_code' });
@@ -35,6 +43,8 @@ export function SignUpScreen() {
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Sign up failed';
       setError(typeof msg === 'string' ? msg : 'Something went wrong');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -175,11 +185,13 @@ export function SignUpScreen() {
                     </label>
                     <input
                       id="age"
-                      type="text"
+                      type="number"
+                      min={18}
                       value={age}
                       onChange={(e) => setAge(e.target.value)}
                       placeholder="18+"
                       className={inputClass}
+                      required
                     />
                   </div>
                   <div>
@@ -232,10 +244,10 @@ export function SignUpScreen() {
 
             <button
               type="submit"
-              disabled={isVerifying}
+              disabled={isSubmitting || isVerifying}
               className="w-full py-2.5 bg-win-titlebar text-white text-sm font-medium hover:bg-win-titlebarLight transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
             >
-              {isVerifying ? 'Verifying…' : verifying ? 'Verify' : 'Create account'}
+              {isSubmitting ? 'Creating account…' : isVerifying ? 'Verifying…' : verifying ? 'Verify' : 'Create account'}
             </button>
           </form>
         </Window>
