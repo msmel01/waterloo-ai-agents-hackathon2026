@@ -68,6 +68,7 @@ class AppCreator:
                 allow_credentials=True,
                 allow_methods=["*"],
                 allow_headers=["*"],
+                expose_headers=["*"],
             )
         self.app.add_middleware(CorrelationIdMiddleware)
 

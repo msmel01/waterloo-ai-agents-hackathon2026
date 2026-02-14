@@ -9,6 +9,11 @@ from pydantic import BaseModel, ConfigDict, Field, computed_field
 class SuitorRegisterRequest(BaseModel):
     """Suitor profile completion payload after Clerk authentication."""
 
+    name: str = Field(
+        min_length=1,
+        max_length=100,
+        description="Suitor display name for the interview.",
+    )
     age: int = Field(ge=18, le=100, description="Suitor's age (must be 18+).")
     gender: str = Field(
         min_length=1, max_length=50, description="Suitor's gender identity."

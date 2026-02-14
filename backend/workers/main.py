@@ -5,13 +5,17 @@ from __future__ import annotations
 import asyncio
 import logging
 import uuid
+from datetime import datetime, timedelta, timezone
 
+from arq import cron
 from arq.connections import RedisSettings
 from sqlmodel import select
 
 from src.core.config import config
 from src.core.database import Database
+from src.models.domain_enums import SessionStatus
 from src.models.heart_model import HeartDb
+from src.repository.session_repository import SessionRepository
 from src.services.tavus_service import TavusService
 
 logger = logging.getLogger(__name__)
@@ -85,6 +89,43 @@ async def poll_tavus_replica_status(ctx: dict, heart_id: str, replica_id: str) -
     return {"status": "timeout", "replica_id": replica_id}
 
 
+async def cleanup_stale_sessions(ctx: dict) -> dict[str, int]:
+    """Expire stale pending/in-progress sessions to keep interview state healthy."""
+    _ = ctx
+    now = datetime.now(timezone.utc)
+    pending_cutoff = now - timedelta(seconds=config.SESSION_PENDING_TIMEOUT)
+    in_progress_cutoff = now - timedelta(seconds=config.SESSION_MAX_DURATION)
+
+    repo = SessionRepository(session_factory=database.session)
+    stale_pending = await repo.find_stale_pending(pending_cutoff)
+    stale_in_progress = await repo.find_stale_in_progress(in_progress_cutoff)
+
+    for stale in stale_pending:
+        await repo.update_status(stale.id, SessionStatus.EXPIRED)
+        await repo.update_attr(stale.id, "end_reason", "connection_timeout")
+        await repo.update_attr(stale.id, "ended_at", now)
+
+    for stale in stale_in_progress:
+        await repo.update_status(stale.id, SessionStatus.EXPIRED)
+        await repo.update_attr(stale.id, "end_reason", "max_duration_exceeded")
+        await repo.update_attr(stale.id, "ended_at", now)
+
+    expired_pending = len(stale_pending)
+    expired_in_progress = len(stale_in_progress)
+
+    if expired_pending or expired_in_progress:
+        logger.info(
+            "Expired stale sessions pending=%s in_progress=%s",
+            expired_pending,
+            expired_in_progress,
+        )
+
+    return {
+        "expired_pending": expired_pending,
+        "expired_in_progress": expired_in_progress,
+    }
+
+
 class WorkerSettings:
     """arq worker configuration."""
 
@@ -94,6 +135,13 @@ class WorkerSettings:
         generate_tavus_avatar,
         send_notification,
         poll_tavus_replica_status,
+        cleanup_stale_sessions,
+    ]
+    cron_jobs = [
+        cron(
+            cleanup_stale_sessions,
+            minute={0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55},
+        ),
     ]
     job_timeout = 300
     keep_result = 3600

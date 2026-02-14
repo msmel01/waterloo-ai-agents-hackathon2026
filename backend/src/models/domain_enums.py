@@ -11,6 +11,7 @@ class SessionStatus(str, Enum):
     COMPLETED = "completed"
     SCORING = "scoring"
     SCORED = "scored"
+    EXPIRED = "expired"
     FAILED = "failed"
     CANCELLED = "cancelled"
 

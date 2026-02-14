@@ -339,6 +339,33 @@
         ]
       }
     },
+    "/api/v1/suitors/me/sessions": {
+      "get": {
+        "tags": [
+          "Suitors"
+        ],
+        "summary": "Get My Sessions",
+        "description": "List authenticated suitor's recent sessions and remaining daily quota.",
+        "operationId": "get_my_sessions_api_v1_suitors_me_sessions_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuitorSessionsResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/sessions/start": {
       "post": {
         "tags": [
@@ -477,6 +504,33 @@
             }
           }
         }
+      }
+    },
+    "/api/v1/sessions/pre-check": {
+      "get": {
+        "tags": [
+          "Sessions"
+        ],
+        "summary": "Pre Check",
+        "description": "Check whether a suitor can start a new interview session.",
+        "operationId": "pre_check_api_v1_sessions_pre_check_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreCheckResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
       }
     },
     "/api/v1/sessions/{id}/verdict": {
@@ -949,6 +1003,57 @@
         "title": "LinkToggleRequest",
         "description": "Payload to activate/deactivate heart link."
       },
+      "PreCheckResponse": {
+        "properties": {
+          "can_start": {
+            "type": "boolean",
+            "title": "Can Start"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "profile_complete": {
+            "type": "boolean",
+            "title": "Profile Complete"
+          },
+          "heart_active": {
+            "type": "boolean",
+            "title": "Heart Active"
+          },
+          "remaining_today": {
+            "type": "integer",
+            "title": "Remaining Today"
+          },
+          "active_session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active Session Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "can_start",
+          "profile_complete",
+          "heart_active",
+          "remaining_today"
+        ],
+        "title": "PreCheckResponse",
+        "description": "Readiness pre-check before creating a session."
+      },
       "PublicHeartProfileResponse": {
         "properties": {
           "display_name": {
@@ -980,10 +1085,10 @@
             "title": "Photo Url",
             "description": "Public profile photo URL for the heart."
           },
-          "avatar_ready": {
+          "agent_ready": {
             "type": "boolean",
-            "title": "Avatar Ready",
-            "description": "Whether the voice interview agent stack is configured and ready."
+            "title": "Agent Ready",
+            "description": "Whether the voice interview agent is ready to accept sessions."
           },
           "has_calendar": {
             "type": "boolean",
@@ -994,6 +1099,11 @@
             "type": "integer",
             "title": "Question Count",
             "description": "Number of screening questions the suitor will answer."
+          },
+          "estimated_duration": {
+            "type": "string",
+            "title": "Estimated Duration",
+            "description": "Estimated interview duration from screening question count."
           },
           "persona_preview": {
             "anyOf": [
@@ -1006,14 +1116,21 @@
             ],
             "title": "Persona Preview",
             "description": "Short personality teaser generated from top persona traits."
+          },
+          "is_accepting": {
+            "type": "boolean",
+            "title": "Is Accepting",
+            "description": "Whether interview entry is currently accepting new suitors."
           }
         },
         "type": "object",
         "required": [
           "display_name",
-          "avatar_ready",
+          "agent_ready",
           "has_calendar",
-          "question_count"
+          "question_count",
+          "estimated_duration",
+          "is_accepting"
         ],
         "title": "PublicHeartProfileResponse",
         "description": "Publicly exposed profile data."
@@ -1037,7 +1154,6 @@
         "properties": {
           "session_id": {
             "type": "string",
-            "format": "uuid",
             "title": "Session Id",
             "description": "Created interview session UUID."
           },
@@ -1055,6 +1171,16 @@
             "type": "string",
             "title": "Room Name",
             "description": "LiveKit room name for this interview session."
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "Session start status: ready or reconnecting."
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Human-readable start/reconnect message."
           }
         },
         "type": "object",
@@ -1062,7 +1188,9 @@
           "session_id",
           "livekit_url",
           "livekit_token",
-          "room_name"
+          "room_name",
+          "status",
+          "message"
         ],
         "title": "SessionStartResponse",
         "description": "Session initialization response payload."
@@ -1071,14 +1199,13 @@
         "properties": {
           "session_id": {
             "type": "string",
-            "format": "uuid",
             "title": "Session Id",
             "description": "Session UUID."
           },
           "status": {
             "type": "string",
             "title": "Status",
-            "description": "Session state: pending, in_progress, completed, scoring, scored, failed, cancelled."
+            "description": "Session state: pending, in_progress, completed, scoring, scored, expired, failed, cancelled."
           },
           "started_at": {
             "anyOf": [
@@ -1106,10 +1233,22 @@
             "title": "Ended At",
             "description": "Timestamp when interview ended."
           },
+          "end_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Reason",
+            "description": "End reason when the session has finished."
+          },
           "duration_seconds": {
             "anyOf": [
               {
-                "type": "number"
+                "type": "integer"
               },
               {
                 "type": "null"
@@ -1117,15 +1256,138 @@
             ],
             "title": "Duration Seconds",
             "description": "Duration from start to end/current time."
+          },
+          "questions_asked": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Questions Asked",
+            "description": "Number of questions asked so far."
+          },
+          "questions_total": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Questions Total",
+            "description": "Total configured screening questions."
+          },
+          "has_verdict": {
+            "type": "boolean",
+            "title": "Has Verdict",
+            "description": "Whether a final verdict exists."
+          },
+          "verdict_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Verdict Status",
+            "description": "Verdict pipeline status: pending, scoring, ready."
           }
         },
         "type": "object",
         "required": [
           "session_id",
-          "status"
+          "status",
+          "has_verdict"
         ],
         "title": "SessionStatusResponse",
         "description": "Polling response for session status."
+      },
+      "SessionSummary": {
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "title": "Session Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "ended_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ended At"
+          },
+          "duration_seconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Seconds"
+          },
+          "end_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Reason"
+          },
+          "has_verdict": {
+            "type": "boolean",
+            "title": "Has Verdict"
+          },
+          "verdict": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Verdict"
+          }
+        },
+        "type": "object",
+        "required": [
+          "session_id",
+          "status",
+          "has_verdict"
+        ],
+        "title": "SessionSummary",
+        "description": "Session summary item for suitor history."
       },
       "SessionVerdictResponse": {
         "properties": {
@@ -1315,6 +1577,13 @@
       },
       "SuitorRegisterRequest": {
         "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name",
+            "description": "Suitor display name for the interview."
+          },
           "age": {
             "type": "integer",
             "maximum": 100.0,
@@ -1352,12 +1621,45 @@
         },
         "type": "object",
         "required": [
+          "name",
           "age",
           "gender",
           "orientation"
         ],
         "title": "SuitorRegisterRequest",
         "description": "Suitor profile completion payload after Clerk authentication."
+      },
+      "SuitorSessionsResponse": {
+        "properties": {
+          "sessions": {
+            "items": {
+              "$ref": "#/components/schemas/SessionSummary"
+            },
+            "type": "array",
+            "title": "Sessions"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "daily_limit": {
+            "type": "integer",
+            "title": "Daily Limit"
+          },
+          "remaining_today": {
+            "type": "integer",
+            "title": "Remaining Today"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sessions",
+          "total",
+          "daily_limit",
+          "remaining_today"
+        ],
+        "title": "SuitorSessionsResponse",
+        "description": "Authenticated suitor session history response."
       },
       "SystemHealthResponse": {
         "properties": {
