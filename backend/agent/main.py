@@ -206,6 +206,8 @@ if server:
 
         already_saved = False
         save_lock = asyncio.Lock()
+        closed = False
+        close_lock = asyncio.Lock()
 
         def _spawn(coro):
             task = asyncio.create_task(coro)
@@ -265,20 +267,26 @@ if server:
             if text:
                 session_mgr.add_transcript_entry(speaker="avatar", text=text)
 
-        async def _handle_session_close():
+        async def on_close(reason: str) -> None:
+            nonlocal closed
+            async with close_lock:
+                if closed:
+                    return
+                closed = True
+                if session_mgr.end_reason is None:
+                    session_mgr.end(reason)
             await hume_tracker.stop()
-            await save_once("session_closed")
+            await save_once(reason)
 
         @session.on("close")
         def on_session_close():
-            _spawn(_handle_session_close())
+            _spawn(on_close("session_closed"))
 
         async def _handle_participant_disconnected(participant):
             identity = getattr(participant, "identity", "")
             if identity.startswith("suitor-"):
                 logger.warning("Suitor disconnected in session %s", session_id)
-                await hume_tracker.stop()
-                await save_once("suitor_disconnected")
+                await on_close("suitor_disconnected")
 
         @ctx.room.on("participant_disconnected")
         def on_participant_disconnected(participant):

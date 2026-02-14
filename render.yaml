@@ -51,6 +51,26 @@ services:
           type: redis
           name: valentine-hotline-redis
           property: connectionString
+      - key: DATABASE_URL
+        sync: false
+      - key: LIVEKIT_URL
+        sync: false
+      - key: LIVEKIT_API_KEY
+        sync: false
+      - key: LIVEKIT_API_SECRET
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: DEEPGRAM_API_KEY
+        sync: false
+      - key: HUME_API_KEY
+        sync: false
+      - key: SMALLEST_AI_API_KEY
+        sync: false
+      - key: SMALLEST_API_KEY
+        sync: false
+      - key: TAVUS_API_KEY
+        sync: false
 
   - type: redis
     name: valentine-hotline-redis

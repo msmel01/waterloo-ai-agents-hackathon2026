@@ -1,6 +1,7 @@
 """Session endpoints."""
 
 import json
+import logging
 import uuid
 from datetime import datetime, timezone
 from typing import Annotated
@@ -32,6 +33,12 @@ from src.schemas.session_schema import (
 from src.services.livekit_service import LiveKitService
 
 router = APIRouter(prefix="/sessions", tags=["Sessions"])
+logger = logging.getLogger(__name__)
+
+try:
+    from livekit.api import TwirpError
+except ImportError:  # pragma: no cover - optional dependency guard
+    TwirpError = RuntimeError  # type: ignore[assignment]
 
 CurrentSuitor = Annotated[SuitorDb, Depends(get_current_suitor)]
 OptionalSuitor = Annotated[SuitorDb | None, Depends(get_current_suitor_optional)]
@@ -134,12 +141,13 @@ async def start_session(
             suitor_id=str(suitor.id),
             suitor_name=suitor_name,
         )
-    except Exception as exc:
+    except (RuntimeError, TwirpError) as exc:
+        logger.exception("Failed to initialize LiveKit room for session %s", created.id)
         await session_repo.update_status(created.id, SessionStatus.FAILED)
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=f"Unable to initialize LiveKit room: {exc}",
-        )
+            detail="Unable to initialize LiveKit room",
+        ) from exc
     finally:
         await livekit.close()
 

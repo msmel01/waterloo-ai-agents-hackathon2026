@@ -1,4 +1,5 @@
 version = 1
+revision = 1
 requires-python = ">=3.11, <4.0"
 resolution-markers = [
     "python_full_version >= '3.13'",
@@ -4317,7 +4318,7 @@ requires-dist = [
     { name = "langchain-openai", specifier = ">=1.1.9" },
     { name = "langgraph-checkpoint-postgres", specifier = ">=3.0.4" },
     { name = "livekit-agents", extras = ["deepgram", "hume", "openai", "silero", "smallestai", "turn-detector"], specifier = "~=1.0" },
-    { name = "livekit-api", specifier = ">=1.0.0" },
+    { name = "livekit-api", specifier = ">=1.0.2" },
     { name = "loguru", specifier = ">=0.7.3" },
     { name = "opentelemetry-instrumentation-fastapi", specifier = ">=0.60b1" },
     { name = "pydantic-settings", specifier = ">=2.12.0" },

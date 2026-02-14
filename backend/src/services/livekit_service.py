@@ -11,7 +11,7 @@ try:
         LiveKitAPI,
         VideoGrants,
     )
-except Exception:  # pragma: no cover - optional dependency guard
+except ImportError:  # pragma: no cover - optional dependency guard
     AccessToken = None  # type: ignore[assignment]
     CreateAgentDispatchRequest = None  # type: ignore[assignment]
     LiveKitAPI = None  # type: ignore[assignment]

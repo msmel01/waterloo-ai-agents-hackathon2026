@@ -95,6 +95,8 @@ async def update_session_status(session_id: str, status: str) -> None:
         "pending": SessionStatus.PENDING,
         "in_progress": SessionStatus.IN_PROGRESS,
         "completed": SessionStatus.COMPLETED,
+        "scoring": SessionStatus.SCORING,
+        "scored": SessionStatus.SCORED,
         "failed": SessionStatus.FAILED,
         "cancelled": SessionStatus.CANCELLED,
     }
