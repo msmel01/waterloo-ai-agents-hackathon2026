@@ -13,6 +13,7 @@ from src.core.security import get_current_user
 from src.models.suitor_model import SuitorDb
 from src.repository.suitor_repository import SuitorRepository
 from src.services.calcom_service import CalcomService
+from src.services.livekit_service import LiveKitService
 from src.services.tavus_service import TavusService
 
 if TYPE_CHECKING:
@@ -95,3 +96,21 @@ def get_heart_config(request: Request) -> "HeartConfig":
 def get_redis_client():
     """Create a Redis client for runtime health checks and background queues."""
     return redis.from_url(config.REDIS_URL)
+
+
+def get_livekit_service() -> LiveKitService:
+    """Build LiveKit service from environment configuration."""
+    if (
+        not config.LIVEKIT_API_KEY
+        or not config.LIVEKIT_API_SECRET
+        or not config.LIVEKIT_URL
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="LiveKit is not configured",
+        )
+    return LiveKitService(
+        api_key=config.LIVEKIT_API_KEY.get_secret_value(),
+        api_secret=config.LIVEKIT_API_SECRET.get_secret_value(),
+        url=config.LIVEKIT_URL,
+    )

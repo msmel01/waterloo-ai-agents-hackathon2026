@@ -34,6 +34,24 @@ services:
           name: valentine-hotline-redis
           property: connectionString
 
+  - type: worker
+    name: valentine-hotline-agent
+    env: docker
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    dockerCommand: uv run python -m livekit.agents start agent.main
+    autoDeploy: true
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: ENV
+        value: prod
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: valentine-hotline-redis
+          property: connectionString
+
   - type: redis
     name: valentine-hotline-redis
     ipAllowList: []

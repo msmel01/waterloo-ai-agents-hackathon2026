@@ -1,14 +1,16 @@
 """Session endpoints."""
 
 import uuid
+from datetime import datetime, timezone
 from typing import Annotated
 
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, HTTPException, status
 
+from src.core.config import config
 from src.core.container import Container
 from src.core.exceptions import NotFoundError
-from src.dependencies import get_current_suitor
+from src.dependencies import get_current_suitor, get_livekit_service
 from src.models.domain_enums import SessionStatus
 from src.models.suitor_model import SuitorDb
 from src.repository.heart_repository import HeartRepository
@@ -20,6 +22,7 @@ from src.schemas.session_schema import (
     SessionStatusResponse,
     SessionVerdictResponse,
 )
+from src.services.livekit_service import LiveKitService
 
 router = APIRouter(prefix="/sessions", tags=["Sessions"])
 
@@ -29,6 +32,7 @@ SessionRepoDep = Annotated[
     SessionRepository, Depends(Provide[Container.session_repository])
 ]
 ScoreRepoDep = Annotated[ScoreRepository, Depends(Provide[Container.score_repository])]
+LiveKitDep = Annotated[LiveKitService, Depends(get_livekit_service)]
 
 
 @router.post(
@@ -40,31 +44,70 @@ async def start_session(
     suitor: CurrentSuitor,
     heart_repo: HeartRepoDep,
     session_repo: SessionRepoDep,
+    livekit: LiveKitDep,
 ):
-    """Initialize a new interview session for the authenticated suitor."""
+    """Start a new interview session and return LiveKit join credentials."""
+    if suitor.age is None or suitor.gender is None or suitor.orientation is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Suitor profile is incomplete. Complete /api/v1/suitors/register first.",
+        )
+
     heart = await heart_repo.find_by_slug(payload.heart_slug)
-    if not heart or not heart.is_active:
+    if not heart:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Heart link not found"
         )
-
-    created = await session_repo.create(
-        session_repo.model(
-            heart_id=heart.id,
-            suitor_id=suitor.id,
-            status=SessionStatus.PENDING,
-            livekit_room_name=f"vh_{heart.id}_{suitor.id}"[:255],
+    if not heart.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_410_GONE,
+            detail="This Heart link is currently inactive",
         )
+    if not heart.tavus_avatar_id:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Heart avatar is not ready yet",
+        )
+
+    active = await session_repo.find_active_by_suitor_heart(suitor.id, heart.id)
+    if active:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="An active session already exists for this suitor",
+        )
+
+    draft = session_repo.model(
+        heart_id=heart.id,
+        suitor_id=suitor.id,
+        status=SessionStatus.PENDING,
+        livekit_room_name=None,
     )
+    created = await session_repo.create(draft)
+    room_name = f"session-{created.id}"
+    created = await session_repo.update_attr(created.id, "livekit_room_name", room_name)
+
+    try:
+        await livekit.create_room(room_name=room_name, max_participants=3)
+        suitor_name = suitor.name or "Suitor"
+        livekit_token = livekit.generate_suitor_token(
+            room_name=room_name,
+            suitor_id=str(suitor.id),
+            suitor_name=suitor_name,
+        )
+    except Exception as exc:
+        await session_repo.update_status(created.id, SessionStatus.FAILED)
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Unable to initialize LiveKit room: {exc}",
+        )
+    finally:
+        await livekit.close()
 
     return SessionStartResponse(
         session_id=created.id,
-        heart_id=created.heart_id,
-        suitor_id=created.suitor_id,
-        status=created.status,
-        livekit_room_name=created.livekit_room_name,
-        livekit_token=None,
-        created_at=created.created_at,
+        livekit_url=config.LIVEKIT_URL or "",
+        livekit_token=livekit_token,
+        room_name=room_name,
     )
 
 
@@ -74,6 +117,7 @@ async def get_session_status(
     id: uuid.UUID,
     suitor: CurrentSuitor,
     session_repo: SessionRepoDep,
+    score_repo: ScoreRepoDep,
 ):
     """Get current processing state for a session owned by the authenticated suitor."""
     try:
@@ -87,11 +131,24 @@ async def get_session_status(
     if session.suitor_id != suitor.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
 
+    score = await score_repo.find_by_session_id(session.id)
+    status_value = session.status.value
+    if session.status == SessionStatus.COMPLETED:
+        status_value = "scoring"
+    if score:
+        status_value = "scored"
+
+    duration_seconds = None
+    if session.started_at:
+        end_ref = session.ended_at or datetime.now(timezone.utc)
+        duration_seconds = max(0.0, (end_ref - session.started_at).total_seconds())
+
     return SessionStatusResponse(
         session_id=session.id,
-        status=session.status,
+        status=status_value,
         started_at=session.started_at,
         ended_at=session.ended_at,
+        duration_seconds=duration_seconds,
     )
 
 
@@ -103,7 +160,7 @@ async def get_session_verdict(
     session_repo: SessionRepoDep,
     score_repo: ScoreRepoDep,
 ):
-    """Poll final verdict and score breakdown for a session owned by the authenticated suitor."""
+    """Get verdict and score breakdown for a completed/scored session."""
     try:
         session = await session_repo.read_by_id(id)
     except NotFoundError:
@@ -118,7 +175,10 @@ async def get_session_verdict(
     score = await score_repo.find_by_session_id(session.id)
 
     if not score:
-        return SessionVerdictResponse(session_id=session.id, ready=False)
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Session has not been scored yet",
+        )
 
     return SessionVerdictResponse(
         session_id=session.id,
@@ -130,5 +190,4 @@ async def get_session_verdict(
         emotional_intelligence_score=score.emotional_intelligence_score,
         emotion_modifiers=score.emotion_modifiers,
         feedback_text=score.feedback_text,
-        ready=True,
     )
