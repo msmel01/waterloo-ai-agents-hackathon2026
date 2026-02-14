@@ -3,39 +3,58 @@
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
+
+from src.models.domain_enums import BookingStatus
 
 
-class BookingSlotItem(BaseModel):
+class AvailableSlot(BaseModel):
     """Available booking slot."""
 
-    slot_id: str
-    starts_at: datetime
-    ends_at: datetime
-    timezone: str
+    model_config = ConfigDict(from_attributes=True)
+
+    slot_id: str = Field(description="Provider slot identifier.")
+    starts_at: datetime = Field(description="Slot start datetime in ISO 8601.")
+    ends_at: datetime = Field(description="Slot end datetime in ISO 8601.")
+    timezone: str = Field(description="Timezone for this slot.")
 
 
-class BookingSlotsResponse(BaseModel):
+class AvailableSlotsResponse(BaseModel):
     """List of open booking slots."""
 
-    slots: list[BookingSlotItem]
+    model_config = ConfigDict(from_attributes=True)
+
+    slots: list[AvailableSlot] = Field(
+        default_factory=list, description="Available booking slots."
+    )
 
 
-class CreateBookingRequest(BaseModel):
+class BookingCreateRequest(BaseModel):
     """Create booking payload."""
 
-    session_id: uuid.UUID
-    slot_id: str
+    session_id: uuid.UUID = Field(
+        description="Session UUID being converted to a date booking."
+    )
+    slot_datetime: datetime = Field(description="Selected slot datetime in ISO 8601.")
 
 
-class CreateBookingResponse(BaseModel):
+class BookingConfirmationResponse(BaseModel):
     """Created booking payload."""
 
-    booking_id: uuid.UUID
-    session_id: uuid.UUID
-    heart_id: uuid.UUID
-    suitor_id: uuid.UUID
-    calcom_booking_id: str
-    scheduled_at: datetime
-    status: str
-    created_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+    booking_id: uuid.UUID = Field(description="Booking UUID.")
+    session_id: uuid.UUID = Field(description="Related session UUID.")
+    heart_id: uuid.UUID = Field(description="Heart UUID.")
+    suitor_id: uuid.UUID = Field(description="Suitor UUID.")
+    calcom_booking_id: str = Field(description="External calendar provider booking ID.")
+    scheduled_at: datetime = Field(description="Scheduled date-time for the booking.")
+    status: BookingStatus = Field(description="Booking lifecycle state.")
+    created_at: datetime = Field(description="Booking creation timestamp.")
+
+
+# Backward-compatible aliases
+BookingSlotItem = AvailableSlot
+BookingSlotsResponse = AvailableSlotsResponse
+CreateBookingRequest = BookingCreateRequest
+CreateBookingResponse = BookingConfirmationResponse

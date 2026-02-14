@@ -2,26 +2,98 @@
 
 import uuid
 from datetime import datetime
-from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
-
-class PersonaConfig(BaseModel):
-    """AI avatar persona configuration."""
-
-    traits: list[str] = Field(default_factory=list)
-    vibe: str = ""
-    tone: str = ""
-    humor_level: int = Field(default=0, ge=0, le=10)
+from src.models.domain_enums import ConversationSpeaker, SessionStatus, Verdict
+from src.schemas.common_schema import PaginatedResponse
 
 
-class ExpectationsConfig(BaseModel):
-    """Heart's dating expectations."""
+class PersonaUpdateRequest(BaseModel):
+    """Request body for persona updates."""
 
-    dealbreakers: list[str] = Field(default_factory=list)
-    green_flags: list[str] = Field(default_factory=list)
-    must_haves: list[str] = Field(default_factory=list)
+    traits: list[str] = Field(
+        default_factory=list, description="Personality traits used by the AI avatar."
+    )
+    vibe: str = Field(
+        default="", description="High-level vibe descriptor for the avatar."
+    )
+    tone: str = Field(default="", description="Conversation tone used by the avatar.")
+    humor_level: int = Field(
+        default=0, ge=0, le=10, description="Humor intensity from 0-10."
+    )
+
+
+class ExpectationsUpdateRequest(BaseModel):
+    """Request body for expectation updates."""
+
+    dealbreakers: list[str] = Field(
+        default_factory=list, description="Non-negotiable disqualifiers."
+    )
+    green_flags: list[str] = Field(
+        default_factory=list, description="Positive traits the heart values."
+    )
+    must_haves: list[str] = Field(
+        default_factory=list, description="Must-have relationship requirements."
+    )
+
+
+class EmotionData(BaseModel):
+    """Emotion analysis data attached to transcript turns."""
+
+    model_config = ConfigDict(extra="allow")
+
+    confidence: float | None = Field(
+        default=None, description="Detected confidence level."
+    )
+    hesitation: float | None = Field(
+        default=None, description="Detected hesitation level."
+    )
+    enthusiasm: float | None = Field(
+        default=None, description="Detected enthusiasm level."
+    )
+    sarcasm: float | None = Field(default=None, description="Detected sarcasm level.")
+
+
+class EmotionModifiers(BaseModel):
+    """Emotion-based score modifiers."""
+
+    model_config = ConfigDict(extra="allow")
+
+    confidence_boost: float | None = Field(
+        default=None, description="Positive weighting from confidence signals."
+    )
+    hesitation_penalty: float | None = Field(
+        default=None, description="Negative weighting from hesitation signals."
+    )
+
+
+class HeartProfileUpdateRequest(BaseModel):
+    """Mutable fields for heart profile updates."""
+
+    display_name: str | None = Field(
+        default=None, description="Display name shown publicly."
+    )
+    bio: str | None = Field(default=None, description="Profile biography text.")
+    photo_url: str | None = Field(default=None, description="Profile photo URL.")
+    video_url: str | None = Field(default=None, description="Avatar source video URL.")
+    calcom_user_id: str | None = Field(
+        default=None, description="cal.com user identifier."
+    )
+    calcom_event_type_id: str | None = Field(
+        default=None, description="cal.com event type identifier."
+    )
+
+
+class QuestionSummary(BaseModel):
+    """Question summary embedded in heart profile payload."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID = Field(description="Question UUID.")
+    question_text: str = Field(description="Question text.")
+    order_index: int = Field(description="Question ordering index.")
+    is_required: bool = Field(description="Whether response is required.")
 
 
 class HeartProfileResponse(BaseModel):
@@ -29,131 +101,169 @@ class HeartProfileResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
-    id: uuid.UUID
-    clerk_user_id: str
-    email: str
-    display_name: str
-    bio: str | None = None
-    photo_url: str | None = None
-    video_url: str | None = None
-    tavus_avatar_id: str | None = None
-    persona: PersonaConfig
-    expectations: ExpectationsConfig
-    calcom_user_id: str | None = None
-    calcom_event_type_id: str | None = None
-    shareable_slug: str
-    is_active: bool
-    created_at: datetime
-    updated_at: datetime
-
-
-class UpdateHeartProfileRequest(BaseModel):
-    """Mutable fields for heart profile updates."""
-
-    display_name: str | None = None
-    bio: str | None = None
-    photo_url: str | None = None
-    video_url: str | None = None
-    calcom_user_id: str | None = None
-    calcom_event_type_id: str | None = None
-
-
-class UpdatePersonaRequest(BaseModel):
-    """Request for persona updates."""
-
-    persona: PersonaConfig
-
-
-class UpdateExpectationsRequest(BaseModel):
-    """Request for expectations updates."""
-
-    expectations: ExpectationsConfig
+    id: uuid.UUID = Field(description="Heart UUID.")
+    clerk_user_id: str = Field(description="Clerk user ID.")
+    email: str = Field(description="Heart email address.")
+    display_name: str = Field(description="Heart display name.")
+    bio: str | None = Field(default=None, description="Heart biography.")
+    photo_url: str | None = Field(default=None, description="Profile photo URL.")
+    video_url: str | None = Field(default=None, description="Avatar source video URL.")
+    tavus_avatar_id: str | None = Field(
+        default=None, description="Generated Tavus avatar ID."
+    )
+    persona: PersonaUpdateRequest = Field(description="Avatar persona configuration.")
+    expectations: ExpectationsUpdateRequest = Field(
+        description="Dating expectation configuration."
+    )
+    questions: list[QuestionSummary] = Field(
+        default_factory=list, description="Configured screening questions."
+    )
+    calcom_user_id: str | None = Field(default=None, description="cal.com user ID.")
+    calcom_event_type_id: str | None = Field(
+        default=None, description="cal.com event type ID."
+    )
+    shareable_slug: str = Field(
+        description="Public slug used for the suitor entry page."
+    )
+    is_active: bool = Field(description="Whether the public interview link is active.")
+    created_at: datetime = Field(description="Creation timestamp.")
+    updated_at: datetime = Field(description="Last update timestamp.")
 
 
 class ShareableLinkResponse(BaseModel):
     """Public link metadata."""
 
-    slug: str
-    url: str
-    is_active: bool
+    model_config = ConfigDict(from_attributes=True)
+
+    slug: str = Field(description="Shareable profile slug.")
+    url: str = Field(description="Fully-qualified frontend interview URL.")
+    is_active: bool = Field(description="Whether the link is currently active.")
 
 
 class ToggleLinkRequest(BaseModel):
     """Enable/disable public link."""
 
-    is_active: bool
+    is_active: bool = Field(description="New active flag for the shareable link.")
 
 
 class ToggleLinkResponse(BaseModel):
     """Link state after toggle."""
 
-    slug: str
-    is_active: bool
+    model_config = ConfigDict(from_attributes=True)
+
+    slug: str = Field(description="Shareable profile slug.")
+    is_active: bool = Field(description="Current active flag after toggle operation.")
 
 
 class DashboardStatsResponse(BaseModel):
     """Dashboard summary card metrics."""
 
-    total_sessions: int
-    completed_sessions: int
-    date_verdicts: int
-    no_date_verdicts: int
-    average_weighted_score: float
-    upcoming_bookings: int
+    model_config = ConfigDict(from_attributes=True)
+
+    total_suitors: int = Field(description="Total suitors that entered screening.")
+    match_rate: float = Field(description="Percentage of sessions with a date verdict.")
+    avg_scores: float = Field(
+        description="Average weighted score across completed sessions."
+    )
+    total_sessions: int = Field(description="Total sessions created.")
+    completed_sessions: int = Field(description="Sessions with completed state.")
+    upcoming_bookings: int = Field(description="Count of upcoming date bookings.")
 
 
 class SessionSummaryItem(BaseModel):
     """Compact session listing item for dashboard."""
 
-    id: uuid.UUID
-    suitor_id: uuid.UUID
-    suitor_name: str
-    status: str
-    created_at: datetime
-    weighted_total: float | None = None
-    verdict: str | None = None
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID = Field(description="Session UUID.")
+    suitor_id: uuid.UUID = Field(description="Suitor UUID.")
+    suitor_name: str = Field(description="Suitor display name.")
+    status: SessionStatus = Field(description="Session lifecycle status.")
+    created_at: datetime = Field(description="Session creation timestamp.")
+    weighted_total: float | None = Field(
+        default=None, description="Weighted total score if available."
+    )
+    verdict: Verdict | None = Field(
+        default=None, description="Date/no-date verdict if available."
+    )
 
 
-class SessionListResponse(BaseModel):
-    """Session list response for a heart."""
+class SessionListResponse(PaginatedResponse):
+    """Paginated-style session list response for a heart."""
 
-    sessions: list[SessionSummaryItem]
+    model_config = ConfigDict(from_attributes=True)
+
+    items: list[SessionSummaryItem] = Field(
+        default_factory=list,
+        description="Session summaries for dashboard list.",
+    )
 
 
 class SessionDetailTurn(BaseModel):
     """Turn data in a detailed session response."""
 
-    id: uuid.UUID
-    turn_index: int
-    speaker: str
-    content: str
-    emotion_data: dict[str, Any] | None = None
-    duration_seconds: float | None = None
-    created_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID = Field(description="Conversation turn UUID.")
+    turn_index: int = Field(description="Sequential turn index.")
+    speaker: ConversationSpeaker = Field(
+        description="Speaker role for the transcript entry."
+    )
+    content: str = Field(description="Transcript content.")
+    emotion_data: EmotionData | None = Field(
+        default=None, description="Emotion analysis object for this turn."
+    )
+    duration_seconds: float | None = Field(
+        default=None, description="Turn duration in seconds."
+    )
+    created_at: datetime = Field(description="Turn creation timestamp.")
 
 
 class SessionDetailScore(BaseModel):
     """Scoring data in session details."""
 
-    effort_score: float
-    creativity_score: float
-    intent_clarity_score: float
-    emotional_intelligence_score: float
-    weighted_total: float
-    verdict: str
-    feedback_text: str
+    model_config = ConfigDict(from_attributes=True)
+
+    effort_score: float = Field(description="Effort score (0-100).")
+    creativity_score: float = Field(description="Creativity score (0-100).")
+    intent_clarity_score: float = Field(description="Intent clarity score (0-100).")
+    emotional_intelligence_score: float = Field(
+        description="Emotional intelligence score (0-100)."
+    )
+    weighted_total: float = Field(description="Weighted total score (0-100).")
+    verdict: Verdict = Field(description="Final verdict for this session.")
+    feedback_text: str = Field(description="Personalized feedback summary.")
+    emotion_modifiers: EmotionModifiers | None = Field(
+        default=None, description="Emotion-based score modifiers."
+    )
 
 
 class SessionDetailResponse(BaseModel):
     """Full session detail response payload."""
 
-    session_id: uuid.UUID
-    heart_id: uuid.UUID
-    suitor_id: uuid.UUID
-    suitor_name: str
-    status: str
-    started_at: datetime | None = None
-    ended_at: datetime | None = None
-    created_at: datetime
-    turns: list[SessionDetailTurn]
-    score: SessionDetailScore | None = None
+    model_config = ConfigDict(from_attributes=True)
+
+    session_id: uuid.UUID = Field(description="Session UUID.")
+    heart_id: uuid.UUID = Field(description="Heart UUID.")
+    suitor_id: uuid.UUID = Field(description="Suitor UUID.")
+    suitor_name: str = Field(description="Suitor display name.")
+    status: SessionStatus = Field(description="Current session status.")
+    started_at: datetime | None = Field(
+        default=None, description="Session start timestamp."
+    )
+    ended_at: datetime | None = Field(
+        default=None, description="Session end timestamp."
+    )
+    created_at: datetime = Field(description="Session creation timestamp.")
+    turns: list[SessionDetailTurn] = Field(
+        default_factory=list, description="Ordered transcript turns."
+    )
+    score: SessionDetailScore | None = Field(
+        default=None, description="Final score payload when available."
+    )
+
+
+# Backward-compatible aliases
+UpdateHeartProfileRequest = HeartProfileUpdateRequest
+UpdatePersonaRequest = PersonaUpdateRequest
+UpdateExpectationsRequest = ExpectationsUpdateRequest

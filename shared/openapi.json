@@ -1,0 +1,2992 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Valentine Hotline API",
+    "description": "AI-powered dating screening system API",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/api/v1/users/me": {
+      "get": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Read Users Me",
+        "description": "Get the current authenticated user's profile.",
+        "operationId": "read_users_me_api_v1_users_me_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "patch": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Update User Me",
+        "description": "Update the current authenticated user's profile.",
+        "operationId": "update_user_me_api_v1_users_me_patch",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/users/": {
+      "get": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Get Users",
+        "description": "Get all users (requires authentication).",
+        "operationId": "get_users_api_v1_users__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserListResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/auth/webhook": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Clerk Webhook",
+        "description": "Verify Clerk Svix signature and synchronize heart records for user lifecycle events.",
+        "operationId": "clerk_webhook_api_v1_auth_webhook_post",
+        "parameters": [
+          {
+            "name": "svix-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Svix-Id"
+            }
+          },
+          {
+            "name": "svix-timestamp",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Svix-Timestamp"
+            }
+          },
+          {
+            "name": "svix-signature",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Svix-Signature"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClerkWebhookEventRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid webhook signature.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected processing error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/chat/": {
+      "post": {
+        "tags": [
+          "chat"
+        ],
+        "summary": "Chat",
+        "operationId": "chat_api_v1_chat__post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/chat/stream": {
+      "post": {
+        "tags": [
+          "chat"
+        ],
+        "summary": "Stream Chat",
+        "operationId": "stream_chat_api_v1_chat_stream_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/hearts/me": {
+      "get": {
+        "tags": [
+          "Hearts"
+        ],
+        "summary": "Get Me",
+        "description": "Get the authenticated heart profile including persona, expectations, and screening questions.",
+        "operationId": "get_me_api_v1_hearts_me_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HeartProfileResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Hearts"
+        ],
+        "summary": "Update Me",
+        "description": "Update mutable heart profile fields for the authenticated heart.",
+        "operationId": "update_me_api_v1_hearts_me_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HeartProfileUpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HeartProfileResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/hearts/me/persona": {
+      "put": {
+        "tags": [
+          "Hearts"
+        ],
+        "summary": "Update Persona",
+        "description": "Update persona settings used by the heart's AI avatar.",
+        "operationId": "update_persona_api_v1_hearts_me_persona_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PersonaUpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HeartProfileResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/hearts/me/expectations": {
+      "put": {
+        "tags": [
+          "Hearts"
+        ],
+        "summary": "Update Expectations",
+        "description": "Update dating expectations used for suitor evaluation.",
+        "operationId": "update_expectations_api_v1_hearts_me_expectations_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExpectationsUpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HeartProfileResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/hearts/me/questions": {
+      "get": {
+        "tags": [
+          "Hearts",
+          "Screening Questions"
+        ],
+        "summary": "List Questions",
+        "description": "List screening questions configured for the authenticated heart.",
+        "operationId": "list_questions_api_v1_hearts_me_questions_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuestionsListResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Hearts",
+          "Screening Questions"
+        ],
+        "summary": "Add Question",
+        "description": "Add a screening question for the authenticated heart profile.",
+        "operationId": "add_question_api_v1_hearts_me_questions_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuestionCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuestionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/hearts/me/questions/{id}": {
+      "put": {
+        "tags": [
+          "Hearts",
+          "Screening Questions"
+        ],
+        "summary": "Update Question",
+        "description": "Update a specific screening question for the authenticated heart.",
+        "operationId": "update_question_api_v1_hearts_me_questions__id__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuestionUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuestionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Hearts",
+          "Screening Questions"
+        ],
+        "summary": "Delete Question",
+        "description": "Delete a screening question from the authenticated heart profile.",
+        "operationId": "delete_question_api_v1_hearts_me_questions__id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/hearts/me/questions/reorder": {
+      "post": {
+        "tags": [
+          "Hearts",
+          "Screening Questions"
+        ],
+        "summary": "Reorder Questions",
+        "description": "Reorder screening questions by submitting a complete ordered list of question IDs.",
+        "operationId": "reorder_questions_api_v1_hearts_me_questions_reorder_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuestionsReorderRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuestionsListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/hearts/me/link": {
+      "get": {
+        "tags": [
+          "Hearts"
+        ],
+        "summary": "Get Shareable Link",
+        "description": "Get public shareable interview link metadata for the authenticated heart.",
+        "operationId": "get_shareable_link_api_v1_hearts_me_link_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShareableLinkResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/hearts/me/link/toggle": {
+      "post": {
+        "tags": [
+          "Hearts"
+        ],
+        "summary": "Toggle Link",
+        "description": "Activate or deactivate the authenticated heart's public link.",
+        "operationId": "toggle_link_api_v1_hearts_me_link_toggle_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ToggleLinkRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ToggleLinkResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/hearts/me/dashboard/stats": {
+      "get": {
+        "tags": [
+          "Hearts",
+          "Dashboard"
+        ],
+        "summary": "Dashboard Stats",
+        "description": "Get dashboard statistics for the authenticated heart.",
+        "operationId": "dashboard_stats_api_v1_hearts_me_dashboard_stats_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardStatsResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/hearts/me/sessions": {
+      "get": {
+        "tags": [
+          "Hearts",
+          "Dashboard"
+        ],
+        "summary": "List Sessions",
+        "description": "List session summaries for the authenticated heart dashboard.",
+        "operationId": "list_sessions_api_v1_hearts_me_sessions_get",
+        "responses": {
+          "200": {
+            "description": "Generic pagination contract template.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/hearts/me/sessions/{id}": {
+      "get": {
+        "tags": [
+          "Hearts",
+          "Dashboard"
+        ],
+        "summary": "Session Detail",
+        "description": "Get transcript, emotion data, and scoring details for a specific session.",
+        "operationId": "session_detail_api_v1_hearts_me_sessions__id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/public/{slug}": {
+      "get": {
+        "tags": [
+          "Public"
+        ],
+        "summary": "Get Public Profile",
+        "description": "Get limited public profile information for a heart by slug.",
+        "operationId": "get_public_profile_api_v1_public__slug__get",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Slug"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicHeartProfileResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/suitors/register": {
+      "post": {
+        "tags": [
+          "Suitors"
+        ],
+        "summary": "Register Suitor",
+        "description": "Register a suitor before starting the interview flow.",
+        "operationId": "register_suitor_api_v1_suitors_register_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SuitorRegisterRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuitorRegisterResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/sessions/start": {
+      "post": {
+        "tags": [
+          "Sessions"
+        ],
+        "summary": "Start Session",
+        "description": "Initialize a new interview session for a suitor and heart.",
+        "operationId": "start_session_api_v1_sessions_start_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SessionStartRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionStartResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/sessions/{id}/status": {
+      "get": {
+        "tags": [
+          "Sessions"
+        ],
+        "summary": "Get Session Status",
+        "description": "Get current processing state for a session.",
+        "operationId": "get_session_status_api_v1_sessions__id__status_get",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionStatusResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/sessions/{id}/verdict": {
+      "get": {
+        "tags": [
+          "Sessions"
+        ],
+        "summary": "Get Session Verdict",
+        "description": "Poll final verdict and score breakdown for a completed session.",
+        "operationId": "get_session_verdict_api_v1_sessions__id__verdict_get",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionVerdictResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/bookings/slots": {
+      "get": {
+        "tags": [
+          "Bookings"
+        ],
+        "summary": "Get Slots",
+        "description": "Get available date booking slots (placeholder data for Milestone 1).",
+        "operationId": "get_slots_api_v1_bookings_slots_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvailableSlotsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/bookings/create": {
+      "post": {
+        "tags": [
+          "Bookings"
+        ],
+        "summary": "Create Booking",
+        "description": "Create a booking confirmation for a successful suitor session.",
+        "operationId": "create_booking_api_v1_bookings_create_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BookingCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingConfirmationResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tools/add": {
+      "post": {
+        "tags": [
+          "tools"
+        ],
+        "summary": "Addition",
+        "description": "Adds two numbers",
+        "operationId": "addition_api_v1_tools_add_post",
+        "parameters": [
+          {
+            "name": "a",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "A"
+            }
+          },
+          {
+            "name": "b",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "B"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AvailableSlot": {
+        "properties": {
+          "slot_id": {
+            "type": "string",
+            "title": "Slot Id",
+            "description": "Provider slot identifier."
+          },
+          "starts_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Starts At",
+            "description": "Slot start datetime in ISO 8601."
+          },
+          "ends_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Ends At",
+            "description": "Slot end datetime in ISO 8601."
+          },
+          "timezone": {
+            "type": "string",
+            "title": "Timezone",
+            "description": "Timezone for this slot."
+          }
+        },
+        "type": "object",
+        "required": [
+          "slot_id",
+          "starts_at",
+          "ends_at",
+          "timezone"
+        ],
+        "title": "AvailableSlot",
+        "description": "Available booking slot."
+      },
+      "AvailableSlotsResponse": {
+        "properties": {
+          "slots": {
+            "items": {
+              "$ref": "#/components/schemas/AvailableSlot"
+            },
+            "type": "array",
+            "title": "Slots",
+            "description": "Available booking slots."
+          }
+        },
+        "type": "object",
+        "title": "AvailableSlotsResponse",
+        "description": "List of open booking slots."
+      },
+      "BookingConfirmationResponse": {
+        "properties": {
+          "booking_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Booking Id",
+            "description": "Booking UUID."
+          },
+          "session_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Session Id",
+            "description": "Related session UUID."
+          },
+          "heart_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Heart Id",
+            "description": "Heart UUID."
+          },
+          "suitor_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Suitor Id",
+            "description": "Suitor UUID."
+          },
+          "calcom_booking_id": {
+            "type": "string",
+            "title": "Calcom Booking Id",
+            "description": "External calendar provider booking ID."
+          },
+          "scheduled_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Scheduled At",
+            "description": "Scheduled date-time for the booking."
+          },
+          "status": {
+            "$ref": "#/components/schemas/BookingStatus",
+            "description": "Booking lifecycle state."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At",
+            "description": "Booking creation timestamp."
+          }
+        },
+        "type": "object",
+        "required": [
+          "booking_id",
+          "session_id",
+          "heart_id",
+          "suitor_id",
+          "calcom_booking_id",
+          "scheduled_at",
+          "status",
+          "created_at"
+        ],
+        "title": "BookingConfirmationResponse",
+        "description": "Created booking payload."
+      },
+      "BookingCreateRequest": {
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Session Id",
+            "description": "Session UUID being converted to a date booking."
+          },
+          "slot_datetime": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Slot Datetime",
+            "description": "Selected slot datetime in ISO 8601."
+          }
+        },
+        "type": "object",
+        "required": [
+          "session_id",
+          "slot_datetime"
+        ],
+        "title": "BookingCreateRequest",
+        "description": "Create booking payload."
+      },
+      "BookingStatus": {
+        "type": "string",
+        "enum": [
+          "confirmed",
+          "cancelled",
+          "rescheduled"
+        ],
+        "title": "BookingStatus",
+        "description": "Booking lifecycle status."
+      },
+      "ChatRequest": {
+        "properties": {
+          "content": {
+            "type": "string",
+            "title": "Content"
+          },
+          "conversation_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conversation Id",
+            "default": "default"
+          }
+        },
+        "type": "object",
+        "required": [
+          "content"
+        ],
+        "title": "ChatRequest"
+      },
+      "ClerkWebhookEventRequest": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "title": "Type",
+            "description": "Clerk event type (for example: user.created)."
+          },
+          "data": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Data",
+            "description": "Event payload object from Clerk."
+          },
+          "object": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Object",
+            "description": "Webhook object type metadata."
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "required": [
+          "type",
+          "data"
+        ],
+        "title": "ClerkWebhookEventRequest",
+        "description": "Raw Clerk webhook payload envelope."
+      },
+      "ConversationSpeaker": {
+        "type": "string",
+        "enum": [
+          "avatar",
+          "suitor"
+        ],
+        "title": "ConversationSpeaker",
+        "description": "Speaker labels for transcript turns."
+      },
+      "DashboardStatsResponse": {
+        "properties": {
+          "total_suitors": {
+            "type": "integer",
+            "title": "Total Suitors",
+            "description": "Total suitors that entered screening."
+          },
+          "match_rate": {
+            "type": "number",
+            "title": "Match Rate",
+            "description": "Percentage of sessions with a date verdict."
+          },
+          "avg_scores": {
+            "type": "number",
+            "title": "Avg Scores",
+            "description": "Average weighted score across completed sessions."
+          },
+          "total_sessions": {
+            "type": "integer",
+            "title": "Total Sessions",
+            "description": "Total sessions created."
+          },
+          "completed_sessions": {
+            "type": "integer",
+            "title": "Completed Sessions",
+            "description": "Sessions with completed state."
+          },
+          "upcoming_bookings": {
+            "type": "integer",
+            "title": "Upcoming Bookings",
+            "description": "Count of upcoming date bookings."
+          }
+        },
+        "type": "object",
+        "required": [
+          "total_suitors",
+          "match_rate",
+          "avg_scores",
+          "total_sessions",
+          "completed_sessions",
+          "upcoming_bookings"
+        ],
+        "title": "DashboardStatsResponse",
+        "description": "Dashboard summary card metrics."
+      },
+      "EmotionData": {
+        "properties": {
+          "confidence": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confidence",
+            "description": "Detected confidence level."
+          },
+          "hesitation": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hesitation",
+            "description": "Detected hesitation level."
+          },
+          "enthusiasm": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enthusiasm",
+            "description": "Detected enthusiasm level."
+          },
+          "sarcasm": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sarcasm",
+            "description": "Detected sarcasm level."
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "title": "EmotionData",
+        "description": "Emotion analysis data attached to transcript turns."
+      },
+      "EmotionModifiers": {
+        "properties": {
+          "confidence_boost": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confidence Boost",
+            "description": "Positive weighting from confidence signals."
+          },
+          "hesitation_penalty": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hesitation Penalty",
+            "description": "Negative weighting from hesitation signals."
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "title": "EmotionModifiers",
+        "description": "Emotion-based score modifiers."
+      },
+      "ErrorResponse": {
+        "properties": {
+          "detail": {
+            "type": "string",
+            "title": "Detail",
+            "description": "Primary error detail shown to API clients."
+          },
+          "code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Code",
+            "description": "Optional machine-readable error code."
+          }
+        },
+        "type": "object",
+        "required": [
+          "detail"
+        ],
+        "title": "ErrorResponse",
+        "description": "Standard API error payload."
+      },
+      "ExpectationsUpdateRequest": {
+        "properties": {
+          "dealbreakers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Dealbreakers",
+            "description": "Non-negotiable disqualifiers."
+          },
+          "green_flags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Green Flags",
+            "description": "Positive traits the heart values."
+          },
+          "must_haves": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Must Haves",
+            "description": "Must-have relationship requirements."
+          }
+        },
+        "type": "object",
+        "title": "ExpectationsUpdateRequest",
+        "description": "Request body for expectation updates."
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HeartProfileResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id",
+            "description": "Heart UUID."
+          },
+          "clerk_user_id": {
+            "type": "string",
+            "title": "Clerk User Id",
+            "description": "Clerk user ID."
+          },
+          "email": {
+            "type": "string",
+            "title": "Email",
+            "description": "Heart email address."
+          },
+          "display_name": {
+            "type": "string",
+            "title": "Display Name",
+            "description": "Heart display name."
+          },
+          "bio": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bio",
+            "description": "Heart biography."
+          },
+          "photo_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Photo Url",
+            "description": "Profile photo URL."
+          },
+          "video_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Url",
+            "description": "Avatar source video URL."
+          },
+          "tavus_avatar_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tavus Avatar Id",
+            "description": "Generated Tavus avatar ID."
+          },
+          "persona": {
+            "$ref": "#/components/schemas/PersonaUpdateRequest",
+            "description": "Avatar persona configuration."
+          },
+          "expectations": {
+            "$ref": "#/components/schemas/ExpectationsUpdateRequest",
+            "description": "Dating expectation configuration."
+          },
+          "questions": {
+            "items": {
+              "$ref": "#/components/schemas/QuestionSummary"
+            },
+            "type": "array",
+            "title": "Questions",
+            "description": "Configured screening questions."
+          },
+          "calcom_user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Calcom User Id",
+            "description": "cal.com user ID."
+          },
+          "calcom_event_type_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Calcom Event Type Id",
+            "description": "cal.com event type ID."
+          },
+          "shareable_slug": {
+            "type": "string",
+            "title": "Shareable Slug",
+            "description": "Public slug used for the suitor entry page."
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active",
+            "description": "Whether the public interview link is active."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At",
+            "description": "Creation timestamp."
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At",
+            "description": "Last update timestamp."
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "clerk_user_id",
+          "email",
+          "display_name",
+          "persona",
+          "expectations",
+          "shareable_slug",
+          "is_active",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "HeartProfileResponse",
+        "description": "Current heart profile payload."
+      },
+      "HeartProfileUpdateRequest": {
+        "properties": {
+          "display_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Display Name",
+            "description": "Display name shown publicly."
+          },
+          "bio": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bio",
+            "description": "Profile biography text."
+          },
+          "photo_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Photo Url",
+            "description": "Profile photo URL."
+          },
+          "video_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Url",
+            "description": "Avatar source video URL."
+          },
+          "calcom_user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Calcom User Id",
+            "description": "cal.com user identifier."
+          },
+          "calcom_event_type_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Calcom Event Type Id",
+            "description": "cal.com event type identifier."
+          }
+        },
+        "type": "object",
+        "title": "HeartProfileUpdateRequest",
+        "description": "Mutable fields for heart profile updates."
+      },
+      "PaginatedResponse": {
+        "properties": {
+          "items": {
+            "items": {},
+            "type": "array",
+            "title": "Items",
+            "description": "Current page items."
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "description": "Total items across all pages."
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page",
+            "description": "Current page number (1-indexed)."
+          },
+          "per_page": {
+            "type": "integer",
+            "title": "Per Page",
+            "description": "Maximum items per page."
+          }
+        },
+        "type": "object",
+        "required": [
+          "total",
+          "page",
+          "per_page"
+        ],
+        "title": "PaginatedResponse",
+        "description": "Standard paginated list payload."
+      },
+      "PersonaUpdateRequest": {
+        "properties": {
+          "traits": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Traits",
+            "description": "Personality traits used by the AI avatar."
+          },
+          "vibe": {
+            "type": "string",
+            "title": "Vibe",
+            "description": "High-level vibe descriptor for the avatar.",
+            "default": ""
+          },
+          "tone": {
+            "type": "string",
+            "title": "Tone",
+            "description": "Conversation tone used by the avatar.",
+            "default": ""
+          },
+          "humor_level": {
+            "type": "integer",
+            "maximum": 10.0,
+            "minimum": 0.0,
+            "title": "Humor Level",
+            "description": "Humor intensity from 0-10.",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "PersonaUpdateRequest",
+        "description": "Request body for persona updates."
+      },
+      "PublicHeartProfileResponse": {
+        "properties": {
+          "display_name": {
+            "type": "string",
+            "title": "Display Name",
+            "description": "Heart display name shown publicly."
+          },
+          "bio_snippet": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bio Snippet",
+            "description": "Short public bio snippet."
+          },
+          "avatar_preview_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avatar Preview Url",
+            "description": "Public avatar or photo preview URL."
+          },
+          "shareable_slug": {
+            "type": "string",
+            "title": "Shareable Slug",
+            "description": "Public slug used in the URL."
+          }
+        },
+        "type": "object",
+        "required": [
+          "display_name",
+          "shareable_slug"
+        ],
+        "title": "PublicHeartProfileResponse",
+        "description": "Publicly exposed profile data."
+      },
+      "QuestionCreateRequest": {
+        "properties": {
+          "question_text": {
+            "type": "string",
+            "title": "Question Text",
+            "description": "New screening question text."
+          },
+          "is_required": {
+            "type": "boolean",
+            "title": "Is Required",
+            "description": "Whether answering this question is mandatory.",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "question_text"
+        ],
+        "title": "QuestionCreateRequest",
+        "description": "Create screening question payload."
+      },
+      "QuestionResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id",
+            "description": "Question UUID."
+          },
+          "heart_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Heart Id",
+            "description": "Owning heart UUID."
+          },
+          "question_text": {
+            "type": "string",
+            "title": "Question Text",
+            "description": "Question text shown to suitors."
+          },
+          "order_index": {
+            "type": "integer",
+            "title": "Order Index",
+            "description": "Display order for this question."
+          },
+          "is_required": {
+            "type": "boolean",
+            "title": "Is Required",
+            "description": "Whether suitor must answer this question."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At",
+            "description": "Question creation timestamp."
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "heart_id",
+          "question_text",
+          "order_index",
+          "is_required",
+          "created_at"
+        ],
+        "title": "QuestionResponse",
+        "description": "Single screening question payload."
+      },
+      "QuestionSummary": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id",
+            "description": "Question UUID."
+          },
+          "question_text": {
+            "type": "string",
+            "title": "Question Text",
+            "description": "Question text."
+          },
+          "order_index": {
+            "type": "integer",
+            "title": "Order Index",
+            "description": "Question ordering index."
+          },
+          "is_required": {
+            "type": "boolean",
+            "title": "Is Required",
+            "description": "Whether response is required."
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "question_text",
+          "order_index",
+          "is_required"
+        ],
+        "title": "QuestionSummary",
+        "description": "Question summary embedded in heart profile payload."
+      },
+      "QuestionUpdateRequest": {
+        "properties": {
+          "question_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Question Text",
+            "description": "Updated question text."
+          },
+          "is_required": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Required",
+            "description": "Updated required flag."
+          }
+        },
+        "type": "object",
+        "title": "QuestionUpdateRequest",
+        "description": "Update screening question payload."
+      },
+      "QuestionsListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/QuestionResponse"
+            },
+            "type": "array",
+            "title": "Items",
+            "description": "Ordered list of screening questions."
+          }
+        },
+        "type": "object",
+        "title": "QuestionsListResponse",
+        "description": "Ordered screening question list payload."
+      },
+      "QuestionsReorderRequest": {
+        "properties": {
+          "question_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Question Ids",
+            "description": "Question IDs in the desired final order."
+          }
+        },
+        "type": "object",
+        "title": "QuestionsReorderRequest",
+        "description": "Bulk reorder payload by question ID sequence."
+      },
+      "SessionDetailResponse": {
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Session Id",
+            "description": "Session UUID."
+          },
+          "heart_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Heart Id",
+            "description": "Heart UUID."
+          },
+          "suitor_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Suitor Id",
+            "description": "Suitor UUID."
+          },
+          "suitor_name": {
+            "type": "string",
+            "title": "Suitor Name",
+            "description": "Suitor display name."
+          },
+          "status": {
+            "$ref": "#/components/schemas/SessionStatus",
+            "description": "Current session status."
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At",
+            "description": "Session start timestamp."
+          },
+          "ended_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ended At",
+            "description": "Session end timestamp."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At",
+            "description": "Session creation timestamp."
+          },
+          "turns": {
+            "items": {
+              "$ref": "#/components/schemas/SessionDetailTurn"
+            },
+            "type": "array",
+            "title": "Turns",
+            "description": "Ordered transcript turns."
+          },
+          "score": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SessionDetailScore"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Final score payload when available."
+          }
+        },
+        "type": "object",
+        "required": [
+          "session_id",
+          "heart_id",
+          "suitor_id",
+          "suitor_name",
+          "status",
+          "created_at"
+        ],
+        "title": "SessionDetailResponse",
+        "description": "Full session detail response payload."
+      },
+      "SessionDetailScore": {
+        "properties": {
+          "effort_score": {
+            "type": "number",
+            "title": "Effort Score",
+            "description": "Effort score (0-100)."
+          },
+          "creativity_score": {
+            "type": "number",
+            "title": "Creativity Score",
+            "description": "Creativity score (0-100)."
+          },
+          "intent_clarity_score": {
+            "type": "number",
+            "title": "Intent Clarity Score",
+            "description": "Intent clarity score (0-100)."
+          },
+          "emotional_intelligence_score": {
+            "type": "number",
+            "title": "Emotional Intelligence Score",
+            "description": "Emotional intelligence score (0-100)."
+          },
+          "weighted_total": {
+            "type": "number",
+            "title": "Weighted Total",
+            "description": "Weighted total score (0-100)."
+          },
+          "verdict": {
+            "$ref": "#/components/schemas/Verdict",
+            "description": "Final verdict for this session."
+          },
+          "feedback_text": {
+            "type": "string",
+            "title": "Feedback Text",
+            "description": "Personalized feedback summary."
+          },
+          "emotion_modifiers": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EmotionModifiers"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Emotion-based score modifiers."
+          }
+        },
+        "type": "object",
+        "required": [
+          "effort_score",
+          "creativity_score",
+          "intent_clarity_score",
+          "emotional_intelligence_score",
+          "weighted_total",
+          "verdict",
+          "feedback_text"
+        ],
+        "title": "SessionDetailScore",
+        "description": "Scoring data in session details."
+      },
+      "SessionDetailTurn": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id",
+            "description": "Conversation turn UUID."
+          },
+          "turn_index": {
+            "type": "integer",
+            "title": "Turn Index",
+            "description": "Sequential turn index."
+          },
+          "speaker": {
+            "$ref": "#/components/schemas/ConversationSpeaker",
+            "description": "Speaker role for the transcript entry."
+          },
+          "content": {
+            "type": "string",
+            "title": "Content",
+            "description": "Transcript content."
+          },
+          "emotion_data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EmotionData"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Emotion analysis object for this turn."
+          },
+          "duration_seconds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Seconds",
+            "description": "Turn duration in seconds."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At",
+            "description": "Turn creation timestamp."
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "turn_index",
+          "speaker",
+          "content",
+          "created_at"
+        ],
+        "title": "SessionDetailTurn",
+        "description": "Turn data in a detailed session response."
+      },
+      "SessionListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SessionSummaryItem"
+            },
+            "type": "array",
+            "title": "Items",
+            "description": "Session summaries for dashboard list."
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "description": "Total items across all pages."
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page",
+            "description": "Current page number (1-indexed)."
+          },
+          "per_page": {
+            "type": "integer",
+            "title": "Per Page",
+            "description": "Maximum items per page."
+          }
+        },
+        "type": "object",
+        "required": [
+          "total",
+          "page",
+          "per_page"
+        ],
+        "title": "SessionListResponse",
+        "description": "Paginated-style session list response for a heart."
+      },
+      "SessionStartRequest": {
+        "properties": {
+          "heart_slug": {
+            "type": "string",
+            "title": "Heart Slug",
+            "description": "Shareable heart slug used to identify interview target."
+          },
+          "suitor_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Suitor Id",
+            "description": "Suitor UUID created during registration."
+          }
+        },
+        "type": "object",
+        "required": [
+          "heart_slug",
+          "suitor_id"
+        ],
+        "title": "SessionStartRequest",
+        "description": "Session initialization payload."
+      },
+      "SessionStartResponse": {
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Session Id",
+            "description": "Created interview session UUID."
+          },
+          "heart_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Heart Id",
+            "description": "Heart UUID for the interview."
+          },
+          "suitor_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Suitor Id",
+            "description": "Suitor UUID for the interview."
+          },
+          "status": {
+            "$ref": "#/components/schemas/SessionStatus",
+            "description": "Current session lifecycle state."
+          },
+          "livekit_room_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Livekit Room Name",
+            "description": "LiveKit room name if allocated."
+          },
+          "livekit_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Livekit Token",
+            "description": "LiveKit access token placeholder for Milestone 1."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At",
+            "description": "Session creation timestamp."
+          }
+        },
+        "type": "object",
+        "required": [
+          "session_id",
+          "heart_id",
+          "suitor_id",
+          "status",
+          "created_at"
+        ],
+        "title": "SessionStartResponse",
+        "description": "Session initialization response payload."
+      },
+      "SessionStatus": {
+        "type": "string",
+        "enum": [
+          "pending",
+          "in_progress",
+          "completed",
+          "failed",
+          "cancelled"
+        ],
+        "title": "SessionStatus",
+        "description": "Interview session lifecycle status."
+      },
+      "SessionStatusResponse": {
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Session Id",
+            "description": "Session UUID."
+          },
+          "status": {
+            "$ref": "#/components/schemas/SessionStatus",
+            "description": "Current session processing status."
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At",
+            "description": "Timestamp when interview started."
+          },
+          "ended_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ended At",
+            "description": "Timestamp when interview ended."
+          }
+        },
+        "type": "object",
+        "required": [
+          "session_id",
+          "status"
+        ],
+        "title": "SessionStatusResponse",
+        "description": "Polling response for session status."
+      },
+      "SessionSummaryItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id",
+            "description": "Session UUID."
+          },
+          "suitor_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Suitor Id",
+            "description": "Suitor UUID."
+          },
+          "suitor_name": {
+            "type": "string",
+            "title": "Suitor Name",
+            "description": "Suitor display name."
+          },
+          "status": {
+            "$ref": "#/components/schemas/SessionStatus",
+            "description": "Session lifecycle status."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At",
+            "description": "Session creation timestamp."
+          },
+          "weighted_total": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Weighted Total",
+            "description": "Weighted total score if available."
+          },
+          "verdict": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Verdict"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Date/no-date verdict if available."
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "suitor_id",
+          "suitor_name",
+          "status",
+          "created_at"
+        ],
+        "title": "SessionSummaryItem",
+        "description": "Compact session listing item for dashboard."
+      },
+      "SessionVerdictResponse": {
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Session Id",
+            "description": "Session UUID."
+          },
+          "verdict": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Verdict"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Date/no-date verdict when ready."
+          },
+          "weighted_total": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Weighted Total",
+            "description": "Overall weighted score (0-100)."
+          },
+          "effort_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Effort Score",
+            "description": "Effort score (0-100)."
+          },
+          "creativity_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Creativity Score",
+            "description": "Creativity score (0-100)."
+          },
+          "intent_clarity_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Intent Clarity Score",
+            "description": "Intent clarity score (0-100)."
+          },
+          "emotional_intelligence_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Emotional Intelligence Score",
+            "description": "Emotional intelligence score (0-100)."
+          },
+          "emotion_modifiers": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EmotionModifiers"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Emotion-based score modifiers."
+          },
+          "feedback_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feedback Text",
+            "description": "Personalized feedback for the suitor."
+          },
+          "ready": {
+            "type": "boolean",
+            "title": "Ready",
+            "description": "Whether verdict and scoring are ready."
+          }
+        },
+        "type": "object",
+        "required": [
+          "session_id",
+          "ready"
+        ],
+        "title": "SessionVerdictResponse",
+        "description": "Final verdict payload returned to suitor."
+      },
+      "ShareableLinkResponse": {
+        "properties": {
+          "slug": {
+            "type": "string",
+            "title": "Slug",
+            "description": "Shareable profile slug."
+          },
+          "url": {
+            "type": "string",
+            "title": "Url",
+            "description": "Fully-qualified frontend interview URL."
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active",
+            "description": "Whether the link is currently active."
+          }
+        },
+        "type": "object",
+        "required": [
+          "slug",
+          "url",
+          "is_active"
+        ],
+        "title": "ShareableLinkResponse",
+        "description": "Public link metadata."
+      },
+      "SuccessResponse": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Human-readable success message."
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "SuccessResponse",
+        "description": "Generic success message payload."
+      },
+      "SuitorRegisterRequest": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "Suitor full name."
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email",
+            "description": "Optional suitor email address."
+          },
+          "intro_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Intro Message",
+            "description": "Optional intro message before interview starts."
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "SuitorRegisterRequest",
+        "description": "Suitor registration payload."
+      },
+      "SuitorRegisterResponse": {
+        "properties": {
+          "suitor_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Suitor Id",
+            "description": "Newly created suitor UUID."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At",
+            "description": "Suitor creation timestamp."
+          }
+        },
+        "type": "object",
+        "required": [
+          "suitor_id",
+          "created_at"
+        ],
+        "title": "SuitorRegisterResponse",
+        "description": "Suitor registration response."
+      },
+      "ToggleLinkRequest": {
+        "properties": {
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active",
+            "description": "New active flag for the shareable link."
+          }
+        },
+        "type": "object",
+        "required": [
+          "is_active"
+        ],
+        "title": "ToggleLinkRequest",
+        "description": "Enable/disable public link."
+      },
+      "ToggleLinkResponse": {
+        "properties": {
+          "slug": {
+            "type": "string",
+            "title": "Slug",
+            "description": "Shareable profile slug."
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active",
+            "description": "Current active flag after toggle operation."
+          }
+        },
+        "type": "object",
+        "required": [
+          "slug",
+          "is_active"
+        ],
+        "title": "ToggleLinkResponse",
+        "description": "Link state after toggle."
+      },
+      "User": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "uuid": {
+            "type": "string",
+            "title": "Uuid"
+          },
+          "clerk_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Clerk Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "uuid",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "User"
+      },
+      "UserListResponse": {
+        "properties": {
+          "founds": {
+            "items": {
+              "$ref": "#/components/schemas/User"
+            },
+            "type": "array",
+            "title": "Founds"
+          },
+          "search_options": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Search Options"
+          }
+        },
+        "type": "object",
+        "required": [
+          "founds",
+          "search_options"
+        ],
+        "title": "UserListResponse"
+      },
+      "UserUpdate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          }
+        },
+        "type": "object",
+        "title": "UserUpdate"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "Verdict": {
+        "type": "string",
+        "enum": [
+          "date",
+          "no_date"
+        ],
+        "title": "Verdict",
+        "description": "Final matchmaking verdict."
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  }
+}

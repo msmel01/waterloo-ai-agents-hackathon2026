@@ -44,9 +44,12 @@ logger = logging.getLogger(__name__)
 class AppCreator:
     def __init__(self):
         self.app = FastAPI(
-            title=config.PROJECT_NAME,
+            title="Valentine Hotline API",
+            description="AI-powered dating screening system API",
             openapi_url="/openapi.json",
-            version="0.0.1",
+            docs_url="/docs",
+            redoc_url="/redoc",
+            version="0.1.0",
             root_path=os.getenv("API_ROOT_PATH", "/"),
             lifespan=lifespan,
         )
