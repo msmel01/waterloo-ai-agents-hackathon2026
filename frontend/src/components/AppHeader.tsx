@@ -22,7 +22,7 @@ export function AppHeader({ children }: AppHeaderProps) {
           <SignOutButton>
             <button
               type="button"
-              className="flex-shrink-0 px-3 py-1.5 border border-win-border text-win-textMuted text-xs hover:bg-win-border hover:text-win-text transition-colors"
+              className="flex-shrink-0 px-3 py-1.5 border border-palette-orchid shadow-bevel text-win-textMuted text-xs hover:bg-win-border hover:text-win-text transition-colors"
             >
               Sign out
             </button>

@@ -9,6 +9,10 @@ module.exports = {
       fontFamily: {
         sans: ['Tahoma', 'Verdana', 'Geneva', 'sans-serif'],
       },
+      boxShadow: {
+        /* Raised bevel: Pink Carnation top-left, Lavender bottom-right (matches Window) */
+        bevel: 'inset 1px 1px 0 #F487B8, inset -1px -1px 0 #905ACA',
+      },
       colors: {
         /* Palette: Bright Indigo, Lavender Purple, Orchid Mist, Pink Carnation, Desert Sand */
         palette: {

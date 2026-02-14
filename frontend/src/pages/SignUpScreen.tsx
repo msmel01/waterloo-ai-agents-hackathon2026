@@ -243,7 +243,7 @@ export function SignUpScreen() {
             <button
               type="submit"
               disabled={isSubmitting || isVerifying}
-              className="w-full py-2.5 bg-win-titlebar text-white text-sm font-medium hover:bg-win-titlebarLight transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
+              className="w-full py-2.5 bg-win-titlebar text-white text-sm font-medium border border-palette-orchid shadow-bevel hover:bg-win-titlebarLight transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
             >
               {isSubmitting ? 'Creating account…' : isVerifying ? 'Verifying…' : verifying ? 'Verify' : 'Create account'}
             </button>

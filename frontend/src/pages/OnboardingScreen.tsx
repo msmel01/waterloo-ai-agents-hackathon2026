@@ -57,7 +57,7 @@ export function OnboardingScreen() {
                 </p>
                 <Link
                   to="/chats"
-                  className="w-full py-2.5 bg-win-titlebar text-white text-sm font-medium text-center hover:bg-win-titlebarLight transition-colors"
+                  className="w-full py-2.5 bg-win-titlebar text-white text-sm font-medium text-center border border-palette-orchid shadow-bevel hover:bg-win-titlebarLight transition-colors"
                 >
                   Go To Chats
                 </Link>
@@ -72,13 +72,13 @@ export function OnboardingScreen() {
                 <div className="flex flex-col gap-3">
                   <Link
                     to="/sign-in"
-                    className="w-full py-2.5 bg-win-titlebar text-white text-sm font-medium text-center hover:bg-win-titlebarLight transition-colors"
+                    className="w-full py-2.5 bg-win-titlebar text-white text-sm font-medium text-center border border-palette-orchid shadow-bevel hover:bg-win-titlebarLight transition-colors"
                   >
                     Sign in
                   </Link>
                   <Link
                     to="/sign-up"
-                    className="w-full py-2.5 border border-win-titlebar text-win-titlebar text-sm font-medium text-center hover:bg-win-titlebar/10 transition-colors"
+                    className="w-full py-2.5 border border-palette-orchid shadow-bevel text-win-titlebar text-sm font-medium text-center hover:bg-win-titlebar/10 transition-colors"
                   >
                     Sign up
                   </Link>

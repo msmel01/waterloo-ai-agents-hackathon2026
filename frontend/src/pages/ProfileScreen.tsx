@@ -37,7 +37,7 @@ export function ProfileScreen() {
             </p>
             <button
               onClick={handleBookChat}
-              className="w-full py-2.5 bg-win-titlebar text-white text-sm font-medium hover:bg-win-titlebarLight transition-colors"
+              className="w-full py-2.5 bg-win-titlebar text-white text-sm font-medium border border-palette-orchid shadow-bevel hover:bg-win-titlebarLight transition-colors"
             >
               Book a chat
             </button>

@@ -77,13 +77,13 @@ function DummyRoomContent({
       <div className="flex justify-center gap-4 py-6">
         <button
           onClick={() => setIsMuted((m) => !m)}
-          className="px-6 py-2.5 border border-gray-500 bg-gray-200 text-gray-800 text-sm hover:bg-win-titlebar hover:text-white hover:border-win-titlebar transition-colors"
+          className="px-6 py-2.5 border border-palette-orchid shadow-bevel bg-palette-sand text-gray-800 text-sm hover:bg-win-titlebar hover:text-white hover:border-palette-orchid transition-colors"
         >
           {isMuted ? 'Unmute' : 'Mute'}
         </button>
         <button
           onClick={onLeave}
-          className="px-6 py-2.5 bg-win-titlebar text-white text-sm font-medium hover:bg-win-titlebarLight transition-colors"
+          className="px-6 py-2.5 bg-win-titlebar text-white text-sm font-medium border border-palette-orchid shadow-bevel hover:bg-win-titlebarLight transition-colors"
         >
           Leave Hotline
         </button>
@@ -167,13 +167,13 @@ function LiveKitRoomWrapper({
       <div className="flex justify-center gap-4 py-6">
         <button
           onClick={isMuted ? unmuteMic : muteMic}
-          className="px-6 py-2.5 border border-gray-500 bg-gray-200 text-gray-800 text-sm hover:bg-win-titlebar hover:text-white hover:border-win-titlebar transition-colors"
+          className="px-6 py-2.5 border border-palette-orchid shadow-bevel bg-palette-sand text-gray-800 text-sm hover:bg-win-titlebar hover:text-white hover:border-palette-orchid transition-colors"
         >
           {isMuted ? 'Unmute' : 'Mute'}
         </button>
         <button
           onClick={handleLeave}
-          className="px-6 py-2.5 bg-win-titlebar text-white text-sm font-medium hover:bg-win-titlebarLight transition-colors"
+          className="px-6 py-2.5 bg-win-titlebar text-white text-sm font-medium border border-palette-orchid shadow-bevel hover:bg-win-titlebarLight transition-colors"
         >
           Leave Hotline
         </button>
