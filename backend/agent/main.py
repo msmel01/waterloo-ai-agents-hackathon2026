@@ -58,7 +58,16 @@ def _build_stt():
             "No STT provider available. Install `livekit-plugins-deepgram` or "
             "upgrade `livekit-plugins-smallestai` to a version exposing STT."
         )
-    return deepgram.STT(model="nova-3", language="en-US")
+    if not config.DEEPGRAM_API_KEY:
+        raise RuntimeError(
+            "DEEPGRAM_API_KEY is required for STT fallback because the installed "
+            "SmallestAI plugin does not expose STT."
+        )
+    return deepgram.STT(
+        model="nova-3",
+        language="en-US",
+        api_key=config.DEEPGRAM_API_KEY.get_secret_value(),
+    )
 
 
 def _build_llm():
@@ -153,6 +162,19 @@ if server:
         already_saved = False
         save_lock = asyncio.Lock()
 
+        def _spawn(coro):
+            task = asyncio.create_task(coro)
+
+            def _on_done(done_task: asyncio.Task) -> None:
+                if done_task.cancelled():
+                    return
+                exc = done_task.exception()
+                if exc:
+                    logger.error("Background callback failed: %s", exc)
+
+            task.add_done_callback(_on_done)
+            return task
+
         async def save_once(reason: str) -> None:
             nonlocal already_saved
             async with save_lock:
@@ -171,8 +193,7 @@ if server:
                     len(data["turns"]),
                 )
 
-        @session.on("user_input_transcribed")
-        async def on_user_speech(event):
+        async def _handle_user_speech(event):
             text = getattr(event, "text", "").strip()
             if not text:
                 return
@@ -192,24 +213,34 @@ if server:
                     text="I appreciate the detail, but let's keep moving.",
                 )
 
+        @session.on("user_input_transcribed")
+        def on_user_speech(event):
+            _spawn(_handle_user_speech(event))
+
         @session.on("agent_speech_committed")
-        async def on_agent_speech(event):
+        def on_agent_speech(event):
             text = getattr(event, "text", "").strip()
             if text:
                 session_mgr.add_transcript_entry(speaker="avatar", text=text)
 
-        @session.on("close")
-        async def on_session_close():
+        async def _handle_session_close():
             await hume_tracker.stop()
             await save_once("session_closed")
 
-        @ctx.room.on("participant_disconnected")
-        async def on_participant_disconnected(participant):
+        @session.on("close")
+        def on_session_close():
+            _spawn(_handle_session_close())
+
+        async def _handle_participant_disconnected(participant):
             identity = getattr(participant, "identity", "")
             if identity.startswith("suitor-"):
                 logger.warning("Suitor disconnected in session %s", session_id)
                 await hume_tracker.stop()
                 await save_once("suitor_disconnected")
+
+        @ctx.room.on("participant_disconnected")
+        def on_participant_disconnected(participant):
+            _spawn(_handle_participant_disconnected(participant))
 
         await session.start(room=ctx.room, agent=interview_agent)
         await hume_tracker.start(ctx.room)
