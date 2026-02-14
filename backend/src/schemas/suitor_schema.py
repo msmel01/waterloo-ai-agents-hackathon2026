@@ -7,21 +7,36 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class SuitorRegisterRequest(BaseModel):
-    """Suitor registration payload."""
+    """Suitor profile completion payload after Clerk authentication."""
 
-    name: str = Field(description="Suitor full name.")
-    email: str | None = Field(
-        default=None, description="Optional suitor email address."
-    )
+    age: int = Field(ge=18, le=100, description="Suitor's age (must be 18+).")
+    gender: str = Field(max_length=50, description="Suitor's gender identity.")
+    orientation: str = Field(max_length=50, description="Suitor's orientation.")
     intro_message: str | None = Field(
-        default=None, description="Optional intro message before interview starts."
+        default=None, max_length=500, description="Optional intro message."
     )
 
 
-class SuitorRegisterResponse(BaseModel):
-    """Suitor registration response."""
+class SuitorProfileResponse(BaseModel):
+    """Suitor self-profile response."""
 
     model_config = ConfigDict(from_attributes=True)
 
-    suitor_id: uuid.UUID = Field(description="Newly created suitor UUID.")
-    created_at: datetime = Field(description="Suitor creation timestamp.")
+    id: uuid.UUID = Field(description="Suitor UUID.")
+    name: str = Field(description="Suitor display name from Clerk profile.")
+    email: str | None = Field(default=None, description="Suitor email.")
+    age: int | None = Field(default=None, description="Suitor age.")
+    gender: str | None = Field(default=None, description="Suitor gender identity.")
+    orientation: str | None = Field(default=None, description="Suitor orientation.")
+    intro_message: str | None = Field(
+        default=None, description="Optional intro message."
+    )
+    is_profile_complete: bool = Field(
+        description="Whether required profile fields are complete."
+    )
+    created_at: datetime = Field(description="Profile creation timestamp.")
+    updated_at: datetime = Field(description="Profile update timestamp.")
+
+
+# Backward-compatible alias
+SuitorRegisterResponse = SuitorProfileResponse

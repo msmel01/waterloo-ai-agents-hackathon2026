@@ -3,32 +3,53 @@
 from typing import Annotated
 
 from dependency_injector.wiring import Provide, inject
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends
 
 from src.core.container import Container
+from src.dependencies import get_current_suitor
+from src.models.suitor_model import SuitorDb
 from src.repository.suitor_repository import SuitorRepository
-from src.schemas.suitor_schema import SuitorRegisterRequest, SuitorRegisterResponse
+from src.schemas.suitor_schema import SuitorProfileResponse, SuitorRegisterRequest
 
 router = APIRouter(prefix="/suitors", tags=["Suitors"])
 
+CurrentSuitor = Annotated[SuitorDb, Depends(get_current_suitor)]
 SuitorRepoDep = Annotated[
     SuitorRepository, Depends(Provide[Container.suitor_repository])
 ]
 
 
-@router.post(
-    "/register",
-    response_model=SuitorRegisterResponse,
-    status_code=status.HTTP_201_CREATED,
-)
+@router.post("/register", response_model=SuitorProfileResponse)
 @inject
-async def register_suitor(payload: SuitorRegisterRequest, suitor_repo: SuitorRepoDep):
-    """Register a suitor before starting the interview flow."""
-    suitor = await suitor_repo.create(
-        suitor_repo.model(
-            name=payload.name,
-            email=payload.email,
-            intro_message=payload.intro_message,
-        )
+async def complete_suitor_profile(
+    payload: SuitorRegisterRequest,
+    suitor: CurrentSuitor,
+    suitor_repo: SuitorRepoDep,
+):
+    """Complete authenticated suitor profile before interview starts."""
+    updated = await suitor_repo.update_by_clerk_id(
+        suitor.clerk_user_id or "",
+        {
+            "age": payload.age,
+            "gender": payload.gender,
+            "orientation": payload.orientation,
+            "intro_message": payload.intro_message,
+        },
     )
-    return SuitorRegisterResponse(suitor_id=suitor.id, created_at=suitor.created_at)
+    if not updated:
+        updated = suitor
+
+    return SuitorProfileResponse(
+        id=updated.id,
+        name=updated.name,
+        email=updated.email,
+        age=updated.age,
+        gender=updated.gender,
+        orientation=updated.orientation,
+        intro_message=updated.intro_message,
+        is_profile_complete=bool(
+            updated.age and updated.gender and updated.orientation
+        ),
+        created_at=updated.created_at,
+        updated_at=updated.updated_at,
+    )

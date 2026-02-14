@@ -8,7 +8,9 @@ from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from src.core.container import Container
+from src.dependencies import get_current_suitor
 from src.models.domain_enums import BookingStatus
+from src.models.suitor_model import SuitorDb
 from src.repository.booking_repository import BookingRepository
 from src.repository.session_repository import SessionRepository
 from src.schemas.booking_schema import (
@@ -20,6 +22,7 @@ from src.schemas.booking_schema import (
 
 router = APIRouter(prefix="/bookings", tags=["Bookings"])
 
+CurrentSuitor = Annotated[SuitorDb, Depends(get_current_suitor)]
 BookingRepoDep = Annotated[
     BookingRepository, Depends(Provide[Container.booking_repository])
 ]
@@ -29,8 +32,8 @@ SessionRepoDep = Annotated[
 
 
 @router.get("/slots", response_model=AvailableSlotsResponse)
-async def get_slots():
-    """Get available date booking slots (placeholder data for Milestone 1)."""
+async def get_slots(_suitor: CurrentSuitor):
+    """Get available date booking slots for authenticated suitors (placeholder)."""
     now = datetime.now(timezone.utc)
     slots = [
         AvailableSlot(
@@ -52,15 +55,18 @@ async def get_slots():
 @inject
 async def create_booking(
     payload: BookingCreateRequest,
+    suitor: CurrentSuitor,
     booking_repo: BookingRepoDep,
     session_repo: SessionRepoDep,
 ):
-    """Create a booking confirmation for a successful suitor session."""
+    """Create a booking confirmation for an authenticated suitor's session."""
     session = await session_repo.read_by_id(payload.session_id)
     if not session:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Session not found"
         )
+    if session.suitor_id != suitor.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
 
     created = await booking_repo.create(
         booking_repo.model(
