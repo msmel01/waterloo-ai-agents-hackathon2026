@@ -1,6 +1,4 @@
-import { useState, FormEvent, useEffect } from 'react';
-import { SignedIn, SignedOut, SignInButton, SignUpButton, UserButton } from '@clerk/clerk-react';
-import { useUser } from '@clerk/clerk-react';
+import { useState, FormEvent } from 'react';
 
 interface ConnectScreenProps {
   onJoin: (displayName: string) => void;
@@ -8,14 +6,7 @@ interface ConnectScreenProps {
 }
 
 export function ConnectScreen({ onJoin, isJoining = false }: ConnectScreenProps) {
-  const { user } = useUser();
   const [displayName, setDisplayName] = useState('');
-
-  useEffect(() => {
-    if (user?.firstName || user?.fullName) {
-      setDisplayName(user.fullName ?? user.firstName ?? '');
-    }
-  }, [user]);
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -24,27 +15,7 @@ export function ConnectScreen({ onJoin, isJoining = false }: ConnectScreenProps)
   };
 
   return (
-    <div className="min-h-screen bg-stone-950 flex flex-col">
-      <header className="flex justify-end p-4">
-        <SignedIn>
-          <UserButton afterSignOutUrl="/" />
-        </SignedIn>
-        <SignedOut>
-          <div className="flex gap-2">
-            <SignInButton mode="modal">
-              <button className="px-4 py-2 rounded-lg bg-stone-800 hover:bg-stone-700 text-stone-200 text-sm">
-                Sign in
-              </button>
-            </SignInButton>
-            <SignUpButton mode="modal">
-              <button className="px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-sm">
-                Sign up
-              </button>
-            </SignUpButton>
-          </div>
-        </SignedOut>
-      </header>
-      <div className="flex-1 flex items-center justify-center p-4 -mt-16">
+    <div className="min-h-screen bg-stone-950 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="bg-stone-900/80 border border-stone-700/50 rounded-2xl shadow-xl shadow-rose-950/20 p-8">
           <h1 className="text-3xl font-bold text-rose-400 tracking-tight mb-1">
@@ -83,7 +54,6 @@ export function ConnectScreen({ onJoin, isJoining = false }: ConnectScreenProps)
           </form>
         </div>
       </div>
-    </div>
     </div>
   );
 }

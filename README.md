@@ -22,7 +22,7 @@ Output directory: `dist/`
 | Variable | Description |
 |----------|-------------|
 | `VITE_LIVEKIT_URL` | LiveKit server URL (e.g. `wss://your-project.livekit.cloud`). Set in `.env` for local dev and in Vercel project settings for production. |
-| `VITE_CLERK_PUBLISHABLE_KEY` | Clerk publishable key (from [Clerk Dashboard](https://dashboard.clerk.com) → API Keys). Required for authentication. Add when connecting your backend. |
+| `VITE_CLERK_PUBLISHABLE_KEY` | Clerk publishable key (from [Clerk Dashboard](https://dashboard.clerk.com) → API Keys). For future auth; not required for current dummy UI. |
 
 ## Deployment (Vercel)
 
@@ -31,9 +31,13 @@ Output directory: `dist/`
 - **Output directory:** `dist/`
 - Add `VITE_LIVEKIT_URL` and `VITE_CLERK_PUBLISHABLE_KEY` in your Vercel project environment variables.
 
+## Current state (dummy UI)
+
+The app runs a **full dummy UI** with TODO stubs. No login required. With placeholder token/URL, the ScreeningRoom shows demo mode (no real LiveKit connection). Use this to develop the UI while backend APIs are built.
+
 ## Token fetching
 
-The app currently uses a **placeholder token** in `src/lib/livekitToken.ts`. To connect to a real LiveKit room:
+The app uses a **placeholder token** stub in `src/lib/livekitToken.ts`. To connect to a real LiveKit room:
 
 1. Implement a backend endpoint that issues LiveKit access tokens using the [LiveKit Access Token API](https://docs.livekit.io/realtime/token/).
 2. Replace the mock implementation in `fetchLivekitToken()` with a call to your API, e.g.:
@@ -52,13 +56,10 @@ The app currently uses a **placeholder token** in `src/lib/livekitToken.ts`. To 
 
 ## Authentication (Clerk)
 
-The app uses [Clerk](https://clerk.com) for authentication. Auth state and tokens are available via `useAuth()` from `@clerk/clerk-react`. When your backend is connected:
+[Clerk](https://clerk.com) is included as a dependency for future use. No login is required for the current dummy UI. When your backend is connected:
 
-- Use `getToken()` from `useAuth()` to obtain the session JWT.
-- Attach it to API requests via `getAuthHeaders(getToken)` from `src/lib/clerk.ts`.
-- Your backend can verify the JWT and access user data.
-
-No backend is included in this repo; connect your API separately and wire it into `fetchLivekitToken` and any other endpoints.
+- Add `ClerkProvider` and wire `useAuth()` / `getToken()` for authenticated API calls.
+- Use `getAuthHeaders(getToken)` from `src/lib/clerk.ts` to attach the JWT to requests.
 
 ## Stack
 
