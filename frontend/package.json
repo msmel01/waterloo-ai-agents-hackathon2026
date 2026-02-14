@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@clerk/clerk-react": "^5.16.0",
+    "react-router-dom": "^7.0.0",
     "@livekit/components-react": "^2.6.0",
     "livekit-client": "^2.6.0",
     "react": "^18.3.1",
