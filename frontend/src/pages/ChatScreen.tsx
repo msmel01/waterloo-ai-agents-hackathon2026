@@ -44,7 +44,7 @@ export function ChatScreen() {
 
   const handleLeave = () => {
     setAuth(null);
-    navigate('/dates');
+    navigate('/chats');
   };
 
   if (isJoining) {

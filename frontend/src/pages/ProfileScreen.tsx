@@ -20,10 +20,10 @@ export function ProfileScreen() {
 
       <main className="flex-1 max-w-xl mx-auto w-full">
         <Link
-          to="/dates"
+          to="/chats"
           className="inline-block text-win-textMuted text-sm hover:text-win-text mb-4"
         >
-          ← Back to dates
+          ← Back to chats
         </Link>
         <Window title={`${displayName}Profile.exe`} icon="person">
           {/* TODO: Profile UI - placeholder for now */}

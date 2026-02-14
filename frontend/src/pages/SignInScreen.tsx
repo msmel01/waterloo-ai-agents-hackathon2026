@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useSignIn } from '@clerk/clerk-react';
 import { toast } from 'sonner';
 import { Window } from '../components/Window';
+import { AppHeader } from '../components/AppHeader';
 
 const inputClass =
   'w-full px-3 py-2 bg-white border border-gray-400 text-gray-900 placeholder-gray-500 text-sm focus:outline-none focus:border-win-titlebar';
@@ -37,9 +38,9 @@ export function SignInScreen() {
       if (res.status === 'complete' && res.createdSessionId) {
         await setActive({
           session: res.createdSessionId,
-          redirectUrl: `${window.location.origin}/dates`,
+          redirectUrl: `${window.location.origin}/chats`,
         });
-        navigate('/dates', { replace: true });
+        navigate('/chats', { replace: true });
         return;
       }
 
@@ -103,9 +104,9 @@ export function SignInScreen() {
         toast.success('Verification successful');
         await setActive({
           session: res.createdSessionId,
-          redirectUrl: `${window.location.origin}/dates`,
+          redirectUrl: `${window.location.origin}/chats`,
         });
-        navigate('/dates', { replace: true });
+        navigate('/chats', { replace: true });
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Verification failed');
@@ -124,12 +125,9 @@ export function SignInScreen() {
 
   return (
     <div className="min-h-screen bg-win-bg flex flex-col items-center justify-center py-6 px-4">
-      <header className="w-full max-w-md mb-6">
-        <h1 className="text-win-textMuted text-sm font-medium uppercase tracking-wider">
-          Valentine Hotline
-        </h1>
-        <div className="h-px bg-win-border mt-1" />
-      </header>
+      <div className="w-full max-w-md mb-6">
+        <AppHeader />
+      </div>
 
       <div className="w-full max-w-md">
         <Window title="SignIn.exe" icon="person">

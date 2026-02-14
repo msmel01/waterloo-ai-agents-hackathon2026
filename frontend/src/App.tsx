@@ -13,6 +13,7 @@ function App() {
         <Route path="/" element={<OnboardingScreen />} />
         <Route path="/sign-in" element={<SignInScreen />} />
         <Route path="/sign-up" element={<SignUpScreen />} />
+        <Route path="/chats" element={<DatesGrid />} />
         <Route path="/dates" element={<DatesGrid />} />
         <Route path="/profile/:slug" element={<ProfileScreen />} />
         <Route path="/chat/:slug" element={<ChatScreen />} />
