@@ -27,12 +27,15 @@ class ScoringService:
     """Scores completed interviews with Claude and normalizes output."""
 
     def __init__(self) -> None:
-        if config.ANTHROPIC_API_KEY is None:
-            raise RuntimeError("ANTHROPIC_API_KEY is not configured")
-
-        self.client = AsyncAnthropic(
-            api_key=config.ANTHROPIC_API_KEY.get_secret_value()
+        api_key = (
+            config.ANTHROPIC_API_KEY.get_secret_value()
+            if config.ANTHROPIC_API_KEY is not None
+            else None
         )
+        if not api_key or not api_key.strip():
+            raise RuntimeError("ANTHROPIC_API_KEY is missing or empty")
+
+        self.client = AsyncAnthropic(api_key=api_key.strip())
         self.model = "claude-sonnet-4-20250514"
 
     async def score_session(
