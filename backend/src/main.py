@@ -91,7 +91,7 @@ class AppCreator:
                 CORSMiddleware,
                 allow_origins=[str(origin) for origin in config.BACKEND_CORS_ORIGINS],
                 allow_credentials=False,
-                allow_methods=["GET", "POST", "PATCH", "OPTIONS"],
+                allow_methods=["GET", "POST", "PATCH", "OPTIONS", "DELETE", "PUT"],
                 allow_headers=[
                     "Content-Type",
                     "Authorization",
