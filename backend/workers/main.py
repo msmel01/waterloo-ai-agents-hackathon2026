@@ -100,10 +100,6 @@ async def score_session_task(ctx: dict, session_id: str) -> None:
         if not isinstance(turn_summaries, list):
             turn_summaries = []
 
-        emotion_timeline = session.emotion_timeline or []
-        if not isinstance(emotion_timeline, list):
-            emotion_timeline = []
-
         from src.services.scoring.scoring_service import ScoringService
 
         scoring_service = ScoringService()
@@ -120,7 +116,6 @@ async def score_session_task(ctx: dict, session_id: str) -> None:
                 "end_reason": session.end_reason,
             },
             turn_summaries=turn_summaries,
-            emotion_timeline=emotion_timeline,
             transcript=transcript,
         )
         score_payload["session_id"] = session_uuid

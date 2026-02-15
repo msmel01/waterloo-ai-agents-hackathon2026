@@ -1116,38 +1116,6 @@
         "title": "CalendarStatusResponse",
         "description": "Calendar status response with lightweight slot preview."
       },
-      "EmotionModifiers": {
-        "properties": {
-          "confidence_boost": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Confidence Boost",
-            "description": "Positive weighting from confidence signals."
-          },
-          "hesitation_penalty": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Hesitation Penalty",
-            "description": "Negative weighting from hesitation signals."
-          }
-        },
-        "additionalProperties": true,
-        "type": "object",
-        "title": "EmotionModifiers",
-        "description": "Emotion-based score modifiers."
-      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -1799,7 +1767,7 @@
               }
             ],
             "title": "Raw Score",
-            "description": "Weighted score before emotion modifier."
+            "description": "Weighted score before final rounding."
           },
           "final_score": {
             "anyOf": [
@@ -1811,7 +1779,7 @@
               }
             ],
             "title": "Final Score",
-            "description": "Final score after emotion modifier (0-100)."
+            "description": "Final score (0-100)."
           },
           "effort_score": {
             "anyOf": [
@@ -1860,32 +1828,6 @@
             ],
             "title": "Emotional Intelligence Score",
             "description": "Emotional intelligence score (0-100)."
-          },
-          "emotion_modifiers": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/EmotionModifiers"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Emotion-based score modifiers."
-          },
-          "emotion_modifier_reasons": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Emotion Modifier Reasons",
-            "description": "Human-readable reasons for emotion modifier."
           },
           "feedback_text": {
             "anyOf": [

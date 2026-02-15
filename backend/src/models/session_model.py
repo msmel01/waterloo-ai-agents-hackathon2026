@@ -75,9 +75,6 @@ class SessionDb(SQLModel, table=True):
     turn_summaries: Optional[dict[str, Any]] = Field(
         default=None, sa_column=Column(JSONB, nullable=True)
     )
-    emotion_timeline: Optional[list[dict[str, Any]]] = Field(
-        default=None, sa_column=Column(JSONB, nullable=True)
-    )
     audio_recording_url: Optional[str] = Field(
         default=None, sa_column=Column(Text, nullable=True)
     )

@@ -15,21 +15,19 @@ from src.services.scoring.scoring_service import ScoringService
 from workers.main import score_session_task
 
 
-def _score_payload(e=80, c=70, i=90, eq=60, modifier=0):
+def _score_payload(e=80, c=70, i=90, eq=60):
     return {
-        "category_scores": {
+        "scores": {
             "effort": e,
             "creativity": c,
             "intent_clarity": i,
             "emotional_intelligence": eq,
         },
-        "emotion_modifier": modifier,
-        "emotion_modifier_reasons": ["steady confidence"],
         "feedback": {
             "summary": "Strong clarity and effort.",
             "strengths": ["specific answers", "good intent"],
             "improvements": ["more humor"],
-            "heart_note": "good fit",
+            "favorite_moment": "The stargazing answer stood out.",
         },
         "per_question_scores": [
             {
@@ -39,7 +37,6 @@ def _score_payload(e=80, c=70, i=90, eq=60, modifier=0):
                 "creativity": c,
                 "intent_clarity": i,
                 "emotional_intelligence": eq,
-                "emotion_context": "calm",
                 "note": "solid",
             }
         ],
@@ -68,12 +65,11 @@ async def test_m5_002_scoring_worker_picks_up_job(monkeypatch):
 @pytest.mark.asyncio
 async def test_m5_003_scoring_worker_fetches_session_data(completed_session):
     assert completed_session.turn_summaries is not None
-    assert completed_session.emotion_timeline is not None
 
 
 @pytest.mark.asyncio
 async def test_m5_004_scoring_prompt_includes_heart_preferences(
-    heart_config, sample_transcript, sample_emotion_timeline
+    heart_config, sample_transcript
 ):
     prompt = build_scoring_prompt(
         heart_config={
@@ -84,16 +80,15 @@ async def test_m5_004_scoring_prompt_includes_heart_preferences(
         },
         session_data={"session_id": "s1"},
         turn_summaries=sample_transcript,
-        emotion_timeline=sample_emotion_timeline,
         transcript=[{"speaker": "suitor", "content": "hello"}],
     )
     assert "dealbreakers" in prompt.lower()
+    assert "prosody" not in prompt.lower()
+    assert "emotion modifier" not in prompt.lower()
 
 
 @pytest.mark.asyncio
-async def test_m5_005_scoring_prompt_includes_transcript(
-    sample_transcript, sample_emotion_timeline
-):
+async def test_m5_005_scoring_prompt_includes_transcript(sample_transcript):
     prompt = build_scoring_prompt(
         heart_config={
             "display_name": "Luna",
@@ -103,16 +98,13 @@ async def test_m5_005_scoring_prompt_includes_transcript(
         },
         session_data={"session_id": "s1"},
         turn_summaries=sample_transcript,
-        emotion_timeline=sample_emotion_timeline,
         transcript=[{"speaker": "suitor", "content": "I like hiking"}],
     )
     assert "I like hiking" in prompt
 
 
 @pytest.mark.asyncio
-async def test_m5_006_scoring_prompt_includes_emotion_timeline(
-    sample_transcript, sample_emotion_timeline
-):
+async def test_m5_006_scoring_prompt_excludes_emotion_timeline(sample_transcript):
     prompt = build_scoring_prompt(
         heart_config={
             "display_name": "Luna",
@@ -122,16 +114,13 @@ async def test_m5_006_scoring_prompt_includes_emotion_timeline(
         },
         session_data={"session_id": "s1"},
         turn_summaries=sample_transcript,
-        emotion_timeline=sample_emotion_timeline,
         transcript=[],
     )
-    assert "Emotional arc" in prompt
+    assert "emotional arc" not in prompt.lower()
 
 
 @pytest.mark.asyncio
-async def test_m5_007_scoring_prompt_defines_categories(
-    sample_transcript, sample_emotion_timeline
-):
+async def test_m5_007_scoring_prompt_defines_categories(sample_transcript):
     prompt = build_scoring_prompt(
         heart_config={
             "display_name": "Luna",
@@ -141,7 +130,6 @@ async def test_m5_007_scoring_prompt_defines_categories(
         },
         session_data={"session_id": "s1"},
         turn_summaries=sample_transcript,
-        emotion_timeline=sample_emotion_timeline,
         transcript=[],
     )
     for label in ["Effort", "Creativity", "Intent clarity", "Emotional intelligence"]:
@@ -149,9 +137,7 @@ async def test_m5_007_scoring_prompt_defines_categories(
 
 
 @pytest.mark.asyncio
-async def test_m5_008_scoring_prompt_defines_emotion_modifiers(
-    sample_transcript, sample_emotion_timeline
-):
+async def test_m5_008_scoring_prompt_has_no_modifiers(sample_transcript):
     prompt = build_scoring_prompt(
         heart_config={
             "display_name": "Luna",
@@ -161,30 +147,29 @@ async def test_m5_008_scoring_prompt_defines_emotion_modifiers(
         },
         session_data={"session_id": "s1"},
         turn_summaries=sample_transcript,
-        emotion_timeline=sample_emotion_timeline,
         transcript=[],
     )
-    assert "modifier" in prompt.lower()
+    assert "modifier" not in prompt.lower()
 
 
 @pytest.mark.asyncio
 async def test_m5_009_effort_score_range():
-    assert 0 <= _score_payload()["category_scores"]["effort"] <= 100
+    assert 0 <= _score_payload()["scores"]["effort"] <= 100
 
 
 @pytest.mark.asyncio
 async def test_m5_010_creativity_score_range():
-    assert 0 <= _score_payload()["category_scores"]["creativity"] <= 100
+    assert 0 <= _score_payload()["scores"]["creativity"] <= 100
 
 
 @pytest.mark.asyncio
 async def test_m5_011_intent_clarity_score_range():
-    assert 0 <= _score_payload()["category_scores"]["intent_clarity"] <= 100
+    assert 0 <= _score_payload()["scores"]["intent_clarity"] <= 100
 
 
 @pytest.mark.asyncio
 async def test_m5_012_emotional_intelligence_score_range():
-    assert 0 <= _score_payload()["category_scores"]["emotional_intelligence"] <= 100
+    assert 0 <= _score_payload()["scores"]["emotional_intelligence"] <= 100
 
 
 @pytest.mark.asyncio
@@ -195,12 +180,10 @@ async def test_m5_013_aggregate_score_weighted_correctly():
 
 
 @pytest.mark.asyncio
-async def test_m5_014_emotion_modifiers_applied():
+async def test_m5_014_no_modifier_adjustment_applied():
     raw = 75.5
-    boosted = raw + 3
-    penalized = raw - 4
-    assert boosted > raw
-    assert penalized < raw
+    final = raw
+    assert final == raw
 
 
 @pytest.mark.asyncio
@@ -230,7 +213,6 @@ async def test_m5_018_verdict_stored_in_db(completed_session):
         weighted_total=75.5,
         verdict=Verdict.DATE,
         feedback_text="Great fit",
-        emotion_modifiers={},
     )
     assert score.session_id == completed_session.id
 
@@ -272,7 +254,6 @@ async def test_m5_023_get_verdict_api_success(registered_suitor, completed_sessi
         weighted_total=75.5,
         verdict=Verdict.DATE,
         feedback_text="Great fit",
-        emotion_modifiers={},
     )
     completed_session.verdict_status = "ready"
     res = await get_session_verdict.__wrapped__(
@@ -327,7 +308,6 @@ async def test_m5_026_verdict_response_shape(registered_suitor, completed_sessio
         weighted_total=75.5,
         verdict=Verdict.DATE,
         feedback_text="Great fit",
-        emotion_modifiers={},
     )
     out = await get_session_verdict.__wrapped__(
         completed_session.id, registered_suitor, session_repo, score_repo, heart_repo
@@ -349,7 +329,7 @@ async def test_m5_027_scoring_retries_on_claude_api_failure(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_m5_028_scoring_handles_empty_transcript(sample_emotion_timeline):
+async def test_m5_028_scoring_handles_empty_transcript():
     prompt = build_scoring_prompt(
         heart_config={
             "display_name": "Luna",
@@ -359,14 +339,15 @@ async def test_m5_028_scoring_handles_empty_transcript(sample_emotion_timeline):
         },
         session_data={"session_id": "s1"},
         turn_summaries=[],
-        emotion_timeline=sample_emotion_timeline,
         transcript=[],
     )
     assert "No transcript available" in prompt
 
 
 @pytest.mark.asyncio
-async def test_m5_029_scoring_handles_missing_emotion_data(sample_transcript):
+async def test_m5_029_scoring_handles_missing_optional_feedback_fields(
+    sample_transcript,
+):
     prompt = build_scoring_prompt(
         heart_config={
             "display_name": "Luna",
@@ -376,16 +357,13 @@ async def test_m5_029_scoring_handles_missing_emotion_data(sample_transcript):
         },
         session_data={"session_id": "s1"},
         turn_summaries=sample_transcript,
-        emotion_timeline=[],
         transcript=[],
     )
-    assert "Insufficient emotion data" in prompt
+    assert "return only valid json" in prompt.lower()
 
 
 @pytest.mark.asyncio
-async def test_m5_030_scoring_handles_partial_conversation(
-    sample_transcript, sample_emotion_timeline
-):
+async def test_m5_030_scoring_handles_partial_conversation(sample_transcript):
     prompt = build_scoring_prompt(
         heart_config={
             "display_name": "Luna",
@@ -395,7 +373,6 @@ async def test_m5_030_scoring_handles_partial_conversation(
         },
         session_data={"session_id": "s1", "end_reason": "suitor_disconnected"},
         turn_summaries=sample_transcript[:2],
-        emotion_timeline=sample_emotion_timeline[:4],
         transcript=[{"speaker": "suitor", "content": "partial"}],
     )
     assert "suitor_disconnected" in prompt

@@ -399,7 +399,7 @@ async def session_detail(
     turn_repo: TurnRepoDep,
     score_repo: ScoreRepoDep,
 ):
-    """Get transcript, emotion data, and scoring details for a specific session."""
+    """Get transcript and scoring details for a specific session."""
     heart = await _get_heart_or_404(current_user, heart_repo)
     session = await session_repo.read_by_id(id)
 
@@ -426,7 +426,6 @@ async def session_detail(
                 turn_index=turn.turn_index,
                 speaker=turn.speaker,
                 content=turn.content,
-                emotion_data=turn.emotion_data,
                 duration_seconds=turn.duration_seconds,
                 created_at=turn.created_at,
             )
@@ -441,7 +440,6 @@ async def session_detail(
                 weighted_total=score.weighted_total,
                 verdict=score.verdict,
                 feedback_text=score.feedback_text,
-                emotion_modifiers=score.emotion_modifiers,
             )
             if score
             else None

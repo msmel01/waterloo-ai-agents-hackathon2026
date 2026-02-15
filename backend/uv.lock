@@ -682,18 +682,6 @@ wheels = [
 ]
 
 [[package]]
-name = "exceptiongroup"
-version = "1.3.1"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "typing-extensions", marker = "python_full_version < '3.13'" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/50/79/66800aadf48771f6b62f7eb014e352e5d06856655206165d775e675a02c9/exceptiongroup-1.3.1.tar.gz", hash = "sha256:8b412432c6055b0b7d14c310000ae93352ed6754f70fa8f7c34141f91c4e3219", size = 30371 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/8a/0e/97c33bf5009bdbac74fd2beace167cab3f978feb69cc36f1ef79360d6c4e/exceptiongroup-1.3.1-py3-none-any.whl", hash = "sha256:a7a39a3bd276781e98394987d3a5701d0c4edffb633bb7a5144577f82c773598", size = 16740 },
-]
-
-[[package]]
 name = "fastapi"
 version = "0.128.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1325,25 +1313,6 @@ wheels = [
 ]
 
 [[package]]
-name = "hume"
-version = "0.13.8"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "aiofiles" },
-    { name = "eval-type-backport" },
-    { name = "exceptiongroup" },
-    { name = "httpx" },
-    { name = "pydantic" },
-    { name = "pydantic-core" },
-    { name = "typing-extensions" },
-    { name = "websockets" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/93/5b/849ac072161e985ce5758f19f792043274b64a9f9dd73fdd14333b7446f4/hume-0.13.8.tar.gz", hash = "sha256:067691b0ce0353e4438d32d5fbfcbb6ed2099533bf5e06af99084c8c76fad24f", size = 142326 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/48/10/ec2c1e9a0401a39c3575ff8c5e42ad4b03687d5dbdefaa94ec5d52dbe088/hume-0.13.8-py3-none-any.whl", hash = "sha256:8295c095e4e04918512eec2df3adf4a0900b8d7ef06e3e8487c45ab520ed0ad5", size = 353023 },
-]
-
-[[package]]
 name = "idna"
 version = "3.11"
 source = { registry = "https://pypi.org/simple" }
@@ -1794,9 +1763,6 @@ codecs = [
 deepgram = [
     { name = "livekit-plugins-deepgram" },
 ]
-hume = [
-    { name = "livekit-plugins-hume" },
-]
 images = [
     { name = "pillow" },
 ]
@@ -1872,19 +1838,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/08/03/8ce5dcc15126fa4c0c00eb2cef90448abf080361c925c1260164d6caec89/livekit_plugins_deepgram-1.4.1.tar.gz", hash = "sha256:f2da1cee631f0f18dcd245caebcf00504ca974efda0df90a407a5343d756344d", size = 16652 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/15/63/99515b6fbdabbb51068af09fdd5ed671fb320838226fe6eaf5a473a55655/livekit_plugins_deepgram-1.4.1-py3-none-any.whl", hash = "sha256:c6368ea7357413baf2ce3fe1b5e524840d550a33a9fc2f8204b4816c64b4c6a5", size = 21838 },
-]
-
-[[package]]
-name = "livekit-plugins-hume"
-version = "1.4.1"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "aiohttp" },
-    { name = "livekit-agents" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/55/54/6347231b60e90402ee798b958a5e82c61b3fdc4cfec74622509d1a44176b/livekit_plugins_hume-1.4.1.tar.gz", hash = "sha256:f479e38358e8db0ec17d2ead3c37a519c3e5343ab53d25f6bba2b81d846609c0", size = 6395 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/5a/0f/29be4ea0380dcf14180ea12cdad9618e1dfe82235d55095b944a9b21bcf1/livekit_plugins_hume-1.4.1-py3-none-any.whl", hash = "sha256:b15161df61d491633d9eb0222ec13453ffa6c69c4f17a115f6fe45a80e6248ca", size = 6804 },
 ]
 
 [[package]]
@@ -4288,14 +4241,13 @@ dependencies = [
     { name = "fastapi-mcp" },
     { name = "greenlet" },
     { name = "httpx" },
-    { name = "hume" },
     { name = "langchain" },
     { name = "langchain-community" },
     { name = "langchain-huggingface" },
     { name = "langchain-mcp-adapters" },
     { name = "langchain-openai" },
     { name = "langgraph-checkpoint-postgres" },
-    { name = "livekit-agents", extra = ["deepgram", "hume", "openai", "silero", "smallestai", "turn-detector"] },
+    { name = "livekit-agents", extra = ["deepgram", "openai", "silero", "smallestai", "turn-detector"] },
     { name = "livekit-api" },
     { name = "loguru" },
     { name = "opentelemetry-instrumentation-fastapi" },
@@ -4330,14 +4282,13 @@ requires-dist = [
     { name = "fastapi-mcp", specifier = ">=0.4.0" },
     { name = "greenlet", specifier = ">=3.3.1" },
     { name = "httpx", specifier = ">=0.23,<1.0" },
-    { name = "hume", specifier = ">=0.13.8" },
     { name = "langchain", specifier = ">=1.2.10" },
     { name = "langchain-community", specifier = ">=0.4.1" },
     { name = "langchain-huggingface", specifier = ">=1.2.0" },
     { name = "langchain-mcp-adapters", specifier = ">=0.1.9" },
     { name = "langchain-openai", specifier = ">=1.1.9" },
     { name = "langgraph-checkpoint-postgres", specifier = ">=3.0.4" },
-    { name = "livekit-agents", extras = ["deepgram", "hume", "openai", "silero", "smallestai", "turn-detector"], specifier = "~=1.0" },
+    { name = "livekit-agents", extras = ["deepgram", "openai", "silero", "smallestai", "turn-detector"], specifier = "~=1.0" },
     { name = "livekit-api", specifier = ">=1.0.2" },
     { name = "loguru", specifier = ">=0.7.3" },
     { name = "opentelemetry-instrumentation-fastapi", specifier = ">=0.60b1" },
