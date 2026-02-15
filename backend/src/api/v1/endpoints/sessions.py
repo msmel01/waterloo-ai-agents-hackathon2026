@@ -17,6 +17,7 @@ from fastapi.responses import JSONResponse
 from src.core.config import config
 from src.core.container import Container
 from src.core.exceptions import NotFoundError
+from src.core.validators import sanitize_input
 from src.dependencies import (
     get_calcom_service,
     get_current_suitor,
@@ -314,11 +315,26 @@ async def start_session(
             ),
         )
 
+    active_for_heart = 0
+    count_active_fn = getattr(session_repo, "count_active_by_heart", None)
+    if callable(count_active_fn):
+        counted = await count_active_fn(heart.id)
+        if isinstance(counted, int):
+            active_for_heart = counted
+
+    if active_for_heart >= config.MAX_CONCURRENT_SESSIONS:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Too many active sessions. Please try again later.",
+        )
+
     draft = session_repo.model(
         heart_id=heart.id,
         suitor_id=suitor.id,
         status=SessionStatus.PENDING,
         livekit_room_name=None,
+        consent_given_at=datetime.now(timezone.utc),
+        session_metadata={"consent": {"source": "chat_screen", "version": "m8"}},
     )
     created = await session_repo.create(draft)
     room_name = f"session-{created.id}"
@@ -657,6 +673,11 @@ async def get_session_slots(
         raw_slots = await calcom.get_available_slots(
             _to_utc_iso(start_dt), _to_utc_iso(end_dt)
         )
+    except httpx.HTTPStatusError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Unable to load available times. Please try again.",
+        ) from exc
     except Exception as exc:
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
@@ -750,13 +771,29 @@ async def create_session_booking(
             detail="This time slot is no longer available. Please choose another.",
         )
 
+    clean_name = sanitize_input(payload.suitor_name) or payload.suitor_name
+    clean_notes = sanitize_input(payload.suitor_notes)
+
     try:
         booking_payload = await calcom.create_booking(
             slot_start=_to_utc_iso(selected[0]),
-            attendee_name=payload.suitor_name,
+            attendee_name=clean_name,
             attendee_email=payload.suitor_email,
-            notes=payload.suitor_notes,
+            notes=clean_notes,
         )
+    except httpx.HTTPStatusError as exc:
+        if (
+            exc.response is not None
+            and exc.response.status_code == status.HTTP_409_CONFLICT
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Slot no longer available, please pick another.",
+            ) from exc
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Unable to create booking. Please try another slot.",
+        ) from exc
     except Exception as exc:
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,

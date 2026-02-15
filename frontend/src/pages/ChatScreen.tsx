@@ -20,6 +20,7 @@ export function ChatScreen() {
 
   const [auth, setAuth] = useState<AuthState | null>(null);
   const [blockingReason, setBlockingReason] = useState<string | null>(null);
+  const [hasConsent, setHasConsent] = useState(false);
 
   const hasStartedRef = useRef(false);
 
@@ -85,6 +86,9 @@ export function ChatScreen() {
 
     if (!preCheck.can_start && !preCheck.active_session_id) {
       setBlockingReason(preCheck.reason ?? 'You cannot start an interview right now.');
+      return;
+    }
+    if (!hasConsent) {
       return;
     }
 
@@ -155,6 +159,14 @@ export function ChatScreen() {
     navigate('/chats');
   };
 
+  const handleConsentCancel = () => {
+    navigate(slug ? `/profile/${slug}` : '/chats', { replace: true });
+  };
+
+  const handleConsentAgree = () => {
+    setHasConsent(true);
+  };
+
   if (profileQuery.isLoading || preCheckQuery.isLoading || startSession.isPending) {
     return (
       <div className="min-h-screen bg-win-bg flex items-center justify-center">
@@ -181,7 +193,36 @@ export function ChatScreen() {
   }
 
   if (!auth) {
-    return null;
+    return (
+      <div className="min-h-screen bg-win-bg flex items-center justify-center p-4">
+        <div className="w-full max-w-xl border border-palette-orchid bg-white shadow-bevel p-5">
+          <h1 className="text-win-titlebar text-lg font-semibold mb-3">Before We Begin</h1>
+          <ul className="space-y-2 text-sm text-gray-700 list-disc pl-5">
+            <li>Your voice conversation will be transcribed and stored.</li>
+            <li>Your responses will be evaluated by an AI scoring system.</li>
+            <li>Your name and responses may be visible to the Heart in the dashboard.</li>
+            <li>If matched, your email will be used for booking only.</li>
+            <li>Data is retained for 90 days and then anonymized.</li>
+          </ul>
+          <div className="mt-5 flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={handleConsentCancel}
+              className="px-4 py-2 text-sm border border-palette-orchid text-win-titlebar"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleConsentAgree}
+              className="px-4 py-2 text-sm bg-win-titlebar text-white border border-palette-orchid"
+            >
+              I Agree, Let&apos;s Go
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (

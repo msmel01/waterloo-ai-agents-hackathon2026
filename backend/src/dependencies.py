@@ -83,7 +83,7 @@ async def verify_dashboard_access(
     expected = config.DASHBOARD_API_KEY
     if request is not None and _has_invalid_dashboard_query(request):
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail="Invalid query parameters",
         )
     if not x_dashboard_key or not expected or x_dashboard_key != expected:

@@ -75,6 +75,12 @@ class SessionDb(SQLModel, table=True):
     turn_summaries: Optional[dict[str, Any]] = Field(
         default=None, sa_column=Column(JSONB, nullable=True)
     )
+    consent_given_at: Optional[datetime] = Field(
+        default=None, sa_column=Column(DateTime(timezone=True), nullable=True)
+    )
+    session_metadata: Optional[dict[str, Any]] = Field(
+        default=None, sa_column=Column("metadata", JSONB, nullable=True)
+    )
     audio_recording_url: Optional[str] = Field(
         default=None, sa_column=Column(Text, nullable=True)
     )

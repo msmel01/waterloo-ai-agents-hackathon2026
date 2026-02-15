@@ -90,6 +90,20 @@ class SessionRepository(BaseRepository):
             count = result.scalar_one_or_none()
             return int(count or 0)
 
+    async def count_active_by_heart(self, heart_id: uuid.UUID) -> int:
+        """Count active sessions for one heart (pending/in-progress)."""
+        async with self.session_factory() as session:
+            result = await session.execute(
+                select(func.count(self.model.id)).where(
+                    self.model.heart_id == heart_id,
+                    self.model.status.in_(
+                        [SessionStatus.PENDING, SessionStatus.IN_PROGRESS]
+                    ),
+                )
+            )
+            count = result.scalar_one_or_none()
+            return int(count or 0)
+
     async def find_by_suitor(
         self, suitor_id: uuid.UUID, *, limit: int = 20
     ) -> list[SessionDb]:

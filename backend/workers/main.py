@@ -16,6 +16,9 @@ from src.core.database import Database
 from src.core.exceptions import DuplicatedError, NotFoundError
 from src.models.domain_enums import SessionStatus
 from src.models.heart_model import HeartDb
+from src.models.score_model import ScoreDb
+from src.models.session_model import SessionDb
+from src.models.suitor_model import SuitorDb
 from src.repository.conversation_turn_repository import ConversationTurnRepository
 from src.repository.score_repository import ScoreRepository
 from src.repository.session_repository import SessionRepository
@@ -254,6 +257,103 @@ async def cleanup_stale_sessions(ctx: dict) -> dict[str, int]:
     }
 
 
+async def cleanup_old_data(ctx: dict) -> dict[str, int]:
+    """Daily retention cleanup: anonymize old completed data and delete stale failures."""
+    _ = ctx
+    retention_cutoff = datetime.now(timezone.utc) - timedelta(
+        days=config.DATA_RETENTION_DAYS
+    )
+    orphan_cutoff = datetime.now(timezone.utc) - timedelta(days=7)
+
+    async with database.session() as session:
+        failed_query = select(SessionDb).where(
+            SessionDb.status == SessionStatus.FAILED,
+            SessionDb.created_at < retention_cutoff,
+        )
+        failed_sessions = (await session.execute(failed_query)).scalars().all()
+        for item in failed_sessions:
+            await session.delete(item)
+
+        completed_query = select(SessionDb).where(
+            SessionDb.status.in_(
+                [SessionStatus.COMPLETED, SessionStatus.SCORING, SessionStatus.SCORED]
+            ),
+            SessionDb.created_at < retention_cutoff,
+        )
+        completed_sessions = (await session.execute(completed_query)).scalars().all()
+        for item in completed_sessions:
+            item.turn_summaries = None
+            metadata = dict(item.session_metadata or {})
+            metadata["retention"] = {
+                "anonymized_at": datetime.now(timezone.utc).isoformat(),
+                "policy_days": config.DATA_RETENTION_DAYS,
+            }
+            item.session_metadata = metadata
+            session.add(item)
+
+        orphan_query = select(SuitorDb).where(SuitorDb.created_at < orphan_cutoff)
+        orphans = (await session.execute(orphan_query)).scalars().all()
+        orphan_count = 0
+        for suitor in orphans:
+            has_session = bool(
+                (
+                    await session.execute(
+                        select(SessionDb.id)
+                        .where(SessionDb.suitor_id == suitor.id)
+                        .limit(1)
+                    )
+                ).first()
+            )
+            if has_session:
+                continue
+            await session.delete(suitor)
+            orphan_count += 1
+
+        await session.commit()
+
+    logger.info(
+        "Retention cleanup complete failed_deleted=%s completed_anonymized=%s orphans_deleted=%s",
+        len(failed_sessions),
+        len(completed_sessions),
+        orphan_count,
+    )
+    return {
+        "failed_deleted": len(failed_sessions),
+        "completed_anonymized": len(completed_sessions),
+        "orphans_deleted": orphan_count,
+    }
+
+
+async def retry_pending_scoring(ctx: dict) -> dict[str, int]:
+    """Retry scoring for completed sessions that still don't have scores."""
+    _ = ctx
+    cutoff = datetime.now(timezone.utc) - timedelta(minutes=5)
+    retried = 0
+
+    async with database.session() as session:
+        pending_query = (
+            select(SessionDb)
+            .outerjoin(ScoreDb, ScoreDb.session_id == SessionDb.id)
+            .where(
+                SessionDb.status.in_([SessionStatus.COMPLETED, SessionStatus.SCORING]),
+                ScoreDb.id.is_(None),
+                SessionDb.ended_at.is_not(None),
+                SessionDb.ended_at < cutoff,
+            )
+            .limit(50)
+        )
+        pending = (await session.execute(pending_query)).scalars().all()
+
+    for candidate in pending:
+        try:
+            await score_session_task({}, str(candidate.id))
+            retried += 1
+        except Exception:
+            logger.exception("Retry scoring failed for session %s", candidate.id)
+
+    return {"retried": retried}
+
+
 class WorkerSettings:
     """arq worker configuration."""
 
@@ -265,12 +365,16 @@ class WorkerSettings:
         send_notification,
         poll_tavus_replica_status,
         cleanup_stale_sessions,
+        cleanup_old_data,
+        retry_pending_scoring,
     ]
     cron_jobs = [
         cron(
             cleanup_stale_sessions,
             minute={0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55},
         ),
+        cron(retry_pending_scoring, minute={2, 12, 22, 32, 42, 52}),
+        cron(cleanup_old_data, hour={3}, minute={0}),
     ]
     max_tries = 3
     job_timeout = 300

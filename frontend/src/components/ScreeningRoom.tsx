@@ -129,6 +129,8 @@ function LiveKitRoomWrapper({
       <div className="flex justify-center gap-4 py-6">
         <button
           onClick={isMuted ? unmuteMic : muteMic}
+          aria-pressed={isMuted}
+          aria-label={isMuted ? 'Unmute microphone' : 'Mute microphone'}
           className="px-6 py-2.5 border border-palette-orchid shadow-bevel bg-palette-sand text-gray-800 text-sm hover:bg-win-titlebar hover:text-white hover:border-palette-orchid transition-colors"
         >
           {isMuted ? 'Unmute' : 'Mute'}
