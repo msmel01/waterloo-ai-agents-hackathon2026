@@ -7,6 +7,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 
+from agent.session_manager import SessionManager
 from src.api.v1.endpoints.public import get_public_profile
 from src.api.v1.endpoints.sessions import (
     SessionStartRequest,
@@ -131,8 +132,14 @@ async def test_e2e_003_livekit_room_creation_fails(seeded_heart, registered_suit
 
 @pytest.mark.asyncio
 async def test_e2e_004_conversation_persists_without_emotion_payload():
-    payload = {"turns": []}
+    mgr = SessionManager("session-1", [{"text": "What made you swipe right?"}])
+    mgr.add_transcript_entry("avatar", "What made you swipe right?")
+    mgr.add_transcript_entry("suitor", "Your hiking bio was thoughtful.")
+    mgr.record_response(0, "Referenced the hiking bio", "strong")
+    payload = mgr.get_session_data()
     assert "emotion_timeline" not in payload
+    assert payload["turns"]
+    assert "emotions" not in payload["turns"][0]
 
 
 @pytest.mark.asyncio

@@ -57,6 +57,7 @@ def downgrade() -> None:
         sa.Column(
             "emotion_modifiers",
             postgresql.JSONB(astext_type=sa.Text()),
+            server_default=sa.text("'{}'::jsonb"),
             autoincrement=False,
             nullable=False,
         ),
