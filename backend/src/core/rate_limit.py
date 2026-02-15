@@ -12,6 +12,27 @@ from typing import Pattern
 
 from fastapi import Request
 
+try:
+    from slowapi import Limiter
+    from slowapi.util import get_remote_address
+except Exception:  # pragma: no cover - optional dependency
+    Limiter = None  # type: ignore[assignment]
+    get_remote_address = None  # type: ignore[assignment]
+
+
+if Limiter is not None and get_remote_address is not None:
+    limiter = Limiter(key_func=get_remote_address)
+else:  # pragma: no cover - fallback for environments without slowapi
+
+    class _NoOpLimiter:
+        def limit(self, *_args, **_kwargs):
+            def _decorator(func):
+                return func
+
+            return _decorator
+
+    limiter = _NoOpLimiter()
+
 
 @dataclass(frozen=True)
 class RateLimitRule:

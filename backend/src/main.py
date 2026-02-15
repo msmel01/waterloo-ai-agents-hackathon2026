@@ -40,10 +40,20 @@ from src.core.exceptions import (
     ValidationError,
 )
 from src.core.observability import configure_sentry, configure_structlog
-from src.core.rate_limit import InMemoryRateLimiter
+from src.core.rate_limit import InMemoryRateLimiter, limiter
 from src.util.class_object import singleton
 
 logger = logging.getLogger(__name__)
+
+try:
+    from slowapi import Limiter, _rate_limit_exceeded_handler
+    from slowapi.errors import RateLimitExceeded
+    from slowapi.util import get_remote_address
+except Exception:  # pragma: no cover - optional dependency
+    Limiter = None  # type: ignore[assignment]
+    _rate_limit_exceeded_handler = None  # type: ignore[assignment]
+    RateLimitExceeded = Exception  # type: ignore[assignment]
+    get_remote_address = None  # type: ignore[assignment]
 
 
 @singleton
@@ -69,6 +79,12 @@ class AppCreator:
         self.app.state.container = self.container
         self.db = self.container.database()
         self.app.state.rate_limiter = InMemoryRateLimiter()
+        if Limiter is not None and get_remote_address is not None:
+            self.app.state.limiter = limiter
+            if _rate_limit_exceeded_handler is not None:
+                self.app.add_exception_handler(
+                    RateLimitExceeded, _rate_limit_exceeded_handler
+                )
 
         if config.BACKEND_CORS_ORIGINS:
             self.app.add_middleware(
