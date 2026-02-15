@@ -594,8 +594,8 @@ async def get_dashboard_trends(
     request: Request,
     _auth: DashboardAuthDep,
     db: DbDep,
-    period: Literal["daily", "weekly"] = Query(default="daily"),
-    days: int = Query(default=30, ge=1, le=365),
+    period: Annotated[Literal["daily", "weekly"], Query()] = "daily",
+    days: Annotated[int, Query(ge=1, le=365)] = 30,
 ):
     heart = await _resolve_heart(request, db)
     cutoff = datetime.now(timezone.utc) - timedelta(days=days)

@@ -5,6 +5,7 @@ services:
     rootDir: backend
     dockerfilePath: ./Dockerfile
     autoDeploy: true
+    healthCheckPath: /health
     envVars:
       - key: APP_ENV
         value: production
@@ -15,6 +16,14 @@ services:
           type: redis
           name: valentine-hotline-redis
           property: connectionString
+      - key: DATA_RETENTION_DAYS
+        value: "90"
+      - key: MAX_CONCURRENT_SESSIONS
+        value: "5"
+      - key: MAX_REQUEST_BODY_BYTES
+        value: "1048576"
+      - key: ALLOWED_HOSTS
+        value: "valentinehotline.com,www.valentinehotline.com,localhost,127.0.0.1,testserver"
 
   - type: worker
     name: valentine-hotline-worker
@@ -33,6 +42,8 @@ services:
           type: redis
           name: valentine-hotline-redis
           property: connectionString
+      - key: DATA_RETENTION_DAYS
+        value: "90"
 
   - type: worker
     name: valentine-hotline-agent

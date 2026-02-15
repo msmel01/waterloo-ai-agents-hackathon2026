@@ -1,3 +1,4 @@
+import bleach
 from fastapi import HTTPException
 
 
@@ -18,3 +19,17 @@ def validate_password(password: str) -> bool:
             "Password must contain at least one lowercase letter"
         )
     return True
+
+
+def sanitize_input(text: str | None) -> str | None:
+    """Strip HTML/script content from user text input."""
+    if text is None:
+        return None
+    if bleach is not None:
+        return bleach.clean(text, tags=[], strip=True).strip()
+
+    # Fallback when bleach is unavailable.
+    import re
+
+    cleaned = re.sub(r"<[^>]*>", "", text)
+    return cleaned.strip()

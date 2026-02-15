@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
 import { AppHeader } from '../../components/AppHeader';
@@ -19,6 +19,14 @@ export function ResultsPage() {
   const [bookingEmail, setBookingEmail] = useState('');
 
   const verdict = verdictQuery.data;
+
+  useEffect(() => {
+    if (verdict?.status !== 'scored') return;
+    document.title =
+      verdict.verdict === 'date'
+        ? 'I Got a Date! | Valentine Hotline'
+        : 'Valentine Hotline Results';
+  }, [verdict?.status, verdict?.verdict]);
 
   const bestMetric = useMemo(() => {
     const scores = verdict?.scores;

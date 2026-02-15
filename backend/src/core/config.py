@@ -67,9 +67,16 @@ class Config(BaseSettings):
     ADMIN_API_KEY: Optional[str] = None
     DASHBOARD_API_KEY: Optional[str] = None
     MAX_SESSIONS_PER_DAY: int = 3
+    MAX_CONCURRENT_SESSIONS: int = 5
     SESSION_PENDING_TIMEOUT: int = 300
     SESSION_MAX_DURATION: int = 1800
     VERDICT_THRESHOLD: float = 65.0
+    DATA_RETENTION_DAYS: int = 90
+    MAX_REQUEST_BODY_BYTES: int = 1_048_576
+    ALLOWED_HOSTS: Optional[str] = None
+    BACKEND_ALLOWED_HOSTS: Optional[list[str]] = None
+    LOG_LEVEL: str = "INFO"
+    SENTRY_DSN: Optional[str] = None
 
     @model_validator(mode="after")
     def set_debug_default(self):
@@ -97,6 +104,14 @@ class Config(BaseSettings):
                 ]
         else:
             self.BACKEND_CORS_ORIGINS = ["*"]
+
+        raw_hosts = self.ALLOWED_HOSTS or ""
+        if raw_hosts:
+            self.BACKEND_ALLOWED_HOSTS = [
+                host.strip() for host in raw_hosts.split(",") if host.strip()
+            ]
+        else:
+            self.BACKEND_ALLOWED_HOSTS = ["localhost", "127.0.0.1", "testserver"]
         return self
 
     @property

@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends
 
 from src.core.config import config
 from src.core.container import Container
+from src.core.validators import sanitize_input
 from src.dependencies import get_current_suitor
 from src.models.suitor_model import SuitorDb
 from src.repository.score_repository import ScoreRepository
@@ -43,7 +44,7 @@ async def complete_suitor_profile(
             "age": payload.age,
             "gender": payload.gender,
             "orientation": payload.orientation,
-            "intro_message": payload.intro_message,
+            "intro_message": sanitize_input(payload.intro_message),
         },
     )
     if not updated:

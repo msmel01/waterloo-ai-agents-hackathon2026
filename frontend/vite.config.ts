@@ -5,5 +5,13 @@ export default defineConfig({
   plugins: [react()],
   build: {
     outDir: 'dist',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          dashboard: ['recharts'],
+          livekit: ['@livekit/components-react', 'livekit-client'],
+        },
+      },
+    },
   },
 })
