@@ -3,6 +3,7 @@ import { OnboardingScreen } from './pages/OnboardingScreen';
 import { DatesGrid } from './pages/DatesGrid';
 import { ProfileScreen } from './pages/ProfileScreen';
 import { ChatScreen } from './pages/ChatScreen';
+import { InterviewCompleteScreen } from './pages/InterviewCompleteScreen';
 import { SignInScreen } from './pages/SignInScreen';
 import { SignUpScreen } from './pages/SignUpScreen';
 import { useAuthSync } from './hooks/useAuthSync';
@@ -20,6 +21,7 @@ function App() {
         <Route path="/dates" element={<DatesGrid />} />
         <Route path="/profile/:slug" element={<ProfileScreen />} />
         <Route path="/chat/:slug" element={<ChatScreen />} />
+        <Route path="/interview/:sessionId/complete" element={<InterviewCompleteScreen />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

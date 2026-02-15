@@ -142,9 +142,13 @@ export function ChatScreen() {
     }
     if (['completed', 'failed', 'expired', 'cancelled', 'scored'].includes(status)) {
       toast.info(`Session ended (${status}).`);
-      navigate('/chats', { replace: true });
+      if (auth?.sessionId) {
+        navigate(`/interview/${auth.sessionId}/complete`, { replace: true });
+      } else {
+        navigate('/chats', { replace: true });
+      }
     }
-  }, [sessionStatusQuery.data?.status, navigate]);
+  }, [sessionStatusQuery.data?.status, auth?.sessionId, navigate]);
 
   const handleLeave = () => {
     setAuth(null);

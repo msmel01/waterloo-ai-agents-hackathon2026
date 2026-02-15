@@ -173,7 +173,6 @@ async def get_session_status(
     id: uuid.UUID,
     suitor: CurrentSuitor,
     session_repo: SessionRepoDep,
-    score_repo: ScoreRepoDep,
 ):
     """Get current processing state for a session owned by the authenticated suitor."""
     try:
@@ -186,8 +185,6 @@ async def get_session_status(
         )
     if session.suitor_id != suitor.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
-
-    score = await score_repo.find_by_session_id(session.id)
 
     duration_seconds: int | None = None
     if session.started_at:
@@ -204,19 +201,8 @@ async def get_session_status(
         questions_total = len(heart_config.screening_questions)
 
     status_value = session.status.value
-    has_verdict = score is not None
-    verdict_status: str | None = None
-    if has_verdict:
-        verdict_status = "ready"
-        status_value = "scored"
-    elif session.status in {SessionStatus.COMPLETED, SessionStatus.SCORING}:
-        verdict_status = "scoring"
-        status_value = "scoring"
-    elif session.status == SessionStatus.SCORED:
-        verdict_status = "ready"
-        status_value = "scored"
-    elif session.status == SessionStatus.EXPIRED:
-        verdict_status = "pending"
+    has_verdict = bool(session.has_verdict)
+    verdict_status = session.verdict_status or "pending"
 
     return SessionStatusResponse(
         session_id=str(session.id),
@@ -339,20 +325,23 @@ async def get_session_verdict(
     if session.suitor_id != suitor.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
 
-    score = await score_repo.find_by_session_id(session.id)
+    verdict_status = session.verdict_status or "pending"
+    if verdict_status in {"pending", "scoring"}:
+        raise HTTPException(
+            status_code=status.HTTP_202_ACCEPTED,
+            detail="Scoring is still in progress",
+        )
+    if verdict_status == "failed":
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Scoring failed. Please try again later.",
+        )
 
+    score = await score_repo.find_by_session_id(session.id)
     if not score:
-        return SessionVerdictResponse(
-            session_id=str(session.id),
-            ready=False,
-            verdict=None,
-            weighted_total=None,
-            effort_score=None,
-            creativity_score=None,
-            intent_clarity_score=None,
-            emotional_intelligence_score=None,
-            emotion_modifiers=None,
-            feedback_text=None,
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Score record missing for completed verdict.",
         )
 
     return SessionVerdictResponse(
@@ -360,10 +349,16 @@ async def get_session_verdict(
         ready=True,
         verdict=score.verdict,
         weighted_total=score.weighted_total,
+        raw_score=score.raw_score,
+        final_score=score.final_score,
         effort_score=score.effort_score,
         creativity_score=score.creativity_score,
         intent_clarity_score=score.intent_clarity_score,
         emotional_intelligence_score=score.emotional_intelligence_score,
         emotion_modifiers=score.emotion_modifiers,
+        emotion_modifier_reasons=score.emotion_modifier_reasons,
         feedback_text=score.feedback_text,
+        feedback_strengths=score.feedback_strengths,
+        feedback_improvements=score.feedback_improvements,
+        per_question_scores=score.per_question_scores,
     )

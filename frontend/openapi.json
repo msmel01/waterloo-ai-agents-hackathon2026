@@ -1383,6 +1383,17 @@
               }
             ],
             "title": "Verdict"
+          },
+          "final_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Final Score"
           }
         },
         "type": "object",
@@ -1428,6 +1439,30 @@
             ],
             "title": "Weighted Total",
             "description": "Overall weighted score (0-100)."
+          },
+          "raw_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Raw Score",
+            "description": "Weighted score before emotion modifier."
+          },
+          "final_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Final Score",
+            "description": "Final score after emotion modifier (0-100)."
           },
           "effort_score": {
             "anyOf": [
@@ -1488,6 +1523,21 @@
             ],
             "description": "Emotion-based score modifiers."
           },
+          "emotion_modifier_reasons": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Emotion Modifier Reasons",
+            "description": "Human-readable reasons for emotion modifier."
+          },
           "feedback_text": {
             "anyOf": [
               {
@@ -1499,6 +1549,52 @@
             ],
             "title": "Feedback Text",
             "description": "Personalized feedback for the suitor."
+          },
+          "feedback_strengths": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feedback Strengths",
+            "description": "Top strengths identified during scoring."
+          },
+          "feedback_improvements": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feedback Improvements",
+            "description": "Top areas for improvement."
+          },
+          "per_question_scores": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Per Question Scores",
+            "description": "Per-question scoring breakdown."
           }
         },
         "type": "object",

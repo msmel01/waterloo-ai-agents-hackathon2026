@@ -90,6 +90,7 @@ async def get_my_sessions(
                 end_reason=session.end_reason,
                 has_verdict=score is not None,
                 verdict=score.verdict.value if score else None,
+                final_score=score.final_score if score else None,
             )
         )
 

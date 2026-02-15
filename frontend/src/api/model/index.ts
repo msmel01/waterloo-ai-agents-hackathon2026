@@ -25,6 +25,7 @@ export * from './sessionStartResponse';
 export * from './sessionStatusResponse';
 export * from './sessionSummary';
 export * from './sessionVerdictResponse';
+export * from './sessionVerdictResponsePerQuestionScores';
 export * from './successResponse';
 export * from './suitorProfileResponse';
 export * from './suitorRegisterRequest';

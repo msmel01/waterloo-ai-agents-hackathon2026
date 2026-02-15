@@ -78,6 +78,12 @@ class SessionVerdictResponse(BaseModel):
     weighted_total: float | None = Field(
         default=None, description="Overall weighted score (0-100)."
     )
+    raw_score: float | None = Field(
+        default=None, description="Weighted score before emotion modifier."
+    )
+    final_score: float | None = Field(
+        default=None, description="Final score after emotion modifier (0-100)."
+    )
     effort_score: float | None = Field(
         default=None, description="Effort score (0-100)."
     )
@@ -93,8 +99,20 @@ class SessionVerdictResponse(BaseModel):
     emotion_modifiers: EmotionModifiers | None = Field(
         default=None, description="Emotion-based score modifiers."
     )
+    emotion_modifier_reasons: list[str] | None = Field(
+        default=None, description="Human-readable reasons for emotion modifier."
+    )
     feedback_text: str | None = Field(
         default=None, description="Personalized feedback for the suitor."
+    )
+    feedback_strengths: list[str] | None = Field(
+        default=None, description="Top strengths identified during scoring."
+    )
+    feedback_improvements: list[str] | None = Field(
+        default=None, description="Top areas for improvement."
+    )
+    per_question_scores: list[dict] | None = Field(
+        default=None, description="Per-question scoring breakdown."
     )
 
 
@@ -115,6 +133,7 @@ class SessionSummary(BaseModel):
     end_reason: str | None = None
     has_verdict: bool
     verdict: str | None = None
+    final_score: float | None = None
 
 
 class SuitorSessionsResponse(BaseModel):

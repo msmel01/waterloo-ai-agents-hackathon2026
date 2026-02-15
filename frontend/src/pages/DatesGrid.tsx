@@ -89,7 +89,16 @@ export function DatesGrid() {
                   <p>
                     Verdict:{' '}
                     {session.has_verdict ? (session.verdict ?? 'ready') : 'pending'}
+                    {session.final_score != null ? ` • Score: ${Math.round(session.final_score)}/100` : ''}
                   </p>
+                  {session.has_verdict ? (
+                    <Link
+                      to={`/interview/${session.session_id}/complete`}
+                      className="inline-block mt-1 text-win-titlebar underline"
+                    >
+                      View details
+                    </Link>
+                  ) : null}
                 </div>
               ))}
             </div>

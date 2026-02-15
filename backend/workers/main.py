@@ -13,18 +13,139 @@ from sqlmodel import select
 
 from src.core.config import config
 from src.core.database import Database
+from src.core.exceptions import NotFoundError
 from src.models.domain_enums import SessionStatus
 from src.models.heart_model import HeartDb
+from src.repository.conversation_turn_repository import ConversationTurnRepository
+from src.repository.score_repository import ScoreRepository
 from src.repository.session_repository import SessionRepository
+from src.services.config_loader import HeartConfigLoader
 from src.services.tavus_service import TavusService
 
 logger = logging.getLogger(__name__)
 database = Database(config)
 
 
+def _to_heart_config_payload(loaded: HeartConfigLoader) -> dict:
+    cfg = loaded.config
+    if cfg is None:
+        raise RuntimeError("Heart config is not loaded")
+    return {
+        "display_name": cfg.profile.display_name,
+        "bio": cfg.profile.bio,
+        "persona": cfg.persona.model_dump(),
+        "expectations": cfg.expectations.model_dump(),
+        "screening_questions": [q.model_dump() for q in cfg.screening_questions],
+    }
+
+
+async def score_session_task(ctx: dict, session_id: str) -> None:
+    """Score completed interview with Claude and persist verdict."""
+    _ = ctx
+    session_uuid = uuid.UUID(session_id)
+    session_repo = SessionRepository(session_factory=database.session)
+    score_repo = ScoreRepository(session_factory=database.session)
+    turn_repo = ConversationTurnRepository(session_factory=database.session)
+
+    try:
+        session = await session_repo.read_by_id(session_uuid)
+    except NotFoundError:
+        logger.warning("Skipping scoring; session %s was not found", session_id)
+        return
+    if session.status not in {SessionStatus.COMPLETED, SessionStatus.SCORING}:
+        logger.info(
+            "Skipping scoring for session %s with status=%s", session_id, session.status
+        )
+        return
+
+    if await score_repo.exists_for_session(session_uuid):
+        logger.info(
+            "Skipping scoring for session %s because score already exists", session_id
+        )
+        await session_repo.update_attr(session_uuid, "has_verdict", True)
+        await session_repo.update_attr(session_uuid, "verdict_status", "ready")
+        if session.status != SessionStatus.SCORED:
+            await session_repo.update_status(session_uuid, SessionStatus.SCORED)
+        return
+
+    await session_repo.update_status(session_uuid, SessionStatus.SCORING)
+    await session_repo.update_attr(session_uuid, "verdict_status", "scoring")
+    await session_repo.update_attr(session_uuid, "has_verdict", False)
+
+    try:
+        loader = HeartConfigLoader()
+        loader.load()
+        heart_config = _to_heart_config_payload(loader)
+
+        turns = await turn_repo.find_by_session_id(session_uuid)
+        transcript = [
+            {
+                "turn_index": turn.turn_index,
+                "speaker": turn.speaker.value.lower(),
+                "content": turn.content,
+                "timestamp": (
+                    turn.created_at.isoformat()
+                    if getattr(turn, "created_at", None)
+                    else None
+                ),
+            }
+            for turn in turns
+        ]
+
+        turn_summaries_raw = session.turn_summaries or {}
+        if isinstance(turn_summaries_raw, dict):
+            turn_summaries = turn_summaries_raw.get("turns", []) or []
+        else:
+            turn_summaries = []
+        if not isinstance(turn_summaries, list):
+            turn_summaries = []
+
+        emotion_timeline = session.emotion_timeline or []
+        if not isinstance(emotion_timeline, list):
+            emotion_timeline = []
+
+        from src.services.scoring.scoring_service import ScoringService
+
+        scoring_service = ScoringService()
+        score_payload = await scoring_service.score_session(
+            heart_config=heart_config,
+            session_data={
+                "session_id": str(session.id),
+                "suitor_id": str(session.suitor_id),
+                "heart_id": str(session.heart_id),
+                "started_at": session.started_at.isoformat()
+                if session.started_at
+                else None,
+                "ended_at": session.ended_at.isoformat() if session.ended_at else None,
+                "end_reason": session.end_reason,
+            },
+            turn_summaries=turn_summaries,
+            emotion_timeline=emotion_timeline,
+            transcript=transcript,
+        )
+        score_payload["session_id"] = session_uuid
+        await score_repo.create(score_payload)
+
+        await session_repo.update_attr(session_uuid, "has_verdict", True)
+        await session_repo.update_attr(session_uuid, "verdict_status", "ready")
+        await session_repo.update_status(session_uuid, SessionStatus.SCORED)
+        logger.info(
+            "Session %s scored successfully (final_score=%s, verdict=%s)",
+            session_id,
+            score_payload.get("final_score"),
+            score_payload.get("verdict"),
+        )
+    except Exception:
+        logger.exception("Session scoring failed for %s", session_id)
+        await session_repo.update_attr(session_uuid, "has_verdict", False)
+        await session_repo.update_attr(session_uuid, "verdict_status", "failed")
+        await session_repo.update_status(session_uuid, SessionStatus.FAILED)
+        raise
+
+
 async def score_session(ctx: dict, session_id: str) -> None:
-    """Placeholder task for Claude-based session scoring."""
-    _ = (ctx, session_id)
+    """Backward-compatible alias for the scoring task name."""
+    await score_session_task(ctx, session_id)
 
 
 async def generate_tavus_avatar(ctx: dict, heart_id: str) -> None:
@@ -132,6 +253,7 @@ class WorkerSettings:
     redis_settings = RedisSettings.from_dsn(config.REDIS_URL)
     functions = [
         score_session,
+        score_session_task,
         generate_tavus_avatar,
         send_notification,
         poll_tavus_replica_status,
@@ -143,5 +265,6 @@ class WorkerSettings:
             minute={0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55},
         ),
     ]
+    max_tries = 3
     job_timeout = 300
     keep_result = 3600
