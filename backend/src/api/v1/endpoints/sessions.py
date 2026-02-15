@@ -5,6 +5,7 @@ import logging
 import uuid
 from collections import defaultdict
 from datetime import date, datetime, time, timedelta, timezone
+from inspect import isawaitable
 from typing import Annotated
 from zoneinfo import ZoneInfo
 
@@ -70,6 +71,15 @@ SCORE_LABELS: dict[str, tuple[float, str]] = {
     "intent_clarity": (0.25, "Intent Clarity"),
     "emotional_intelligence": (0.25, "Emotional Intelligence"),
 }
+
+
+async def _resolve_livekit_token(token_result: object) -> str:
+    """Support token providers implemented as either sync or async callables."""
+    if isawaitable(token_result):
+        token_result = await token_result
+    if not isinstance(token_result, str):
+        raise RuntimeError("LiveKit token generation returned a non-string value")
+    return token_result
 
 
 def _to_utc_iso(value: datetime) -> str:
@@ -278,10 +288,12 @@ async def start_session(
                 status_code=status.HTTP_409_CONFLICT,
                 detail="You have an active session that is missing room details.",
             )
-        livekit_token = livekit.generate_suitor_token(
-            room_name=active.livekit_room_name,
-            suitor_id=str(suitor.id),
-            suitor_name=suitor.name or "Suitor",
+        livekit_token = await _resolve_livekit_token(
+            livekit.generate_suitor_token(
+                room_name=active.livekit_room_name,
+                suitor_id=str(suitor.id),
+                suitor_name=suitor.name or "Suitor",
+            )
         )
         return SessionStartResponse(
             session_id=str(active.id),
@@ -332,10 +344,12 @@ async def start_session(
         )
         await session_repo.update_attr(created.id, "livekit_room_sid", room.get("sid"))
         suitor_name = suitor.name or "Suitor"
-        livekit_token = livekit.generate_suitor_token(
-            room_name=room_name,
-            suitor_id=str(suitor.id),
-            suitor_name=suitor_name,
+        livekit_token = await _resolve_livekit_token(
+            livekit.generate_suitor_token(
+                room_name=room_name,
+                suitor_id=str(suitor.id),
+                suitor_name=suitor_name,
+            )
         )
     except (RuntimeError, TwirpError) as exc:
         logger.exception("Failed to initialize LiveKit room for session %s", created.id)

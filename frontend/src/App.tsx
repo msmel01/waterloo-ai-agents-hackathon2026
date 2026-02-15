@@ -13,6 +13,8 @@ import { DashboardLogin } from './pages/dashboard/DashboardLogin';
 import { DashboardOverview } from './pages/dashboard/DashboardOverview';
 import { DashboardSessions } from './pages/dashboard/DashboardSessions';
 import { DashboardSessionDetail } from './pages/dashboard/DashboardSessionDetail';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { OfflineBanner } from './components/OfflineBanner';
 
 function RequireDashboardAuth({ children }: { children: ReactElement }) {
   const hasKey = Boolean(sessionStorage.getItem('dashboard_api_key'));
@@ -26,45 +28,54 @@ function App() {
   useAuthSync();
 
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<OnboardingScreen />} />
-        <Route path="/sign-in" element={<SignInScreen />} />
-        <Route path="/sign-up" element={<SignUpScreen />} />
-        <Route path="/chats" element={<DatesGrid />} />
-        <Route path="/dates" element={<DatesGrid />} />
-        <Route path="/profile/:slug" element={<ProfileScreen />} />
-        <Route path="/chat/:slug" element={<ChatScreen />} />
-        <Route path="/session/:sessionId/results" element={<ResultsPage />} />
-        <Route path="/interview/:sessionId/complete" element={<InterviewCompleteScreen />} />
-        <Route path="/dashboard/login" element={<DashboardLogin />} />
-        <Route
-          path="/dashboard"
-          element={
-            <RequireDashboardAuth>
-              <DashboardOverview />
-            </RequireDashboardAuth>
-          }
-        />
-        <Route
-          path="/dashboard/sessions"
-          element={
-            <RequireDashboardAuth>
-              <DashboardSessions />
-            </RequireDashboardAuth>
-          }
-        />
-        <Route
-          path="/dashboard/sessions/:id"
-          element={
-            <RequireDashboardAuth>
-              <DashboardSessionDetail />
-            </RequireDashboardAuth>
-          }
-        />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </BrowserRouter>
+    <ErrorBoundary>
+      <OfflineBanner />
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<OnboardingScreen />} />
+          <Route path="/sign-in" element={<SignInScreen />} />
+          <Route path="/sign-up" element={<SignUpScreen />} />
+          <Route path="/chats" element={<DatesGrid />} />
+          <Route path="/dates" element={<DatesGrid />} />
+          <Route path="/profile/:slug" element={<ProfileScreen />} />
+          <Route path="/chat/:slug" element={<ChatScreen />} />
+          <Route path="/session/:sessionId/results" element={<ResultsPage />} />
+          <Route path="/interview/:sessionId/complete" element={<InterviewCompleteScreen />} />
+          <Route path="/dashboard/login" element={<DashboardLogin />} />
+          <Route
+            path="/dashboard"
+            element={
+              <RequireDashboardAuth>
+                <ErrorBoundary>
+                  <DashboardOverview />
+                </ErrorBoundary>
+              </RequireDashboardAuth>
+            }
+          />
+          <Route
+            path="/dashboard/sessions"
+            element={
+              <RequireDashboardAuth>
+                <ErrorBoundary>
+                  <DashboardSessions />
+                </ErrorBoundary>
+              </RequireDashboardAuth>
+            }
+          />
+          <Route
+            path="/dashboard/sessions/:id"
+            element={
+              <RequireDashboardAuth>
+                <ErrorBoundary>
+                  <DashboardSessionDetail />
+                </ErrorBoundary>
+              </RequireDashboardAuth>
+            }
+          />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </BrowserRouter>
+    </ErrorBoundary>
   );
 }
 

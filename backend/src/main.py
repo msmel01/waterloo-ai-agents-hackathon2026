@@ -65,12 +65,17 @@ class AppCreator:
             self.app.add_middleware(
                 CORSMiddleware,
                 allow_origins=[str(origin) for origin in config.BACKEND_CORS_ORIGINS],
-                allow_credentials=True,
-                allow_methods=["*"],
-                allow_headers=["*"],
-                expose_headers=["*"],
+                allow_credentials=False,
+                allow_methods=["GET", "POST", "PATCH", "OPTIONS"],
+                allow_headers=[
+                    "Content-Type",
+                    "Authorization",
+                    "X-Dashboard-Key",
+                    "X-Admin-Key",
+                ],
             )
         self.app.add_middleware(CorrelationIdMiddleware)
+        self._register_middlewares()
 
         self.app.include_router(routers, prefix=config.API_STR)
         self.app.include_router(mcps_routers, prefix=config.API_STR)
@@ -105,6 +110,13 @@ class AppCreator:
             self.app.add_exception_handler(exception_class, handler)
 
         self.app.add_exception_handler(Exception, global_exception_handler)
+
+    def _register_middlewares(self):
+        @self.app.middleware("http")
+        async def add_api_version_header(request, call_next):
+            response = await call_next(request)
+            response.headers["X-API-Version"] = "1.0"
+            return response
 
 
 app_creator = AppCreator()

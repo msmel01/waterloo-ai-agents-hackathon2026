@@ -1,5 +1,6 @@
 """Shared FastAPI dependencies for auth and guard checks."""
 
+from datetime import date
 from typing import TYPE_CHECKING, Annotated
 
 import redis.asyncio as redis
@@ -34,11 +35,57 @@ async def verify_admin_key(api_key: str | None = Security(admin_key_header)) -> 
     return api_key
 
 
+def _has_invalid_dashboard_query(request: Request) -> bool:
+    path = request.url.path
+    query = request.query_params
+
+    if path.endswith("/dashboard/sessions"):
+        sort_by = query.get("sort_by")
+        if sort_by and sort_by not in {"date", "score", "name"}:
+            return True
+        verdict = query.get("verdict")
+        if verdict and verdict not in {"date", "no_date", "pending"}:
+            return True
+        date_from = query.get("date_from")
+        if date_from:
+            try:
+                date.fromisoformat(date_from)
+            except ValueError:
+                return True
+        date_to = query.get("date_to")
+        if date_to:
+            try:
+                date.fromisoformat(date_to)
+            except ValueError:
+                return True
+
+    if path.endswith("/dashboard/stats/trends"):
+        period = query.get("period")
+        if period and period not in {"daily", "weekly"}:
+            return True
+        days = query.get("days")
+        if days is not None:
+            try:
+                parsed_days = int(days)
+            except ValueError:
+                return True
+            if parsed_days < 1 or parsed_days > 365:
+                return True
+
+    return False
+
+
 async def verify_dashboard_access(
     x_dashboard_key: str | None = Security(dashboard_key_header),
+    request: Request = None,  # type: ignore[assignment]
 ) -> str:
     """API key auth for dashboard endpoints."""
     expected = config.DASHBOARD_API_KEY
+    if request is not None and _has_invalid_dashboard_query(request):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Invalid query parameters",
+        )
     if not x_dashboard_key or not expected or x_dashboard_key != expected:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
