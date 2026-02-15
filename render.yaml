@@ -23,7 +23,7 @@ services:
       - key: MAX_REQUEST_BODY_BYTES
         value: "1048576"
       - key: ALLOWED_HOSTS
-        value: "valentinehotline.com,www.valentinehotline.com,localhost,127.0.0.1,testserver"
+        value: "valentinehotline.com,www.valentinehotline.com"
 
   - type: worker
     name: valentine-hotline-worker

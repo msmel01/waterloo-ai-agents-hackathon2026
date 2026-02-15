@@ -289,13 +289,19 @@ async def start_session(
                 status_code=status.HTTP_409_CONFLICT,
                 detail="You have an active session that is missing room details.",
             )
-        livekit_token = await _resolve_livekit_token(
-            livekit.generate_suitor_token(
-                room_name=active.livekit_room_name,
-                suitor_id=str(suitor.id),
-                suitor_name=suitor.name or "Suitor",
+        try:
+            livekit_token = await _resolve_livekit_token(
+                livekit.generate_suitor_token(
+                    room_name=active.livekit_room_name,
+                    suitor_id=str(suitor.id),
+                    suitor_name=suitor.name or "Suitor",
+                )
             )
-        )
+        except Exception as exc:
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail="Unable to initialize LiveKit room",
+            ) from exc
         return SessionStartResponse(
             session_id=str(active.id),
             livekit_url=config.LIVEKIT_URL or "",
