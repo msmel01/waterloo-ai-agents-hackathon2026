@@ -14,20 +14,22 @@ import type { Verdict } from './verdict';
 export interface SessionVerdictResponse {
   /** Session UUID. */
   session_id: string;
+  /** Whether a verdict is ready for this session. */
+  ready: boolean;
   /** Date/no-date verdict. */
-  verdict: Verdict;
+  verdict?: Verdict | null;
   /** Overall weighted score (0-100). */
-  weighted_total: number;
+  weighted_total?: number | null;
   /** Effort score (0-100). */
-  effort_score: number;
+  effort_score?: number | null;
   /** Creativity score (0-100). */
-  creativity_score: number;
+  creativity_score?: number | null;
   /** Intent clarity score (0-100). */
-  intent_clarity_score: number;
+  intent_clarity_score?: number | null;
   /** Emotional intelligence score (0-100). */
-  emotional_intelligence_score: number;
+  emotional_intelligence_score?: number | null;
   /** Emotion-based score modifiers. */
   emotion_modifiers?: EmotionModifiers | null;
   /** Personalized feedback for the suitor. */
-  feedback_text: string;
+  feedback_text?: string | null;
 }

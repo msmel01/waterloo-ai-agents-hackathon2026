@@ -73,18 +73,29 @@ class SessionVerdictResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     session_id: str = Field(description="Session UUID.")
-    verdict: Verdict = Field(description="Date/no-date verdict.")
-    weighted_total: float = Field(description="Overall weighted score (0-100).")
-    effort_score: float = Field(description="Effort score (0-100).")
-    creativity_score: float = Field(description="Creativity score (0-100).")
-    intent_clarity_score: float = Field(description="Intent clarity score (0-100).")
-    emotional_intelligence_score: float = Field(
-        description="Emotional intelligence score (0-100)."
+    ready: bool = Field(description="Whether a verdict is ready for this session.")
+    verdict: Verdict | None = Field(default=None, description="Date/no-date verdict.")
+    weighted_total: float | None = Field(
+        default=None, description="Overall weighted score (0-100)."
+    )
+    effort_score: float | None = Field(
+        default=None, description="Effort score (0-100)."
+    )
+    creativity_score: float | None = Field(
+        default=None, description="Creativity score (0-100)."
+    )
+    intent_clarity_score: float | None = Field(
+        default=None, description="Intent clarity score (0-100)."
+    )
+    emotional_intelligence_score: float | None = Field(
+        default=None, description="Emotional intelligence score (0-100)."
     )
     emotion_modifiers: EmotionModifiers | None = Field(
         default=None, description="Emotion-based score modifiers."
     )
-    feedback_text: str = Field(description="Personalized feedback for the suitor.")
+    feedback_text: str | None = Field(
+        default=None, description="Personalized feedback for the suitor."
+    )
 
 
 # Backward-compatible aliases

@@ -66,8 +66,16 @@ export function ChatScreen() {
     const preCheck = preCheckQuery.data;
 
     if (!profile?.is_profile_complete) {
-      setBlockingReason('Please complete your profile before starting an interview.');
+        setBlockingReason('Please complete your profile before starting an interview.');
       navigate('/sign-up', { replace: true });
+      return;
+    }
+
+    if (preCheckQuery.isError) {
+      const error = preCheckQuery.error as AxiosError<{ detail?: string }>;
+      const detail = error.response?.data?.detail;
+      setBlockingReason(detail || 'Could not validate interview eligibility.');
+      hasStartedRef.current = false;
       return;
     }
 
@@ -120,6 +128,8 @@ export function ChatScreen() {
     profileQuery.data,
     profileQuery.isLoading,
     preCheckQuery.data,
+    preCheckQuery.error,
+    preCheckQuery.isError,
     preCheckQuery.isLoading,
     startSession,
     navigate,

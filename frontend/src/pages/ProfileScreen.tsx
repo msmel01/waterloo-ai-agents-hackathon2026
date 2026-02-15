@@ -53,7 +53,7 @@ export function ProfileScreen() {
 
   const heart = profileQuery.data;
   const canStart = isSignedIn
-    ? Boolean(heart.is_accepting && (preCheckQuery.data?.can_start || preCheckQuery.data?.active_session_id))
+    ? Boolean(preCheckQuery.data?.active_session_id || (heart.is_accepting && preCheckQuery.data?.can_start))
     : Boolean(heart.is_accepting);
 
   return (
