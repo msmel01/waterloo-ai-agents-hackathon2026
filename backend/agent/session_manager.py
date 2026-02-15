@@ -69,10 +69,14 @@ class SessionManager:
         """Return next question or None when done."""
         if self.current_question_index >= len(self.questions):
             return None
-        question = self.questions[self.current_question_index]
+        question_index = self.current_question_index
+        question = self.questions[question_index]
+        # Advance on question retrieval so we don't get stuck on Q1 if the LLM
+        # forgets to call record_suitor_response.
+        self.current_question_index += 1
         return {
             "text": question["text"],
-            "index": self.current_question_index,
+            "index": question_index,
             "required": question.get("required", True),
         }
 
@@ -83,6 +87,8 @@ class SessionManager:
         response_quality: str,
     ):
         """Store summarized answer and advance question index."""
+        if question_index < 0 or question_index >= len(self.questions):
+            return
         turn = ConversationTurn(
             question_index=question_index,
             question_text=self.questions[question_index]["text"],
@@ -91,7 +97,8 @@ class SessionManager:
             timestamp=time.time(),
         )
         self.turns.append(turn)
-        self.current_question_index = question_index + 1
+        if question_index >= self.current_question_index:
+            self.current_question_index = question_index + 1
         self.ramble_detector.reset()
 
     def questions_remaining(self) -> int:

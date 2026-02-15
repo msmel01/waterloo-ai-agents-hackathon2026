@@ -42,6 +42,33 @@ else:
 
 server = AgentServer() if AgentServer else None
 AGENT_NAME = "valentine-interview-agent"
+HARD_CODED_QUESTIONS: list[dict[str, object]] = [
+    {
+        "text": "So, what made you click on this link? Be honest — was it curiosity, boredom, or genuine interest?",
+        "required": True,
+        "order_index": 0,
+    },
+    {
+        "text": "If you could plan the perfect first date with no budget limit, what would it look like?",
+        "required": True,
+        "order_index": 1,
+    },
+    {
+        "text": "What's something you've changed your mind about recently? I want to know you can actually grow.",
+        "required": True,
+        "order_index": 2,
+    },
+    {
+        "text": "Tell me about a time you really messed up in a relationship — and what you learned from it.",
+        "required": True,
+        "order_index": 3,
+    },
+    {
+        "text": "Last question — why should Luna give you a chance? Sell yourself, but keep it real.",
+        "required": True,
+        "order_index": 4,
+    },
+]
 
 
 def _build_stt():
@@ -168,14 +195,22 @@ if server:
         if not session_data:
             logger.error("No DB session found for room %s", room_name)
             return
+        screening_questions = HARD_CODED_QUESTIONS
+        logger.info(
+            "Starting agent session %s with %s screening questions",
+            session_id,
+            len(screening_questions),
+        )
 
+        prompt_config = dict(heart_config)
+        prompt_config["screening_questions"] = screening_questions
         prompt = build_system_prompt(
-            heart_config=heart_config,
+            heart_config=prompt_config,
             suitor_name=session_data["suitor_name"],
         )
         session_mgr = SessionManager(
             session_id=session_id,
-            questions=heart_config["screening_questions"],
+            questions=screening_questions,
             max_duration_seconds=600,
         )
         interview_agent = InterviewAgent(
@@ -197,6 +232,12 @@ if server:
         save_lock = asyncio.Lock()
         closed = False
         close_lock = asyncio.Lock()
+        closing_line = (
+            "Thanks for taking the time to chat with me. "
+            "I am ending the call now and your results will be ready shortly."
+        )
+        closing_commit_event = asyncio.Event()
+        closing_pending = False
 
         def _spawn(coro):
             task = asyncio.create_task(coro)
@@ -248,9 +289,12 @@ if server:
 
         @session.on("agent_speech_committed")
         def on_agent_speech(event):
+            nonlocal closing_pending
             text = getattr(event, "text", "").strip()
             if text:
                 session_mgr.add_transcript_entry(speaker="avatar", text=text)
+                if closing_pending and "results will be ready shortly" in text.lower():
+                    closing_commit_event.set()
 
         async def on_close(reason: str) -> None:
             nonlocal closed
@@ -279,13 +323,57 @@ if server:
         await session.start(room=ctx.room, agent=interview_agent)
         await update_session_status(session_id, "in_progress")
 
+        # Ensure the agent always speaks first immediately after joining.
+        first_question = session_mgr.get_next_question()
+        if first_question:
+            opener = (
+                f"Hey {session_data['suitor_name']} — thanks for joining. "
+                f"Let's jump in. {first_question['text']}"
+            )
+            try:
+                session_mgr.add_transcript_entry(speaker="avatar", text=opener)
+                await session.say(opener)
+            except Exception as exc:
+                logger.warning(
+                    "Failed to deliver opener for session %s: %s",
+                    session_id,
+                    exc,
+                )
+
         while session_mgr.end_reason is None and not session_mgr.is_overtime():
             await asyncio.sleep(1)
         if session_mgr.end_reason is None:
             session_mgr.end("max_duration_reached")
 
+        async def _say_closing_message() -> None:
+            nonlocal closing_pending
+            # Track intended close line even if runtime speak hooks differ by SDK version.
+            session_mgr.add_transcript_entry(speaker="avatar", text=closing_line)
+            for method_name in ("say", "speak"):
+                maybe_method = getattr(session, method_name, None)
+                if not callable(maybe_method):
+                    continue
+                try:
+                    closing_pending = True
+                    result = maybe_method(closing_line)
+                    if asyncio.iscoroutine(result):
+                        await result
+                    try:
+                        await asyncio.wait_for(closing_commit_event.wait(), timeout=8.0)
+                    except asyncio.TimeoutError:
+                        logger.warning(
+                            "Timed out waiting for closing speech commit for session %s",
+                            session_id,
+                        )
+                    return
+                except Exception:
+                    continue
+                finally:
+                    closing_pending = False
+
         try:
             final_reason = session_mgr.end_reason or "session_completed"
+            await _say_closing_message()
             await on_close(final_reason)
             maybe_aclose = getattr(session, "aclose", None)
             if callable(maybe_aclose):

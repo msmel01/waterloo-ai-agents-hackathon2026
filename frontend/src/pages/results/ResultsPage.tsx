@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
+import { AxiosError } from 'axios';
 import { Link, useParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 import { AppHeader } from '../../components/AppHeader';
 import { BookingConfirmation } from '../../components/results/BookingConfirmation';
@@ -14,6 +16,7 @@ import type { BookingResponse } from '../../types/results';
 
 export function ResultsPage() {
   const { sessionId = '' } = useParams<{ sessionId: string }>();
+  const navigate = useNavigate();
   const verdictQuery = useVerdictPolling(sessionId);
   const [booking, setBooking] = useState<BookingResponse | null>(null);
   const [bookingEmail, setBookingEmail] = useState('');
@@ -27,6 +30,16 @@ export function ResultsPage() {
         ? 'I Got a Date! | Valentine Hotline'
         : 'Valentine Hotline Results';
   }, [verdict?.status, verdict?.verdict]);
+
+  useEffect(() => {
+    if (!verdictQuery.isError) {
+      return;
+    }
+    const status = (verdictQuery.error as AxiosError | undefined)?.response?.status;
+    if (status === 401) {
+      navigate('/sign-in', { replace: true });
+    }
+  }, [verdictQuery.error, verdictQuery.isError, navigate]);
 
   const bestMetric = useMemo(() => {
     const scores = verdict?.scores;
@@ -79,6 +92,17 @@ export function ResultsPage() {
               />
             ) : null}
           </>
+        ) : null}
+
+        {!verdictQuery.isLoading && verdict?.status === 'failed' ? (
+          <section className="m6-card space-y-3 text-center">
+            <p className="text-rose-100 text-sm">
+              {verdict.message || 'Scoring failed for this interview. Please try again later.'}
+            </p>
+            <Link to="/chats" className="block text-rose-200 text-sm underline">
+              Back to chats
+            </Link>
+          </section>
         ) : null}
 
         {verdictQuery.isError ? (

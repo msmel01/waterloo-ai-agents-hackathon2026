@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { RoomAudioRenderer } from '@livekit/components-react';
 import { Window } from './Window';
 import { AppHeader } from './AppHeader';
@@ -8,6 +9,7 @@ import type { AuthState } from '../types';
 interface ScreeningRoomProps {
   auth: AuthState;
   onLeave: () => void;
+  onInterviewEnded?: () => void;
   dateName?: string;
   sessionStatus?: SessionStatusResponse;
 }
@@ -15,6 +17,7 @@ interface ScreeningRoomProps {
 export function ScreeningRoom({
   auth,
   onLeave,
+  onInterviewEnded,
   dateName = 'Date',
   sessionStatus,
 }: ScreeningRoomProps) {
@@ -30,6 +33,7 @@ export function ScreeningRoom({
         serverUrl={serverUrl}
         displayName={displayName}
         onLeave={onLeave}
+        onInterviewEnded={onInterviewEnded}
         dateName={dateName}
         sessionStatus={sessionStatus}
       />
@@ -42,6 +46,7 @@ function LiveKitRoomWrapper({
   serverUrl,
   displayName,
   onLeave,
+  onInterviewEnded,
   dateName,
   sessionStatus,
 }: {
@@ -49,6 +54,7 @@ function LiveKitRoomWrapper({
   serverUrl: string;
   displayName: string;
   onLeave: () => void;
+  onInterviewEnded?: () => void;
   dateName: string;
   sessionStatus?: SessionStatusResponse;
 }) {
@@ -62,6 +68,20 @@ function LiveKitRoomWrapper({
     disconnect,
     isMuted,
   } = useLivekitRoom({ token, serverUrl });
+  const hadConnectionRef = useRef(false);
+  const endedHandledRef = useRef(false);
+
+  useEffect(() => {
+    if (isConnected) {
+      hadConnectionRef.current = true;
+      return;
+    }
+    if (!hadConnectionRef.current || endedHandledRef.current) {
+      return;
+    }
+    endedHandledRef.current = true;
+    onInterviewEnded?.();
+  }, [isConnected, onInterviewEnded]);
 
   const handleLeave = () => {
     disconnect();
@@ -123,6 +143,11 @@ function LiveKitRoomWrapper({
             {typeof sessionStatus.duration_seconds === 'number' &&
               ` • Duration: ${sessionStatus.duration_seconds}s`}
           </p>
+          {!isConnected ? (
+            <p className="mt-1 text-win-titlebar">
+              Interview ended. Preparing analysis...
+            </p>
+          ) : null}
         </div>
       )}
 

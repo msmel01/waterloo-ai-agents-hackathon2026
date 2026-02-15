@@ -9,7 +9,7 @@ export function useVerdictPolling(sessionId: string) {
     enabled: Boolean(sessionId),
     refetchInterval: (query) => {
       const status = query.state.data?.status;
-      if (status === 'scored') {
+      if (status === 'scored' || status === 'failed') {
         return false;
       }
       return 3000;

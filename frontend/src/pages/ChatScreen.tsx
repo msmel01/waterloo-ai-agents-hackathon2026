@@ -43,7 +43,7 @@ export function ChatScreen() {
           if (!status || ['completed', 'failed', 'expired', 'cancelled', 'scored'].includes(status)) {
             return false;
           }
-          return 15_000;
+          return 2_000;
         },
       },
     }
@@ -159,6 +159,12 @@ export function ChatScreen() {
     navigate('/chats');
   };
 
+  const handleInterviewEnded = () => {
+    if (auth?.sessionId) {
+      navigate(`/session/${auth.sessionId}/results`, { replace: true });
+    }
+  };
+
   const handleConsentCancel = () => {
     navigate(slug ? `/profile/${slug}` : '/chats', { replace: true });
   };
@@ -229,6 +235,7 @@ export function ChatScreen() {
     <ScreeningRoom
       auth={auth}
       onLeave={handleLeave}
+      onInterviewEnded={handleInterviewEnded}
       dateName={slug ? slug.charAt(0).toUpperCase() + slug.slice(1) : 'Date'}
       sessionStatus={sessionStatusQuery.data}
     />

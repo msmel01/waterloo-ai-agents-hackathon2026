@@ -42,6 +42,24 @@ def _to_heart_config_payload(loaded: HeartConfigLoader) -> dict:
     }
 
 
+async def _fallback_heart_config_payload(heart_id: uuid.UUID) -> dict:
+    """Fallback heart payload from DB when YAML/env config isn't available."""
+    async with database.session() as db:
+        result = await db.execute(select(HeartDb).where(HeartDb.id == heart_id))
+        heart = result.scalars().first()
+
+    if not heart:
+        raise RuntimeError(f"Heart not found for session heart_id={heart_id}")
+
+    return {
+        "display_name": heart.display_name,
+        "bio": heart.bio,
+        "persona": heart.persona or {},
+        "expectations": heart.expectations or {},
+        "screening_questions": [],
+    }
+
+
 async def score_session_task(ctx: dict, session_id: str) -> None:
     """Score completed interview with Claude and persist verdict."""
     _ = ctx
@@ -55,7 +73,11 @@ async def score_session_task(ctx: dict, session_id: str) -> None:
     except NotFoundError:
         logger.warning("Skipping scoring; session %s was not found", session_id)
         return
-    if session.status not in {SessionStatus.COMPLETED, SessionStatus.SCORING}:
+    if session.status not in {
+        SessionStatus.COMPLETED,
+        SessionStatus.SCORING,
+        SessionStatus.FAILED,
+    }:
         logger.info(
             "Skipping scoring for session %s with status=%s", session_id, session.status
         )
@@ -77,8 +99,16 @@ async def score_session_task(ctx: dict, session_id: str) -> None:
 
     try:
         loader = HeartConfigLoader()
-        loader.load()
-        heart_config = _to_heart_config_payload(loader)
+        try:
+            loader.load()
+            heart_config = _to_heart_config_payload(loader)
+        except Exception as exc:
+            logger.warning(
+                "Heart config YAML unavailable for scoring session %s; falling back to DB heart payload: %s",
+                session_id,
+                exc,
+            )
+            heart_config = await _fallback_heart_config_payload(session.heart_id)
 
         turns = await turn_repo.find_by_session_id(session_uuid)
         transcript = [
@@ -145,8 +175,15 @@ async def score_session_task(ctx: dict, session_id: str) -> None:
             score_payload.get("final_score"),
             score_payload.get("verdict"),
         )
-    except Exception:
+    except Exception as exc:
         logger.exception("Session scoring failed for %s", session_id)
+        metadata = dict(session.session_metadata or {})
+        metadata["scoring_error"] = {
+            "type": type(exc).__name__,
+            "message": str(exc)[:500],
+            "captured_at": datetime.now(timezone.utc).isoformat(),
+        }
+        await session_repo.update_attr(session_uuid, "session_metadata", metadata)
         await session_repo.update_attr(session_uuid, "has_verdict", False)
         await session_repo.update_attr(session_uuid, "verdict_status", "failed")
         await session_repo.update_status(session_uuid, SessionStatus.FAILED)
@@ -329,29 +366,43 @@ async def retry_pending_scoring(ctx: dict) -> dict[str, int]:
     _ = ctx
     cutoff = datetime.now(timezone.utc) - timedelta(minutes=5)
     retried = 0
+    timed_out = 0
+    failed = 0
 
     async with database.session() as session:
         pending_query = (
             select(SessionDb)
             .outerjoin(ScoreDb, ScoreDb.session_id == SessionDb.id)
             .where(
-                SessionDb.status.in_([SessionStatus.COMPLETED, SessionStatus.SCORING]),
+                SessionDb.status.in_(
+                    [
+                        SessionStatus.COMPLETED,
+                        SessionStatus.SCORING,
+                        SessionStatus.FAILED,
+                    ]
+                ),
                 ScoreDb.id.is_(None),
                 SessionDb.ended_at.is_not(None),
                 SessionDb.ended_at < cutoff,
             )
-            .limit(50)
+            .limit(20)
         )
         pending = (await session.execute(pending_query)).scalars().all()
 
     for candidate in pending:
         try:
-            await score_session_task({}, str(candidate.id))
+            await asyncio.wait_for(
+                score_session_task({}, str(candidate.id)), timeout=45
+            )
             retried += 1
+        except TimeoutError:
+            timed_out += 1
+            logger.warning("Retry scoring timed out for session %s", candidate.id)
         except Exception:
+            failed += 1
             logger.exception("Retry scoring failed for session %s", candidate.id)
 
-    return {"retried": retried}
+    return {"retried": retried, "timed_out": timed_out, "failed": failed}
 
 
 class WorkerSettings:

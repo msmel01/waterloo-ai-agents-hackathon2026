@@ -575,6 +575,28 @@ async def get_session_verdict(
 
     score = await score_repo.find_by_session_id(session.id)
     verdict_status = session.verdict_status or ("ready" if score else "pending")
+    if verdict_status == "failed":
+        failure_msg = "Scoring failed for this interview. Please try again later."
+        scoring_error = (
+            (session.session_metadata or {}).get("scoring_error")
+            if isinstance(session.session_metadata, dict)
+            else None
+        )
+        if config.DEBUG and isinstance(scoring_error, dict):
+            error_type = str(scoring_error.get("type") or "Error")
+            error_message = str(scoring_error.get("message") or "").strip()
+            if error_message:
+                failure_msg = f"{failure_msg} ({error_type}: {error_message})"
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={
+                "session_id": str(session.id),
+                "status": "failed",
+                "ready": True,
+                "message": failure_msg,
+            },
+        )
+
     if verdict_status in {"pending", "scoring"} or not score:
         return JSONResponse(
             status_code=status.HTTP_202_ACCEPTED,
@@ -584,12 +606,6 @@ async def get_session_verdict(
                 "ready": False,
                 "message": "Your results are being prepared. Please wait...",
             },
-        )
-
-    if verdict_status == "failed":
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Scoring failed. Please try again later.",
         )
 
     heart = await heart_repo.read_by_id(session.heart_id)

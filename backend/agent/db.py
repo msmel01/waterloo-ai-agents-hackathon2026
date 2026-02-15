@@ -127,6 +127,38 @@ async def save_conversation_data(session_id: str, session_data: dict) -> None:
             raise RuntimeError(f"Session not found: {session_id}")
 
         transcript = session_data.get("full_transcript", [])
+        summarized_turns = session_data.get("turns", [])
+        if not transcript and isinstance(summarized_turns, list):
+            # Fallback: synthesize minimal transcript from summarized turns so
+            # scoring can still operate when runtime transcript events were sparse.
+            synthesized: list[dict] = []
+            for idx, turn in enumerate(summarized_turns):
+                q = str(turn.get("question_text") or "").strip()
+                a = str(turn.get("response_summary") or "").strip()
+                if q:
+                    synthesized.append(
+                        {
+                            "speaker": "avatar",
+                            "text": q,
+                            "index": len(synthesized),
+                        }
+                    )
+                if a:
+                    synthesized.append(
+                        {
+                            "speaker": "suitor",
+                            "text": a,
+                            "index": len(synthesized),
+                        }
+                    )
+            transcript = synthesized
+
+        logger.info(
+            "Persisting session %s transcript entries=%s summarized_turns=%s",
+            session_id,
+            len(transcript) if isinstance(transcript, list) else 0,
+            len(summarized_turns) if isinstance(summarized_turns, list) else 0,
+        )
         for index, turn in enumerate(transcript):
             speaker_value = (turn.get("speaker") or "avatar").lower()
             speaker = (
@@ -155,7 +187,9 @@ async def save_conversation_data(session_id: str, session_data: dict) -> None:
             session.ended_at = datetime.now(timezone.utc)
         session.status = SessionStatus.COMPLETED
         session.end_reason = session_data.get("end_reason")
-        session.turn_summaries = {"turns": session_data.get("turns", [])}
+        session.turn_summaries = {
+            "turns": summarized_turns if isinstance(summarized_turns, list) else []
+        }
         session.audio_recording_url = session_data.get("audio_recording_url")
         db.add(session)
         await db.commit()

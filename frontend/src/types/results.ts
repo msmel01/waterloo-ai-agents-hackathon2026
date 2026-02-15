@@ -1,4 +1,4 @@
-export type VerdictStatus = 'scoring' | 'scored';
+export type VerdictStatus = 'scoring' | 'scored' | 'failed';
 export type VerdictValue = 'date' | 'no_date';
 
 export interface ScoreMetric {
