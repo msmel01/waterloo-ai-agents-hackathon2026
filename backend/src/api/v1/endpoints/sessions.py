@@ -165,7 +165,7 @@ def _group_slots(
 
     for start_utc, end_utc in sorted(entries, key=lambda x: x[0]):
         local_start = start_utc.astimezone(tz)
-        end_utc.astimezone(tz)
+        local_end = end_utc.astimezone(tz)  # noqa: F841
         day_key = local_start.date().isoformat()
         display = local_start.strftime("%I:%M %p").lstrip("0")
         grouped[day_key].append(
