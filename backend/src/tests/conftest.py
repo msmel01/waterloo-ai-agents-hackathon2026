@@ -345,7 +345,7 @@ def mock_calcom() -> AsyncMock:
     return svc
 
 
-VALID_DASHBOARD_KEY = "test-dashboard-key-12345"
+VALID_DASHBOARD_KEY = os.environ.get("DASHBOARD_API_KEY", "dashboard-test-key")
 INVALID_DASHBOARD_KEY = "wrong-key"
 
 
