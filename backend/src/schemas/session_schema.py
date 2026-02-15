@@ -73,8 +73,27 @@ class SessionVerdictResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     session_id: str = Field(description="Session UUID.")
-    ready: bool = Field(description="Whether a verdict is ready for this session.")
+    status: str = Field(description="Verdict status payload: scoring or scored.")
+    ready: bool = Field(
+        default=False, description="Whether a verdict is ready for this session."
+    )
     verdict: Verdict | None = Field(default=None, description="Date/no-date verdict.")
+    booking_available: bool | None = Field(
+        default=None, description="True only when session verdict is date."
+    )
+    suitor_name: str | None = Field(
+        default=None, description="Authenticated suitor name."
+    )
+    heart_name: str | None = Field(default=None, description="Heart display name.")
+    message: str | None = Field(
+        default=None, description="Status message for scoring state."
+    )
+    scores: dict | None = Field(
+        default=None, description="Structured weighted scoring payload."
+    )
+    feedback: dict | None = Field(
+        default=None, description="Structured feedback payload."
+    )
     weighted_total: float | None = Field(
         default=None, description="Overall weighted score (0-100)."
     )
@@ -154,3 +173,54 @@ class PreCheckResponse(BaseModel):
     heart_active: bool
     remaining_today: int
     active_session_id: str | None = None
+
+
+class SlotTimeItem(BaseModel):
+    """Single slot entry shown in grouped slot picker."""
+
+    start: datetime
+    end: datetime
+    display: str
+
+
+class SlotDayGroup(BaseModel):
+    """Slots grouped by date for frontend rendering."""
+
+    date: str
+    day_label: str
+    times: list[SlotTimeItem]
+
+
+class SessionSlotsResponse(BaseModel):
+    """Session-scoped slot response used in M6 results flow."""
+
+    slots: list[SlotDayGroup]
+    timezone: str
+    event_duration_minutes: int
+
+
+class SessionBookRequest(BaseModel):
+    """Book a selected slot for a successful date verdict session."""
+
+    slot_start: datetime
+    suitor_name: str = Field(min_length=1, max_length=120)
+    suitor_email: str = Field(min_length=3, max_length=255)
+    suitor_notes: str | None = Field(default=None, max_length=1000)
+
+
+class BookedSlotResponse(BaseModel):
+    """Booked slot display payload."""
+
+    start: datetime
+    end: datetime
+    display: str
+
+
+class SessionBookResponse(BaseModel):
+    """Booking confirmation payload for suitor."""
+
+    booking_id: str
+    cal_event_id: str
+    slot: BookedSlotResponse
+    status: str
+    message: str

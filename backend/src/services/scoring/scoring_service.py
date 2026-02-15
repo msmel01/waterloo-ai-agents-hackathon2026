@@ -65,7 +65,7 @@ class ScoringService:
         response_text = self._extract_text(response)
         result = self._parse_json(response_text)
 
-        category_scores = result.get("category_scores", {})
+        category_scores = result.get("scores") or result.get("category_scores", {})
         effort = self._clamp(category_scores.get("effort", 50), 0, 100)
         creativity = self._clamp(category_scores.get("creativity", 50), 0, 100)
         intent_clarity = self._clamp(category_scores.get("intent_clarity", 50), 0, 100)
@@ -73,7 +73,40 @@ class ScoringService:
             category_scores.get("emotional_intelligence", 50), 0, 100
         )
 
-        emotion_modifier = self._clamp(result.get("emotion_modifier", 0), -10, 10)
+        emotion_modifiers_payload = result.get("emotion_modifiers")
+        if isinstance(emotion_modifiers_payload, dict):
+            emotion_modifier = self._clamp(
+                sum(
+                    float(emotion_modifiers_payload.get(key, 0) or 0)
+                    for key in [
+                        "confidence_boost",
+                        "anxiety_context",
+                        "enthusiasm_bonus",
+                        "discomfort_sensitivity",
+                    ]
+                ),
+                -10,
+                10,
+            )
+            emotion_modifiers = {
+                "confidence_boost": float(
+                    emotion_modifiers_payload.get("confidence_boost", 0) or 0
+                ),
+                "anxiety_context": float(
+                    emotion_modifiers_payload.get("anxiety_context", 0) or 0
+                ),
+                "enthusiasm_bonus": float(
+                    emotion_modifiers_payload.get("enthusiasm_bonus", 0) or 0
+                ),
+                "discomfort_sensitivity": float(
+                    emotion_modifiers_payload.get("discomfort_sensitivity", 0) or 0
+                ),
+                "total": 0.0,
+            }
+            emotion_modifiers["total"] = round(emotion_modifier, 2)
+        else:
+            emotion_modifier = self._clamp(result.get("emotion_modifier", 0), -10, 10)
+            emotion_modifiers = {"voice_modifier": round(float(emotion_modifier), 2)}
 
         raw_score = (
             effort * SCORING_WEIGHTS["effort"]
@@ -90,6 +123,12 @@ class ScoringService:
         feedback_summary = str(feedback.get("summary") or "")
         if not feedback_summary:
             feedback_summary = "Interview scored successfully."
+        feedback_json = {
+            "summary": feedback_summary,
+            "strengths": self._as_list(feedback.get("strengths")),
+            "improvements": self._as_list(feedback.get("improvements")),
+            "favorite_moment": str(feedback.get("favorite_moment") or ""),
+        }
 
         return {
             "effort_score": float(effort),
@@ -100,7 +139,7 @@ class ScoringService:
             "raw_score": round(raw_score, 2),
             "final_score": round(final_score, 2),
             "emotion_modifier": float(emotion_modifier),
-            "emotion_modifiers": {"voice_modifier": round(float(emotion_modifier), 2)},
+            "emotion_modifiers": emotion_modifiers,
             "emotion_modifier_reasons": self._as_list(
                 result.get("emotion_modifier_reasons")
             ),
@@ -108,8 +147,9 @@ class ScoringService:
             "verdict_threshold": verdict_threshold,
             "feedback_text": feedback_summary,
             "feedback_summary": feedback_summary,
-            "feedback_strengths": self._as_list(feedback.get("strengths")),
-            "feedback_improvements": self._as_list(feedback.get("improvements")),
+            "feedback_strengths": feedback_json["strengths"],
+            "feedback_improvements": feedback_json["improvements"],
+            "feedback_json": feedback_json,
             "feedback_heart_note": (
                 str(feedback.get("heart_note"))
                 if feedback.get("heart_note") is not None

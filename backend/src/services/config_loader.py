@@ -56,6 +56,9 @@ class CalendarConfig(BaseModel):
 
     calcom_api_key: str
     calcom_event_type_id: str
+    timezone: str = "America/Toronto"
+    event_duration_minutes: int = Field(default=60, ge=15, le=240)
+    notification_webhook_url: str | None = None
 
 
 class AvatarConfig(BaseModel):

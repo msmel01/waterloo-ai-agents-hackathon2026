@@ -68,6 +68,9 @@ class ScoreDb(SQLModel, table=True):
         default_factory=list,
         sa_column=Column(JSONB, nullable=False, server_default="[]"),
     )
+    feedback_json: Optional[dict[str, Any]] = Field(
+        default=None, sa_column=Column(JSONB, nullable=True)
+    )
     feedback_heart_note: Optional[str] = Field(
         default=None, sa_column=Column(Text, nullable=True)
     )

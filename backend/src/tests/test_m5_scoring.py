@@ -260,6 +260,8 @@ async def test_m5_022_feedback_references_specific_answers(sample_transcript):
 async def test_m5_023_get_verdict_api_success(registered_suitor, completed_session):
     session_repo = AsyncMock()
     session_repo.read_by_id.return_value = completed_session
+    heart_repo = AsyncMock()
+    heart_repo.read_by_id.return_value = type("Heart", (), {"display_name": "Luna"})()
     score_repo = AsyncMock()
     score_repo.find_by_session_id.return_value = ScoreDb(
         session_id=completed_session.id,
@@ -274,33 +276,37 @@ async def test_m5_023_get_verdict_api_success(registered_suitor, completed_sessi
     )
     completed_session.verdict_status = "ready"
     res = await get_session_verdict.__wrapped__(
-        completed_session.id, registered_suitor, session_repo, score_repo
+        completed_session.id, registered_suitor, session_repo, score_repo, heart_repo
     )
     assert res.ready is True
     assert res.verdict == Verdict.DATE
+    assert res.status == "scored"
 
 
 @pytest.mark.asyncio
 async def test_m5_024_get_verdict_api_not_ready(registered_suitor, completed_session):
     session_repo = AsyncMock()
     session_repo.read_by_id.return_value = completed_session
+    heart_repo = AsyncMock()
+    heart_repo.read_by_id.return_value = None
     score_repo = AsyncMock()
     score_repo.find_by_session_id.return_value = None
     completed_session.verdict_status = "scoring"
-    with pytest.raises(Exception):
-        await get_session_verdict.__wrapped__(
-            completed_session.id, registered_suitor, session_repo, score_repo
-        )
+    resp = await get_session_verdict.__wrapped__(
+        completed_session.id, registered_suitor, session_repo, score_repo, heart_repo
+    )
+    assert resp.status_code == 202
 
 
 @pytest.mark.asyncio
 async def test_m5_025_get_verdict_api_session_not_found(registered_suitor):
     session_repo = AsyncMock()
     session_repo.read_by_id.return_value = None
+    heart_repo = AsyncMock()
     score_repo = AsyncMock()
     with pytest.raises(Exception):
         await get_session_verdict.__wrapped__(
-            uuid.uuid4(), registered_suitor, session_repo, score_repo
+            uuid.uuid4(), registered_suitor, session_repo, score_repo, heart_repo
         )
 
 
@@ -308,6 +314,8 @@ async def test_m5_025_get_verdict_api_session_not_found(registered_suitor):
 async def test_m5_026_verdict_response_shape(registered_suitor, completed_session):
     session_repo = AsyncMock()
     session_repo.read_by_id.return_value = completed_session
+    heart_repo = AsyncMock()
+    heart_repo.read_by_id.return_value = type("Heart", (), {"display_name": "Luna"})()
     score_repo = AsyncMock()
     completed_session.verdict_status = "ready"
     score_repo.find_by_session_id.return_value = ScoreDb(
@@ -322,18 +330,10 @@ async def test_m5_026_verdict_response_shape(registered_suitor, completed_sessio
         emotion_modifiers={},
     )
     out = await get_session_verdict.__wrapped__(
-        completed_session.id, registered_suitor, session_repo, score_repo
+        completed_session.id, registered_suitor, session_repo, score_repo, heart_repo
     )
     payload = out.model_dump()
-    for field in [
-        "effort_score",
-        "creativity_score",
-        "intent_clarity_score",
-        "emotional_intelligence_score",
-        "weighted_total",
-        "verdict",
-        "feedback_text",
-    ]:
+    for field in ["status", "scores", "feedback", "booking_available", "verdict"]:
         assert field in payload
 
 

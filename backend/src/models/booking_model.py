@@ -2,8 +2,9 @@
 
 import uuid
 from datetime import datetime
+from typing import Optional
 
-from sqlalchemy import Column, DateTime, ForeignKey, String, func
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, String, Text, func
 from sqlalchemy import Enum as SAEnum
 from sqlalchemy.dialects.postgresql import UUID
 from sqlmodel import Field, SQLModel
@@ -45,6 +46,19 @@ class BookingDb(SQLModel, table=True):
     )
     calcom_booking_id: str = Field(
         sa_column=Column(String(255), nullable=False, index=True)
+    )
+    suitor_email: Optional[str] = Field(
+        default=None, sa_column=Column(String(255), nullable=True)
+    )
+    suitor_notes: Optional[str] = Field(
+        default=None, sa_column=Column(Text, nullable=True)
+    )
+    notification_sent: bool = Field(
+        default=False, sa_column=Column(Boolean, nullable=False, server_default="false")
+    )
+    booking_status: str = Field(
+        default=BookingStatus.CONFIRMED.value,
+        sa_column=Column(String(50), nullable=False, server_default="confirmed"),
     )
     scheduled_at: datetime = Field(
         sa_column=Column(DateTime(timezone=True), nullable=False, index=True)

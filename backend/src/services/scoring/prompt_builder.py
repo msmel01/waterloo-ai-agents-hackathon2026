@@ -187,8 +187,27 @@ Dealbreakers:
 
 Apply emotion modifier in range -10..+10 based on voice/emotion signals.
 
-Return ONLY valid JSON:
+Return ONLY valid JSON with this exact structure:
 {{
+  "scores": {{
+    "effort": 0,
+    "creativity": 0,
+    "intent_clarity": 0,
+    "emotional_intelligence": 0
+  }},
+  "emotion_modifiers": {{
+    "confidence_boost": 0,
+    "anxiety_context": 0,
+    "enthusiasm_bonus": 0,
+    "discomfort_sensitivity": 0
+  }},
+  "feedback": {{
+    "summary": "...",
+    "strengths": ["..."],
+    "improvements": ["..."],
+    "favorite_moment": "...",
+    "heart_note": "..."
+  }},
   "per_question_scores": [
     {{
       "question_index": 0,
@@ -200,20 +219,6 @@ Return ONLY valid JSON:
       "emotion_context": "...",
       "note": "..."
     }}
-  ],
-  "category_scores": {{
-    "effort": 0,
-    "creativity": 0,
-    "intent_clarity": 0,
-    "emotional_intelligence": 0
-  }},
-  "emotion_modifier": 0,
-  "emotion_modifier_reasons": ["..."],
-  "feedback": {{
-    "summary": "...",
-    "strengths": ["..."],
-    "improvements": ["..."],
-    "heart_note": "..."
-  }}
+  ]
 }}
 """

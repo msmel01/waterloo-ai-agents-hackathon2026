@@ -143,7 +143,7 @@ export function ChatScreen() {
     if (['completed', 'failed', 'expired', 'cancelled', 'scored'].includes(status)) {
       toast.info(`Session ended (${status}).`);
       if (auth?.sessionId) {
-        navigate(`/interview/${auth.sessionId}/complete`, { replace: true });
+        navigate(`/session/${auth.sessionId}/results`, { replace: true });
       } else {
         navigate('/chats', { replace: true });
       }
