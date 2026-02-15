@@ -11,6 +11,16 @@ from locust import HttpUser, between, task
 class SuitorUser(HttpUser):
     wait_time = between(1, 3)
 
+    def on_start(self):
+        # In staging/test load runs we use a pre-issued Clerk bearer token.
+        token = (
+            os.getenv("CLERK_TEST_BEARER_TOKEN")
+            or os.getenv("CLERK_BEARER_TOKEN")
+            or os.getenv("AUTH_BEARER_TOKEN")
+            or ""
+        )
+        self.auth_headers = {"Authorization": f"Bearer {token}"} if token else {}
+
     @task(3)
     def view_landing(self):
         self.client.get("/api/v1/public/melika", name="public_profile")
@@ -25,6 +35,7 @@ class SuitorUser(HttpUser):
                 "gender": "female",
                 "orientation": "straight",
             },
+            headers=self.auth_headers,
             name="register_suitor",
         )
 
@@ -33,6 +44,7 @@ class SuitorUser(HttpUser):
         self.client.post(
             "/api/v1/sessions/start",
             json={"heart_slug": "melika"},
+            headers=self.auth_headers,
             name="start_session",
         )
 

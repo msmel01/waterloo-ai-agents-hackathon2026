@@ -16,7 +16,6 @@ from src.api.mcps import router as mcps_routers
 from src.api.routes import routers
 from src.core.config import config
 from src.core.container import Container
-from src.core.database import Database
 from src.core.events import lifespan
 from src.core.exception_handlers import (
     auth_error_handler,
@@ -183,8 +182,7 @@ class AppCreator:
         async def health():
             db_status = "ok"
             try:
-                probe_db = Database(config)
-                async with probe_db.session() as session:
+                async with self.db.session() as session:
                     await session.execute(text("SELECT 1"))
             except Exception:
                 db_status = "error"
