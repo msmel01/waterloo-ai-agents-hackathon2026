@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime, timezone
 from types import SimpleNamespace
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 
@@ -254,7 +254,8 @@ async def test_m7_status_012_resume_allows_new_sessions(m7_seeded_heart):
 
     livekit = AsyncMock()
     livekit.create_room.return_value = {"sid": "RM_123"}
-    livekit.generate_suitor_token.return_value = "token"
+    # generate_suitor_token is used synchronously in start_session.
+    livekit.generate_suitor_token = Mock(return_value="token")
 
     suitor = SimpleNamespace(
         id=uuid.uuid4(),
