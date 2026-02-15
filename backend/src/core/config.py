@@ -68,6 +68,7 @@ class Config(BaseSettings):
     MAX_SESSIONS_PER_DAY: int = 3
     SESSION_PENDING_TIMEOUT: int = 300
     SESSION_MAX_DURATION: int = 1800
+    VERDICT_THRESHOLD: float = 65.0
 
     @model_validator(mode="after")
     def set_debug_default(self):

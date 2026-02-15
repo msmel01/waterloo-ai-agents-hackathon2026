@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { EmotionModifiers } from './emotionModifiers';
+import type { SessionVerdictResponsePerQuestionScores } from './sessionVerdictResponsePerQuestionScores';
 import type { Verdict } from './verdict';
 
 /**
@@ -20,6 +21,10 @@ export interface SessionVerdictResponse {
   verdict?: Verdict | null;
   /** Overall weighted score (0-100). */
   weighted_total?: number | null;
+  /** Weighted score before emotion modifier. */
+  raw_score?: number | null;
+  /** Final score after emotion modifier (0-100). */
+  final_score?: number | null;
   /** Effort score (0-100). */
   effort_score?: number | null;
   /** Creativity score (0-100). */
@@ -30,6 +35,14 @@ export interface SessionVerdictResponse {
   emotional_intelligence_score?: number | null;
   /** Emotion-based score modifiers. */
   emotion_modifiers?: EmotionModifiers | null;
+  /** Human-readable reasons for emotion modifier. */
+  emotion_modifier_reasons?: string[] | null;
   /** Personalized feedback for the suitor. */
   feedback_text?: string | null;
+  /** Top strengths identified during scoring. */
+  feedback_strengths?: string[] | null;
+  /** Top areas for improvement. */
+  feedback_improvements?: string[] | null;
+  /** Per-question scoring breakdown. */
+  per_question_scores?: SessionVerdictResponsePerQuestionScores;
 }

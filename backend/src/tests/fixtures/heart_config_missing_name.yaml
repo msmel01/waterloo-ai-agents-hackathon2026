@@ -1,0 +1,14 @@
+persona:
+  traits: [warm]
+  vibe: calm
+  tone: nice
+  humor_level: 5
+  strictness: 5
+expectations: {}
+screening_questions:
+  - text: Hello?
+    required: true
+shareable_slug: broken
+calendar:
+  calcom_api_key: x
+  calcom_event_type_id: y

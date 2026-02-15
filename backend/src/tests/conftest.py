@@ -12,16 +12,37 @@ Fixture inventory:
 from __future__ import annotations
 
 import os
+import uuid
 from dataclasses import dataclass
+from datetime import datetime, timedelta, timezone
 from typing import Any, Callable
 from unittest.mock import AsyncMock, Mock
 
+import httpx
 import pytest
+from httpx import ASGITransport
 
 # Ensure required settings exist during test collection before src.core.config imports.
 os.environ.setdefault("CLERK_JWKS_URL", "https://example.com/.well-known/jwks.json")
 os.environ.setdefault("CLERK_SECRET_KEY", "sk_test_dummy")
 os.environ.setdefault("CLERK_WEBHOOK_SECRET", "whsec_dummy")
+os.environ.setdefault("DB_USER", "test")
+os.environ.setdefault("DB_HOST", "localhost")
+os.environ.setdefault("DB_PORT", "5432")
+os.environ.setdefault("DB_NAME", "test")
+os.environ.setdefault("DB_PASSWORD", "test")
+os.environ.setdefault(
+    "DATABASE_URL", "postgresql+asyncpg://test:test@localhost:5432/test"
+)
+os.environ.setdefault("LIVEKIT_URL", "wss://example.livekit.cloud")
+os.environ.setdefault("LIVEKIT_API_KEY", "lk_test_key")
+os.environ.setdefault("LIVEKIT_API_SECRET", "lk_test_secret")
+os.environ.setdefault("DEEPGRAM_API_KEY", "dg_test_key")
+os.environ.setdefault("OPENAI_API_KEY", "sk-test")
+os.environ.setdefault("HUME_API_KEY", "hume-test")
+os.environ.setdefault("ANTHROPIC_API_KEY", "anthropic-test")
+os.environ.setdefault("CALCOM_API_KEY", "cal-test")
+os.environ.setdefault("REDIS_URL", "redis://localhost:6379/0")
 
 
 @dataclass
@@ -126,3 +147,275 @@ def session_factory(
 def uuid4_str() -> str:
     """Deterministic UUID string for convenient test payloads."""
     return "11111111-1111-1111-1111-111111111111"
+
+
+@pytest.fixture
+async def db_session() -> AsyncMock:
+    """Async SQLAlchemy session mock placeholder for integration-like tests."""
+    session = AsyncMock()
+    session.add = Mock()
+    return session
+
+
+@pytest.fixture
+async def client():
+    """Async HTTP client bound to FastAPI app with lifespan disabled."""
+    from src.main import app
+
+    transport = ASGITransport(app=app)
+    async with httpx.AsyncClient(
+        transport=transport, base_url="http://testserver"
+    ) as async_client:
+        yield async_client
+
+
+@pytest.fixture
+def heart_config() -> dict[str, Any]:
+    """Returns a valid heart_config dict for testing."""
+    return {
+        "name": "Test Heart",
+        "slug": "test-heart",
+        "persona": "A witty and warm person who loves deep conversations",
+        "expectations": ["Sense of humor", "Emotional depth", "Creativity"],
+        "screening_questions": [
+            "What's the most thoughtful thing you've done for someone you care about?",
+            "If we had one perfect day together, what would it look like?",
+            "What's something you're passionate about that most people don't know?",
+            "How do you handle disagreements in a relationship?",
+            "What does love mean to you?",
+        ],
+        "cal_com": {"api_key": "test-cal-key", "event_type_id": 123456},
+        "scoring": {
+            "date_threshold": 65,
+            "weights": {
+                "effort": 0.30,
+                "creativity": 0.20,
+                "intent_clarity": 0.25,
+                "emotional_intelligence": 0.25,
+            },
+        },
+    }
+
+
+@pytest.fixture
+def sample_transcript() -> list[dict[str, Any]]:
+    """Returns a realistic conversation transcript for scoring tests."""
+    return [
+        {
+            "turn": 1,
+            "question": "What's the most thoughtful thing you've done for someone?",
+            "answer": "I once planned a surprise stargazing picnic for my partner's birthday...",
+            "timestamp": "2026-02-14T20:01:00Z",
+            "emotion_snapshot": {
+                "confidence": 0.72,
+                "anxiety": 0.15,
+                "enthusiasm": 0.81,
+                "warmth": 0.68,
+                "amusement": 0.30,
+                "discomfort": 0.08,
+            },
+        },
+        {
+            "turn": 2,
+            "question": "If we had one perfect day together, what would it look like?",
+            "answer": "I'd start with making breakfast together, maybe trying a new recipe...",
+            "timestamp": "2026-02-14T20:03:30Z",
+            "emotion_snapshot": {
+                "confidence": 0.65,
+                "anxiety": 0.20,
+                "enthusiasm": 0.75,
+                "warmth": 0.82,
+                "amusement": 0.45,
+                "discomfort": 0.05,
+            },
+        },
+        {
+            "turn": 3,
+            "question": "What's something you're passionate about?",
+            "answer": "I'm really into urban gardening. I've been growing vegetables on my balcony...",
+            "timestamp": "2026-02-14T20:06:00Z",
+            "emotion_snapshot": {
+                "confidence": 0.85,
+                "anxiety": 0.08,
+                "enthusiasm": 0.90,
+                "warmth": 0.55,
+                "amusement": 0.20,
+                "discomfort": 0.03,
+            },
+        },
+        {
+            "turn": 4,
+            "question": "How do you handle disagreements?",
+            "answer": "I try to listen first and understand the other person's perspective...",
+            "timestamp": "2026-02-14T20:08:45Z",
+            "emotion_snapshot": {
+                "confidence": 0.60,
+                "anxiety": 0.25,
+                "enthusiasm": 0.40,
+                "warmth": 0.70,
+                "amusement": 0.10,
+                "discomfort": 0.18,
+            },
+        },
+        {
+            "turn": 5,
+            "question": "What does love mean to you?",
+            "answer": "To me, love is about choosing someone every day, even when it's hard...",
+            "timestamp": "2026-02-14T20:11:30Z",
+            "emotion_snapshot": {
+                "confidence": 0.78,
+                "anxiety": 0.12,
+                "enthusiasm": 0.65,
+                "warmth": 0.92,
+                "amusement": 0.15,
+                "discomfort": 0.06,
+            },
+        },
+    ]
+
+
+@pytest.fixture
+def sample_emotion_timeline() -> list[dict[str, Any]]:
+    """Returns chronological emotion readings from Hume streaming."""
+    base = datetime(2026, 2, 14, 20, 0, 0, tzinfo=timezone.utc)
+    return [
+        {
+            "timestamp": (base + timedelta(seconds=i * 30)).isoformat(),
+            "confidence": 0.5 + (i * 0.03),
+            "anxiety": max(0, 0.30 - (i * 0.02)),
+            "enthusiasm": 0.6 + (i * 0.02),
+            "warmth": 0.5 + (i * 0.04),
+            "amusement": 0.2 + (i * 0.01),
+            "discomfort": max(0, 0.15 - (i * 0.01)),
+        }
+        for i in range(25)
+    ]
+
+
+@pytest.fixture
+async def seeded_heart() -> Any:
+    from src.models.heart_model import HeartDb
+
+    return HeartDb(
+        id=uuid.uuid4(),
+        display_name="Test Heart",
+        bio="Bio",
+        shareable_slug="test-heart",
+        persona={"traits": ["witty", "warm", "direct"]},
+        expectations={"values": ["kindness"]},
+        is_active=True,
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
+    )
+
+
+@pytest.fixture
+async def registered_suitor() -> Any:
+    from src.models.suitor_model import SuitorDb
+
+    return SuitorDb(
+        id=uuid.uuid4(),
+        clerk_user_id="user_test_123",
+        name="Test Suitor",
+        email="test@example.com",
+        age=25,
+        gender="male",
+        orientation="straight",
+        intro_message="Hello there",
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
+    )
+
+
+@pytest.fixture
+async def completed_session(
+    seeded_heart: Any,
+    registered_suitor: Any,
+    sample_transcript: list[dict[str, Any]],
+    sample_emotion_timeline: list[dict[str, Any]],
+) -> Any:
+    from src.models.domain_enums import SessionStatus
+    from src.models.session_model import SessionDb
+
+    return SessionDb(
+        id=uuid.uuid4(),
+        heart_id=seeded_heart.id,
+        suitor_id=registered_suitor.id,
+        livekit_room_name=f"session-{uuid.uuid4()}",
+        status=SessionStatus.COMPLETED,
+        started_at=datetime.now(timezone.utc) - timedelta(minutes=10),
+        ended_at=datetime.now(timezone.utc),
+        turn_summaries={"turns": sample_transcript},
+        emotion_timeline=sample_emotion_timeline,
+        has_verdict=False,
+        verdict_status="pending",
+    )
+
+
+@pytest.fixture
+def mock_livekit() -> AsyncMock:
+    svc = AsyncMock()
+    svc.create_room.return_value = {"name": "session-room", "sid": "RM_123"}
+    svc.create_agent_dispatch.return_value = {
+        "id": "AD_123",
+        "agent_name": "valentine-interview-agent",
+        "room": "session-room",
+    }
+    svc.generate_suitor_token = Mock(return_value="mock.livekit.jwt")
+    return svc
+
+
+@pytest.fixture
+def mock_deepgram() -> AsyncMock:
+    svc = AsyncMock()
+    svc.transcribe.return_value = "mock transcript"
+    svc.synthesize.return_value = b"mock-audio"
+    return svc
+
+
+@pytest.fixture
+def mock_openai() -> AsyncMock:
+    svc = AsyncMock()
+    svc.complete.return_value = {"text": "mock llm response"}
+    return svc
+
+
+@pytest.fixture
+def mock_hume() -> AsyncMock:
+    svc = AsyncMock()
+    svc.connect.return_value = True
+    svc.latest.return_value = {
+        "confidence": 0.7,
+        "anxiety": 0.1,
+        "enthusiasm": 0.8,
+        "warmth": 0.6,
+        "amusement": 0.2,
+        "discomfort": 0.05,
+    }
+    return svc
+
+
+@pytest.fixture
+def mock_claude() -> AsyncMock:
+    svc = AsyncMock()
+    svc.score.return_value = {
+        "category_scores": {
+            "effort": 80,
+            "creativity": 75,
+            "intent_clarity": 82,
+            "emotional_intelligence": 78,
+        },
+        "emotion_modifier": 3,
+        "feedback": {"summary": "Great conversation overall."},
+    }
+    return svc
+
+
+@pytest.fixture
+def mock_calcom() -> AsyncMock:
+    svc = AsyncMock()
+    svc.validate_connection.return_value = True
+    svc.get_available_slots.return_value = [
+        {"start": "2026-02-20T14:00:00Z", "end": "2026-02-20T14:30:00Z"}
+    ]
+    return svc

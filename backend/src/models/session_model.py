@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime
 from typing import Any, Optional
 
-from sqlalchemy import Column, DateTime, ForeignKey, String, Text, func
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, String, Text, func
 from sqlalchemy import Enum as SAEnum
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlmodel import Field, SQLModel
@@ -59,6 +59,18 @@ class SessionDb(SQLModel, table=True):
     )
     end_reason: Optional[str] = Field(
         default=None, sa_column=Column(String(255), nullable=True)
+    )
+    has_verdict: bool = Field(
+        default=False,
+        sa_column=Column(
+            Boolean,
+            nullable=False,
+            server_default="false",
+        ),
+    )
+    verdict_status: str = Field(
+        default="pending",
+        sa_column=Column(String(32), nullable=False, server_default="pending"),
     )
     turn_summaries: Optional[dict[str, Any]] = Field(
         default=None, sa_column=Column(JSONB, nullable=True)

@@ -1,0 +1,23 @@
+profile:
+  display_name: Test Heart
+  bio: Test bio
+persona:
+  traits: [witty, warm, direct]
+  vibe: playful
+  tone: calm
+  humor_level: 6
+  strictness: 5
+expectations:
+  dealbreakers: [dishonesty]
+  green_flags: [kindness]
+  must_haves: [effort]
+  looking_for: long-term
+screening_questions:
+  - text: What's your ideal date?
+    required: true
+shareable_slug: test-heart
+calendar:
+  calcom_api_key: ${CALCOM_API_KEY}
+  calcom_event_type_id: test-event
+avatar:
+  tavus_api_key: ${TAVUS_API_KEY}

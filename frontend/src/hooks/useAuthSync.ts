@@ -8,27 +8,37 @@ export function useAuthSync() {
 
   useEffect(() => {
     let mounted = true;
+    let intervalId: number | null = null;
+
+    const syncToken = async () => {
+      try {
+        const token = await getToken();
+        if (!mounted) {
+          return;
+        }
+        setAuthToken(token ?? null);
+      } catch {
+        if (mounted) {
+          setAuthToken(null);
+        }
+      }
+    };
 
     if (!isSignedIn) {
       setAuthToken(null);
       return;
     }
 
-    getToken()
-      .then((token) => {
-        if (!mounted) {
-          return;
-        }
-        setAuthToken(token ?? null);
-      })
-      .catch(() => {
-        if (mounted) {
-          setAuthToken(null);
-        }
-      });
+    void syncToken();
+    intervalId = window.setInterval(() => {
+      void syncToken();
+    }, 30_000);
 
     return () => {
       mounted = false;
+      if (intervalId !== null) {
+        window.clearInterval(intervalId);
+      }
     };
   }, [getToken, isSignedIn]);
 }

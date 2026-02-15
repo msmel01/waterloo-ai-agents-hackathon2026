@@ -1,0 +1,16 @@
+{
+  "category_scores": {
+    "effort": 82,
+    "creativity": 74,
+    "intent_clarity": 79,
+    "emotional_intelligence": 81
+  },
+  "emotion_modifier": 3,
+  "emotion_modifier_reasons": ["steady confidence", "high warmth"],
+  "feedback": {
+    "summary": "Strong overall interview with clear intention.",
+    "strengths": ["specific answers", "good emotional tone"],
+    "improvements": ["add more playful spontaneity"],
+    "heart_note": "worth a date"
+  }
+}

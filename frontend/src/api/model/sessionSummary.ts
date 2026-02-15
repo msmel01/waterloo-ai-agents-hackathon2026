@@ -18,4 +18,5 @@ export interface SessionSummary {
   end_reason?: string | null;
   has_verdict: boolean;
   verdict?: string | null;
+  final_score?: number | null;
 }
