@@ -4,12 +4,13 @@ from datetime import datetime, timezone
 from typing import Annotated
 
 from dependency_injector.wiring import Provide, inject
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 
 from src.core.config import config
 from src.core.container import Container
+from src.core.security import get_current_user
 from src.core.validators import sanitize_input
-from src.dependencies import get_current_suitor
+from src.dependencies import get_current_suitor, get_current_suitor_optional
 from src.models.suitor_model import SuitorDb
 from src.repository.score_repository import ScoreRepository
 from src.repository.session_repository import SessionRepository
@@ -20,6 +21,7 @@ from src.schemas.suitor_schema import SuitorProfileResponse, SuitorRegisterReque
 router = APIRouter(prefix="/suitors", tags=["Suitors"])
 
 CurrentSuitor = Annotated[SuitorDb, Depends(get_current_suitor)]
+CurrentSuitorOptional = Annotated[SuitorDb | None, Depends(get_current_suitor_optional)]
 SuitorRepoDep = Annotated[
     SuitorRepository, Depends(Provide[Container.suitor_repository])
 ]
@@ -33,22 +35,36 @@ ScoreRepoDep = Annotated[ScoreRepository, Depends(Provide[Container.score_reposi
 @inject
 async def complete_suitor_profile(
     payload: SuitorRegisterRequest,
-    suitor: CurrentSuitor,
+    suitor: CurrentSuitorOptional,
     suitor_repo: SuitorRepoDep,
+    clerk_user_id: Annotated[str, Depends(get_current_user)] = "",
 ):
     """Complete authenticated suitor profile before interview starts."""
+    resolved_clerk_user_id = (suitor.clerk_user_id if suitor else None) or clerk_user_id
+    if not resolved_clerk_user_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Unauthorized",
+        )
+
+    profile_data = {
+        "name": payload.name.strip(),
+        "age": payload.age,
+        "gender": payload.gender,
+        "orientation": payload.orientation,
+        "intro_message": sanitize_input(payload.intro_message),
+    }
     updated = await suitor_repo.update_by_clerk_id(
-        suitor.clerk_user_id or "",
-        {
-            "name": payload.name.strip(),
-            "age": payload.age,
-            "gender": payload.gender,
-            "orientation": payload.orientation,
-            "intro_message": sanitize_input(payload.intro_message),
-        },
+        resolved_clerk_user_id,
+        profile_data,
     )
     if not updated:
-        updated = suitor
+        updated = await suitor_repo.create(
+            SuitorDb(
+                clerk_user_id=resolved_clerk_user_id,
+                **profile_data,
+            )
+        )
 
     return SuitorProfileResponse.model_validate(updated)
 
