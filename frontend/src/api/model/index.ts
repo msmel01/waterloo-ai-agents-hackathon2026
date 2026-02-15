@@ -16,7 +16,6 @@ export * from './bookingCreateRequest';
 export * from './bookingStatus';
 export * from './calcomStatusInfo';
 export * from './calendarStatusResponse';
-export * from './emotionModifiers';
 export * from './getSessionSlotsApiV1SessionsIdSlotsGetParams';
 export * from './hTTPValidationError';
 export * from './linkToggleRequest';

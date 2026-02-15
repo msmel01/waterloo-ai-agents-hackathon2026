@@ -2,11 +2,11 @@
 
 import uuid
 from datetime import datetime
-from typing import Any, Optional
+from typing import Optional
 
 from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, Text, func
 from sqlalchemy import Enum as SAEnum
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.dialects.postgresql import UUID
 from sqlmodel import Field, SQLModel
 
 from src.models.domain_enums import ConversationSpeaker
@@ -37,9 +37,6 @@ class ConversationTurnDb(SQLModel, table=True):
         )
     )
     content: str = Field(sa_column=Column(Text, nullable=False))
-    emotion_data: Optional[dict[str, Any]] = Field(
-        default=None, sa_column=Column(JSONB, nullable=True)
-    )
     duration_seconds: Optional[float] = Field(
         default=None, sa_column=Column(Float, nullable=True)
     )

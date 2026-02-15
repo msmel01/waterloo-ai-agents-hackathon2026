@@ -26,7 +26,6 @@ async def test_find_by_session_id_returns_score(
         intent_clarity_score=90,
         emotional_intelligence_score=85,
         weighted_total=82.75,
-        emotion_modifiers={"confidence_boost": 1.5},
         verdict=Verdict.DATE,
         feedback_text="Good effort",
     )

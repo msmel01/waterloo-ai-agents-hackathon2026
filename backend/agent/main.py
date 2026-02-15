@@ -1,4 +1,4 @@
-"""Valentine Hotline LiveKit Agent server (voice-only, emotion-aware)."""
+"""Valentine Hotline LiveKit Agent server (voice-only)."""
 
 from __future__ import annotations
 
@@ -12,7 +12,6 @@ from agent.db import (
     save_conversation_data,
     update_session_status,
 )
-from agent.hume_tracker import HumeEmotionTracker
 from agent.interview_agent import InterviewAgent
 from agent.prompt_builder import build_system_prompt
 from agent.session_manager import SessionManager
@@ -36,10 +35,6 @@ else:
         from livekit.plugins import deepgram
     except Exception:  # pragma: no cover - optional plugin
         deepgram = None  # type: ignore[assignment]
-    try:
-        from livekit.plugins import hume
-    except Exception:  # pragma: no cover - optional plugin
-        hume = None  # type: ignore[assignment]
     try:
         from livekit.plugins import openai as lk_openai
     except Exception:  # pragma: no cover - optional plugin
@@ -183,15 +178,9 @@ if server:
             questions=heart_config["screening_questions"],
             max_duration_seconds=600,
         )
-        hume_tracker = HumeEmotionTracker(
-            api_key=config.HUME_API_KEY.get_secret_value()
-            if config.HUME_API_KEY
-            else ""
-        )
         interview_agent = InterviewAgent(
             instructions=prompt,
             session_manager=session_mgr,
-            hume_tracker=hume_tracker,
         )
 
         session = AgentSession(
@@ -230,7 +219,6 @@ if server:
                 if session_mgr.end_reason is None:
                     session_mgr.end(reason)
                 data = session_mgr.get_session_data()
-                data["emotion_timeline"] = hume_tracker.get_full_timeline()
                 await save_conversation_data(session_id, data)
                 already_saved = True
                 logger.info(
@@ -247,10 +235,7 @@ if server:
             session_mgr.add_transcript_entry(
                 speaker="suitor",
                 text=text,
-                emotions=hume_tracker.get_current_state(),
             )
-            # Hume-specific per-turn description updates are disabled because
-            # runtime TTS is pinned to SmallestAI for reliability.
             if session_mgr.ramble_detector.should_interrupt():
                 session_mgr.add_transcript_entry(
                     speaker="avatar",
@@ -275,7 +260,6 @@ if server:
                 closed = True
                 if session_mgr.end_reason is None:
                     session_mgr.end(reason)
-            await hume_tracker.stop()
             await save_once(reason)
 
         @session.on("close")
@@ -293,7 +277,6 @@ if server:
             _spawn(_handle_participant_disconnected(participant))
 
         await session.start(room=ctx.room, agent=interview_agent)
-        await hume_tracker.start(ctx.room)
         await update_session_status(session_id, "in_progress")
 
         while session_mgr.end_reason is None and not session_mgr.is_overtime():

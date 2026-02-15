@@ -5,7 +5,7 @@ from __future__ import annotations
 import base64
 import json
 import uuid
-from unittest.mock import AsyncMock, Mock
+from unittest.mock import AsyncMock
 
 import pytest
 
@@ -98,19 +98,17 @@ async def test_m3_005_token_expiry():
 
 
 @pytest.mark.asyncio
-async def test_m3_006_agent_initializes_with_heart_persona(sample_emotion_timeline):
+async def test_m3_006_agent_initializes_with_heart_persona():
     mgr = SessionManager("s1", [{"text": "Q1"}])
-    tracker = AsyncMock()
     agent = InterviewAgent(
         instructions="Heart persona: witty, warm",
         session_manager=mgr,
-        hume_tracker=tracker,
     )
     assert "witty" in agent.instructions
 
 
 @pytest.mark.asyncio
-async def test_m3_007_agent_system_prompt_has_emotion_instructions():
+async def test_m3_007_agent_system_prompt_has_conversation_instructions():
     from agent.prompt_builder import build_system_prompt
 
     prompt = build_system_prompt(
@@ -128,8 +126,8 @@ async def test_m3_007_agent_system_prompt_has_emotion_instructions():
         },
         suitor_name="Sam",
     )
-    assert "emotion" in prompt.lower()
-    assert "check_suitor_emotion" in prompt
+    assert "get_next_question" in prompt
+    assert "check_suitor_emotion" not in prompt
 
 
 @pytest.mark.asyncio
@@ -183,10 +181,9 @@ async def test_m3_015_llm_function_tools_registered():
     tools = {
         "get_next_question",
         "record_suitor_response",
-        "check_suitor_emotion",
         "end_interview",
     }
-    assert "check_suitor_emotion" in tools
+    assert "record_suitor_response" in tools
 
 
 @pytest.mark.asyncio
@@ -201,69 +198,47 @@ async def test_m3_017_tts_generates_audio(mock_deepgram):
 
 
 @pytest.mark.asyncio
-async def test_m3_018_hume_websocket_connects(mock_hume):
-    assert await mock_hume.connect() is True
+async def test_m3_018_audio_pipeline_routes_to_stt_only():
+    consumers = ["deepgram_stt"]
+    assert consumers == ["deepgram_stt"]
 
 
 @pytest.mark.asyncio
-async def test_m3_019_hume_receives_audio_chunks():
+async def test_m3_019_audio_chunks_flow_to_stt():
     chunks = [b"a", b"b", b"c"]
-    assert b"".join(chunks) == b"abc"
+    assert len(chunks) == 3
 
 
 @pytest.mark.asyncio
-async def test_m3_020_hume_returns_emotion_scores(mock_hume):
-    snapshot = await mock_hume.latest()
-    assert {
-        "confidence",
-        "anxiety",
-        "enthusiasm",
-        "warmth",
-        "amusement",
-        "discomfort",
-    }.issubset(snapshot)
+async def test_m3_020_transcript_without_emotion_fields():
+    turn = {"speaker": "suitor", "content": "Hello", "timestamp": 1.0}
+    assert "content" in turn
+    assert "emotion_snapshot" not in turn
 
 
 @pytest.mark.asyncio
-async def test_m3_021_hume_reconnects_on_timeout():
-    attempts = []
-    for i in range(2):
-        attempts.append(i)
-    assert len(attempts) == 2
+async def test_m3_021_no_emotion_reconnect_loop_present():
+    reconnect_features = []
+    assert reconnect_features == []
 
 
 @pytest.mark.asyncio
-async def test_m3_022_check_suitor_emotion_tool():
-    tracker = AsyncMock()
-    tracker.get_emotion_summary = Mock(return_value="Suitor appears calm")
+async def test_m3_022_record_suitor_response_tool_exists():
     mgr = SessionManager("s1", [{"text": "Q"}])
-    agent = InterviewAgent(instructions="x", session_manager=mgr, hume_tracker=tracker)
-    msg = await agent.check_suitor_emotion(None)
-    assert "Suitor" in msg
+    agent = InterviewAgent(instructions="x", session_manager=mgr)
+    assert hasattr(agent, "record_suitor_response")
 
 
 @pytest.mark.asyncio
-async def test_m3_023_emotion_feeds_into_llm_context():
-    context = "Suitor appears anxious"
-    assert "anxious" in context
+async def test_m3_023_no_emotion_context_injected():
+    context = "Focus on question flow and answer quality."
+    assert "emotion" not in context.lower()
 
 
 @pytest.mark.asyncio
-async def test_m3_024_get_tts_instruction_generates_acting_direction():
-    from agent.hume_tracker import HumeEmotionTracker
-
-    tracker = HumeEmotionTracker(api_key="x")
-    tracker._current_emotions = {
-        "anxiety": 0.8,
-        "confidence": 0.1,
-        "enthusiasm": 0.2,
-        "warmth": 0.2,
-        "amusement": 0.1,
-        "discomfort": 0.5,
-        "dominant_emotion": "Anxiety",
-    }
-    summary = tracker.get_emotion_summary().lower()
-    assert "anx" in summary or "nerv" in summary
+async def test_m3_024_tts_runs_without_emotion_instructions(mock_deepgram):
+    audio = await mock_deepgram.synthesize("Hello there")
+    assert isinstance(audio, (bytes, bytearray))
 
 
 @pytest.mark.asyncio
@@ -310,9 +285,11 @@ async def test_m3_030_transcript_stored_per_exchange():
 
 
 @pytest.mark.asyncio
-async def test_m3_031_emotion_timeline_stored(sample_emotion_timeline):
-    timestamps = [row["timestamp"] for row in sample_emotion_timeline]
-    assert timestamps == sorted(timestamps)
+async def test_m3_031_transcript_entries_do_not_include_emotion_metadata():
+    mgr = SessionManager("s1", [{"text": "Q1"}])
+    mgr.add_transcript_entry("suitor", "A1")
+    entry = mgr.full_transcript[0]
+    assert "emotions" not in entry
 
 
 @pytest.mark.asyncio

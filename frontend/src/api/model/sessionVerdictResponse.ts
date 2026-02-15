@@ -5,7 +5,6 @@
  * AI-powered dating screening system API
  * OpenAPI spec version: 0.1.0
  */
-import type { EmotionModifiers } from './emotionModifiers';
 import type { SessionVerdictResponseFeedback } from './sessionVerdictResponseFeedback';
 import type { SessionVerdictResponsePerQuestionScores } from './sessionVerdictResponsePerQuestionScores';
 import type { SessionVerdictResponseScores } from './sessionVerdictResponseScores';
@@ -37,9 +36,9 @@ export interface SessionVerdictResponse {
   feedback?: SessionVerdictResponseFeedback;
   /** Overall weighted score (0-100). */
   weighted_total?: number | null;
-  /** Weighted score before emotion modifier. */
+  /** Weighted score before final rounding. */
   raw_score?: number | null;
-  /** Final score after emotion modifier (0-100). */
+  /** Final score (0-100). */
   final_score?: number | null;
   /** Effort score (0-100). */
   effort_score?: number | null;
@@ -49,10 +48,6 @@ export interface SessionVerdictResponse {
   intent_clarity_score?: number | null;
   /** Emotional intelligence score (0-100). */
   emotional_intelligence_score?: number | null;
-  /** Emotion-based score modifiers. */
-  emotion_modifiers?: EmotionModifiers | null;
-  /** Human-readable reasons for emotion modifier. */
-  emotion_modifier_reasons?: string[] | null;
   /** Personalized feedback for the suitor. */
   feedback_text?: string | null;
   /** Top strengths identified during scoring. */

@@ -34,16 +34,6 @@ class ScoreDb(SQLModel, table=True):
     intent_clarity_score: float = Field(sa_column=Column(Float, nullable=False))
     emotional_intelligence_score: float = Field(sa_column=Column(Float, nullable=False))
     weighted_total: float = Field(sa_column=Column(Float, nullable=False, index=True))
-    emotion_modifiers: dict[str, Any] = Field(
-        default_factory=dict, sa_column=Column(JSONB, nullable=False)
-    )
-    emotion_modifier: float = Field(
-        default=0.0, sa_column=Column(Float, nullable=False, server_default="0")
-    )
-    emotion_modifier_reasons: list[str] = Field(
-        default_factory=list,
-        sa_column=Column(JSONB, nullable=False, server_default="[]"),
-    )
     raw_score: float = Field(
         default=0.0, sa_column=Column(Float, nullable=False, server_default="0")
     )

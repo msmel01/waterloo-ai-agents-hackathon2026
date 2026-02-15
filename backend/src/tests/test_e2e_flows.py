@@ -130,10 +130,9 @@ async def test_e2e_003_livekit_room_creation_fails(seeded_heart, registered_suit
 
 
 @pytest.mark.asyncio
-async def test_e2e_004_hume_connection_fails():
-    # Conversation should still be possible without emotion snapshots in persistence payload.
-    payload = {"turns": [], "emotion_timeline": []}
-    assert payload["emotion_timeline"] == []
+async def test_e2e_004_conversation_persists_without_emotion_payload():
+    payload = {"turns": []}
+    assert "emotion_timeline" not in payload
 
 
 @pytest.mark.asyncio
@@ -181,9 +180,9 @@ async def test_e2e_008_transcript_matches_conversation(sample_transcript):
 
 
 @pytest.mark.asyncio
-async def test_e2e_009_emotion_timeline_chronological(sample_emotion_timeline):
-    timestamps = [row["timestamp"] for row in sample_emotion_timeline]
-    assert timestamps == sorted(timestamps)
+async def test_e2e_009_transcript_entries_are_ordered(sample_transcript):
+    turns = [row["turn"] for row in sample_transcript]
+    assert turns == sorted(turns)
 
 
 @pytest.mark.asyncio
@@ -197,7 +196,6 @@ async def test_e2e_010_scores_immutable_after_creation(completed_session):
         weighted_total=75.5,
         verdict=Verdict.DATE,
         feedback_text="ok",
-        emotion_modifiers={},
     )
     assert score.session_id == completed_session.id
 

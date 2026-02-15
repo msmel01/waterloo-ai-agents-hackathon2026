@@ -63,8 +63,6 @@ services:
         sync: false
       - key: DEEPGRAM_API_KEY
         sync: false
-      - key: HUME_API_KEY
-        sync: false
       - key: SMALLEST_AI_API_KEY
         sync: false
       - key: SMALLEST_API_KEY

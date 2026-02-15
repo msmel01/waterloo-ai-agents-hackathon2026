@@ -140,7 +140,6 @@ async def save_conversation_data(session_id: str, session_data: dict) -> None:
                     turn_index=int(turn.get("index", index)),
                     speaker=speaker,
                     content=turn.get("text", ""),
-                    emotion_data=turn.get("emotions"),
                     duration_seconds=turn.get("duration"),
                 )
             )
@@ -157,7 +156,6 @@ async def save_conversation_data(session_id: str, session_data: dict) -> None:
         session.status = SessionStatus.COMPLETED
         session.end_reason = session_data.get("end_reason")
         session.turn_summaries = {"turns": session_data.get("turns", [])}
-        session.emotion_timeline = session_data.get("emotion_timeline", [])
         session.audio_recording_url = session_data.get("audio_recording_url")
         db.add(session)
         await db.commit()

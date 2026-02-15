@@ -76,7 +76,6 @@ async def test_m1_005_db_schema_sessions_table():
         "started_at",
         "ended_at",
         "turn_summaries",
-        "emotion_timeline",
     }.issubset(columns)
 
 
@@ -155,7 +154,6 @@ async def test_m1_012_env_variables_loaded():
     assert config.LIVEKIT_API_SECRET is not None
     assert config.DEEPGRAM_API_KEY is not None
     assert config.OPENAI_API_KEY is not None
-    assert config.HUME_API_KEY is not None
     assert config.ANTHROPIC_API_KEY is not None
 
 

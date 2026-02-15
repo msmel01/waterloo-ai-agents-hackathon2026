@@ -38,36 +38,6 @@ class ExpectationsUpdateRequest(BaseModel):
     )
 
 
-class EmotionData(BaseModel):
-    """Emotion analysis data attached to transcript turns."""
-
-    model_config = ConfigDict(extra="allow")
-
-    confidence: float | None = Field(
-        default=None, description="Detected confidence level."
-    )
-    hesitation: float | None = Field(
-        default=None, description="Detected hesitation level."
-    )
-    enthusiasm: float | None = Field(
-        default=None, description="Detected enthusiasm level."
-    )
-    sarcasm: float | None = Field(default=None, description="Detected sarcasm level.")
-
-
-class EmotionModifiers(BaseModel):
-    """Emotion-based score modifiers."""
-
-    model_config = ConfigDict(extra="allow")
-
-    confidence_boost: float | None = Field(
-        default=None, description="Positive weighting from confidence signals."
-    )
-    hesitation_penalty: float | None = Field(
-        default=None, description="Negative weighting from hesitation signals."
-    )
-
-
 class HeartProfileUpdateRequest(BaseModel):
     """Mutable fields for heart profile updates."""
 
@@ -210,9 +180,6 @@ class SessionDetailTurn(BaseModel):
         description="Speaker role for the transcript entry."
     )
     content: str = Field(description="Transcript content.")
-    emotion_data: EmotionData | None = Field(
-        default=None, description="Emotion analysis object for this turn."
-    )
     duration_seconds: float | None = Field(
         default=None, description="Turn duration in seconds."
     )
@@ -233,9 +200,6 @@ class SessionDetailScore(BaseModel):
     weighted_total: float = Field(description="Weighted total score (0-100).")
     verdict: Verdict = Field(description="Final verdict for this session.")
     feedback_text: str = Field(description="Personalized feedback summary.")
-    emotion_modifiers: EmotionModifiers | None = Field(
-        default=None, description="Emotion-based score modifiers."
-    )
 
 
 class SessionDetailResponse(BaseModel):

@@ -5,7 +5,6 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field
 
 from src.models.domain_enums import Verdict
-from src.schemas.heart_schema import EmotionModifiers
 
 
 class SessionStartRequest(BaseModel):
@@ -98,11 +97,9 @@ class SessionVerdictResponse(BaseModel):
         default=None, description="Overall weighted score (0-100)."
     )
     raw_score: float | None = Field(
-        default=None, description="Weighted score before emotion modifier."
+        default=None, description="Weighted score before final rounding."
     )
-    final_score: float | None = Field(
-        default=None, description="Final score after emotion modifier (0-100)."
-    )
+    final_score: float | None = Field(default=None, description="Final score (0-100).")
     effort_score: float | None = Field(
         default=None, description="Effort score (0-100)."
     )
@@ -114,12 +111,6 @@ class SessionVerdictResponse(BaseModel):
     )
     emotional_intelligence_score: float | None = Field(
         default=None, description="Emotional intelligence score (0-100)."
-    )
-    emotion_modifiers: EmotionModifiers | None = Field(
-        default=None, description="Emotion-based score modifiers."
-    )
-    emotion_modifier_reasons: list[str] | None = Field(
-        default=None, description="Human-readable reasons for emotion modifier."
     )
     feedback_text: str | None = Field(
         default=None, description="Personalized feedback for the suitor."

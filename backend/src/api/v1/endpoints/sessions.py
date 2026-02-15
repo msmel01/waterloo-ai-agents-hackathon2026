@@ -574,8 +574,6 @@ async def get_session_verdict(
         creativity_score=score.creativity_score,
         intent_clarity_score=score.intent_clarity_score,
         emotional_intelligence_score=score.emotional_intelligence_score,
-        emotion_modifiers=score.emotion_modifiers,
-        emotion_modifier_reasons=score.emotion_modifier_reasons,
         feedback_text=feedback.get("summary"),
         feedback_strengths=feedback.get("strengths"),
         feedback_improvements=feedback.get("improvements"),
