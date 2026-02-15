@@ -56,6 +56,7 @@ function LiveKitRoomWrapper({
     isConnected,
     localParticipant,
     remoteParticipants,
+    room,
     muteMic,
     unmuteMic,
     disconnect,
@@ -71,7 +72,7 @@ function LiveKitRoomWrapper({
 
   return (
     <div className="flex-1 flex flex-col p-4 md:p-6">
-      <RoomAudioRenderer />
+      {room ? <RoomAudioRenderer room={room} /> : null}
       <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 max-w-4xl mx-auto w-full">
         <Window title="Suitor.exe" icon="person">
           <div className="flex flex-col items-center">

@@ -1,6 +1,7 @@
 import { FormEvent, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth, useSignUp } from '@clerk/clerk-react';
+import { AxiosError } from 'axios';
 import { toast } from 'sonner';
 import { setAuthToken } from '../api/axiosInstance';
 import { useCompleteSuitorProfileApiV1SuitorsRegisterPost } from '../api/generated/suitors/suitors';
@@ -27,6 +28,52 @@ export function SignUpScreen() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [code, setCode] = useState('');
+
+  const getReadyToken = async (): Promise<string | null> => {
+    for (let i = 0; i < 10; i += 1) {
+      const token = await getToken({ skipCache: true });
+      if (token) {
+        return token;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 150));
+    }
+    return null;
+  };
+
+  const registerWithRetry = async (payload: {
+    name: string;
+    age: number;
+    gender: string;
+    orientation: string;
+    intro_message: null;
+  }) => {
+    for (let attempt = 0; attempt < 8; attempt += 1) {
+      try {
+        await registerSuitor.mutateAsync({ data: payload });
+        return;
+      } catch (error) {
+        const axiosError = error as AxiosError;
+        const status = axiosError.response?.status;
+        const isLast = attempt === 7;
+
+        // 404 can happen briefly while Clerk webhook creates the suitor row.
+        if (status === 404 && !isLast) {
+          await new Promise((resolve) => setTimeout(resolve, 400));
+          continue;
+        }
+
+        if (status === 401 && !isLast) {
+          const refreshed = await getReadyToken();
+          if (refreshed) {
+            setAuthToken(refreshed);
+            continue;
+          }
+        }
+
+        throw error;
+      }
+    }
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -73,20 +120,21 @@ export function SignUpScreen() {
       if (res.status === 'complete' && res.createdSessionId) {
         await setActive({
           session: res.createdSessionId,
-          redirectUrl: `${window.location.origin}/chats`,
         });
 
-        const token = await getToken();
-        setAuthToken(token ?? null);
+        const token = await getReadyToken();
+        if (!token) {
+          setError('Authenticated session not ready yet. Please click verify again.');
+          return;
+        }
+        setAuthToken(token);
 
-        await registerSuitor.mutateAsync({
-          data: {
-            name: name.trim(),
-            age: ageNum,
-            gender,
-            orientation,
-            intro_message: null,
-          },
+        await registerWithRetry({
+          name: name.trim(),
+          age: ageNum,
+          gender,
+          orientation,
+          intro_message: null,
         });
 
         toast.success('Verification successful');
