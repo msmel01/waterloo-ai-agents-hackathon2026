@@ -301,6 +301,23 @@ if server:
         if session_mgr.end_reason is None:
             session_mgr.end("max_duration_reached")
 
+        final_reason = session_mgr.end_reason or "session_completed"
+        await on_close(final_reason)
+        try:
+            maybe_aclose = getattr(session, "aclose", None)
+            if callable(maybe_aclose):
+                await maybe_aclose()
+            else:
+                maybe_close = getattr(session, "close", None)
+                if callable(maybe_close):
+                    result = maybe_close()
+                    if asyncio.iscoroutine(result):
+                        await result
+        except Exception as exc:
+            logger.warning(
+                "Failed to close agent session %s cleanly: %s", session_id, exc
+            )
+
 else:
 
     def _missing_server(*_args, **_kwargs):  # pragma: no cover

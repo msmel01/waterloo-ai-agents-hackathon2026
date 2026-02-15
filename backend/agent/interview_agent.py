@@ -60,7 +60,9 @@ class InterviewAgent(Agent):
         )
         remaining = self.session_mgr.questions_remaining()
         if remaining == 0:
-            return "All questions answered. Wrap up warmly and call end_interview."
+            if self.session_mgr.end_reason is None:
+                self.session_mgr.end("all_questions_complete")
+            return "All questions answered. Wrap up warmly and end now."
         return f"Response recorded. {remaining} questions remaining."
 
     @function_tool
