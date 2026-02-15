@@ -1,10 +1,14 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '@clerk/clerk-react';
+import { useGetPublicProfileApiV1PublicSlugGet } from '../api/generated/public/public';
 import { Window } from '../components/Window';
 import { AppHeader } from '../components/AppHeader';
 
+const HEART_SLUG = import.meta.env.VITE_HEART_SLUG || 'heart';
+
 export function OnboardingScreen() {
   const { isSignedIn } = useAuth();
+  const publicProfile = useGetPublicProfileApiV1PublicSlugGet(HEART_SLUG);
 
   return (
     <div className="min-h-screen bg-win-bg flex flex-col items-center py-6 px-4">
@@ -46,6 +50,11 @@ export function OnboardingScreen() {
                 If you fail?<br />
                 You&apos;ll receive a clear explanation of why you were denied access to the calendar. No hard feelings.
               </p>
+              {publicProfile.data && (
+                <p className="text-gray-600 text-sm leading-relaxed">
+                  Current hotline: {publicProfile.data.display_name} • {publicProfile.data.question_count} questions • {publicProfile.data.estimated_duration}
+                </p>
+              )}
             </div>
           </Window>
 

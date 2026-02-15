@@ -1,93 +1,38 @@
-import { useState } from 'react';
+import { RoomAudioRenderer } from '@livekit/components-react';
 import { Window } from './Window';
 import { AppHeader } from './AppHeader';
 import { useLivekitRoom } from '../hooks/useLivekitRoom';
-import { getLivekitServerUrl } from '../api/livekitClient';
+import type { SessionStatusResponse } from '../api/model';
 import type { AuthState } from '../types';
 
 interface ScreeningRoomProps {
   auth: AuthState;
   onLeave: () => void;
   dateName?: string;
+  sessionStatus?: SessionStatusResponse;
 }
 
-const isPlaceholderToken = (token: string) => token.startsWith('placeholder_');
-const isPlaceholderUrl = (url: string) => url.includes('placeholder');
-
-export function ScreeningRoom({ auth, onLeave, dateName = 'Date' }: ScreeningRoomProps) {
-  const serverUrl = getLivekitServerUrl();
-  const { token, displayName } = auth;
-  const useDummyRoom = isPlaceholderToken(token) || isPlaceholderUrl(serverUrl);
+export function ScreeningRoom({
+  auth,
+  onLeave,
+  dateName = 'Date',
+  sessionStatus,
+}: ScreeningRoomProps) {
+  const { token, displayName, livekitUrl: serverUrl } = auth;
 
   return (
     <div className="min-h-screen bg-win-bg flex flex-col">
       <div className="border-b border-win-border px-4 py-4">
         <AppHeader />
       </div>
-
-      {useDummyRoom ? (
-        <DummyRoomContent displayName={displayName} onLeave={onLeave} dateName={dateName} />
-      ) : (
-        <LiveKitRoomWrapper
-          token={token}
-          serverUrl={serverUrl}
-          displayName={displayName}
-          onLeave={onLeave}
-          dateName={dateName}
-        />
-      )}
-    </div>
-  );
-}
-
-/** TODO: Replace with real LiveKit connection when backend APIs are ready. */
-function DummyRoomContent({
-  displayName,
-  onLeave,
-  dateName,
-}: {
-  displayName: string;
-  onLeave: () => void;
-  dateName: string;
-}) {
-  const [isMuted, setIsMuted] = useState(false);
-
-  return (
-    <div className="flex-1 flex flex-col p-4 md:p-6">
-      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 max-w-4xl mx-auto w-full">
-        <Window title="Suitor.exe" icon="person">
-          <div className="flex flex-col items-center">
-            <p className="text-gray-800 text-sm mb-4">{displayName || 'You'}</p>
-            <div className="h-14 w-28 border border-gray-400 bg-gray-200 flex items-center justify-center mb-4">
-              <div className="h-3 w-3 bg-win-titlebar" />
-            </div>
-            <p className="text-gray-600 text-xs">Demo mode — awaiting backend</p>
-          </div>
-        </Window>
-        <Window title={`${dateName}'s Gatekeeper.exe`} icon="person">
-          <div className="flex flex-col items-center">
-            <p className="text-gray-800 text-sm mb-4">Valentine Hotline AI</p>
-            <div className="h-14 w-28 border border-gray-400 bg-gray-200 flex items-center justify-center mb-4">
-              <div className="h-3 w-3 bg-gray-500" />
-            </div>
-            <p className="text-gray-600 text-xs">Waiting for AI…</p>
-          </div>
-        </Window>
-      </div>
-      <div className="flex justify-center gap-4 py-6">
-        <button
-          onClick={() => setIsMuted((m) => !m)}
-          className="px-6 py-2.5 border border-palette-orchid shadow-bevel bg-palette-sand text-gray-800 text-sm hover:bg-win-titlebar hover:text-white hover:border-palette-orchid transition-colors"
-        >
-          {isMuted ? 'Unmute' : 'Mute'}
-        </button>
-        <button
-          onClick={onLeave}
-          className="px-6 py-2.5 bg-win-titlebar text-white text-sm font-medium border border-palette-orchid shadow-bevel hover:bg-win-titlebarLight transition-colors"
-        >
-          Leave Hotline
-        </button>
-      </div>
+      <LiveKitRoomWrapper
+        token={token}
+        serverUrl={serverUrl}
+        displayName={displayName}
+        onLeave={onLeave}
+        dateName={dateName}
+        sessionStatus={sessionStatus}
+      />
     </div>
   );
 }
@@ -98,17 +43,20 @@ function LiveKitRoomWrapper({
   displayName,
   onLeave,
   dateName,
+  sessionStatus,
 }: {
   token: string;
   serverUrl: string;
   displayName: string;
   onLeave: () => void;
   dateName: string;
+  sessionStatus?: SessionStatusResponse;
 }) {
   const {
     isConnected,
     localParticipant,
     remoteParticipants,
+    room,
     muteMic,
     unmuteMic,
     disconnect,
@@ -124,6 +72,7 @@ function LiveKitRoomWrapper({
 
   return (
     <div className="flex-1 flex flex-col p-4 md:p-6">
+      {room ? <RoomAudioRenderer room={room} /> : null}
       <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 max-w-4xl mx-auto w-full">
         <Window title="Suitor.exe" icon="person">
           <div className="flex flex-col items-center">
@@ -163,6 +112,19 @@ function LiveKitRoomWrapper({
           </div>
         </Window>
       </div>
+
+      {sessionStatus && (
+        <div className="max-w-4xl mx-auto w-full mt-2 text-xs text-gray-600">
+          <p>
+            Status: {sessionStatus.status}
+            {typeof sessionStatus.questions_asked === 'number' &&
+              typeof sessionStatus.questions_total === 'number' &&
+              ` • Questions: ${sessionStatus.questions_asked}/${sessionStatus.questions_total}`}
+            {typeof sessionStatus.duration_seconds === 'number' &&
+              ` • Duration: ${sessionStatus.duration_seconds}s`}
+          </p>
+        </div>
+      )}
 
       <div className="flex justify-center gap-4 py-6">
         <button

@@ -1,10 +1,12 @@
 import { FormEvent, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useSignUp } from '@clerk/clerk-react';
+import { useAuth, useSignUp } from '@clerk/clerk-react';
+import { AxiosError } from 'axios';
 import { toast } from 'sonner';
+import { setAuthToken } from '../api/axiosInstance';
+import { useCompleteSuitorProfileApiV1SuitorsRegisterPost } from '../api/generated/suitors/suitors';
 import { Window } from '../components/Window';
 import { AppHeader } from '../components/AppHeader';
-import { syncSuitorProfile } from '../api/suitorProfile';
 
 const inputClass =
   'w-full px-3 py-2 bg-white border border-gray-400 text-gray-900 placeholder-gray-500 text-sm focus:outline-none focus:border-win-titlebar';
@@ -12,7 +14,9 @@ const labelClass = 'block text-gray-600 text-sm mb-1';
 
 export function SignUpScreen() {
   const navigate = useNavigate();
+  const { getToken } = useAuth();
   const { isLoaded, signUp, setActive } = useSignUp();
+  const registerSuitor = useCompleteSuitorProfileApiV1SuitorsRegisterPost();
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
@@ -24,6 +28,52 @@ export function SignUpScreen() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [code, setCode] = useState('');
+
+  const getReadyToken = async (): Promise<string | null> => {
+    for (let i = 0; i < 10; i += 1) {
+      const token = await getToken({ skipCache: true });
+      if (token) {
+        return token;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 150));
+    }
+    return null;
+  };
+
+  const registerWithRetry = async (payload: {
+    name: string;
+    age: number;
+    gender: string;
+    orientation: string;
+    intro_message: null;
+  }) => {
+    for (let attempt = 0; attempt < 8; attempt += 1) {
+      try {
+        await registerSuitor.mutateAsync({ data: payload });
+        return;
+      } catch (error) {
+        const axiosError = error as AxiosError;
+        const status = axiosError.response?.status;
+        const isLast = attempt === 7;
+
+        // 404 can happen briefly while Clerk webhook creates the suitor row.
+        if (status === 404 && !isLast) {
+          await new Promise((resolve) => setTimeout(resolve, 400));
+          continue;
+        }
+
+        if (status === 401 && !isLast) {
+          const refreshed = await getReadyToken();
+          if (refreshed) {
+            setAuthToken(refreshed);
+            continue;
+          }
+        }
+
+        throw error;
+      }
+    }
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -59,15 +109,35 @@ export function SignUpScreen() {
     }
 
     try {
+      const ageNum = parseInt(age, 10);
+      if (isNaN(ageNum) || ageNum < 18) {
+        setError('You must be at least 18 years old to sign up.');
+        return;
+      }
+
       const res = await signUp.attemptEmailAddressVerification({ code });
 
       if (res.status === 'complete' && res.createdSessionId) {
-        await syncSuitorProfile({ name: name.trim(), gender, orientation, age });
-        toast.success('Verification successful');
         await setActive({
           session: res.createdSessionId,
-          redirectUrl: `${window.location.origin}/chats`,
         });
+
+        const token = await getReadyToken();
+        if (!token) {
+          setError('Authenticated session not ready yet. Please click verify again.');
+          return;
+        }
+        setAuthToken(token);
+
+        await registerWithRetry({
+          name: name.trim(),
+          age: ageNum,
+          gender,
+          orientation,
+          intro_message: null,
+        });
+
+        toast.success('Verification successful');
         navigate('/chats', { replace: true });
       } else if (res.status === 'missing_requirements') {
         const missing = (res as { missingFields?: string[] }).missingFields ?? [];

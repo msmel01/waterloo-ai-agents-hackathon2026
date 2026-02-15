@@ -66,7 +66,7 @@ screening_questions:
   - text: "Last question — why should Luna give you a chance? Sell yourself, but keep it real."
     required: true
 
-shareable_slug: "meet-luna"
+shareable_slug: "heart"
 
 calendar:
   calcom_api_key: "${CALCOM_API_KEY}"
