@@ -1,7 +1,7 @@
 import { useAuth } from '@clerk/clerk-react';
 import { useEffect } from 'react';
 
-import { setAuthToken } from '../api/axiosInstance';
+import { setAuthToken, setAuthTokenProvider } from '../api/axiosInstance';
 
 export function useAuthSync() {
   const { getToken, isSignedIn } = useAuth();
@@ -25,10 +25,12 @@ export function useAuthSync() {
     };
 
     if (!isSignedIn) {
+      setAuthTokenProvider(null);
       setAuthToken(null);
       return;
     }
 
+    setAuthTokenProvider(async () => getToken({ skipCache: true }));
     void syncToken();
     intervalId = window.setInterval(() => {
       void syncToken();
@@ -36,6 +38,7 @@ export function useAuthSync() {
 
     return () => {
       mounted = false;
+      setAuthTokenProvider(null);
       if (intervalId !== null) {
         window.clearInterval(intervalId);
       }

@@ -347,6 +347,38 @@ async def test_m3_034_create_session_api(registered_suitor, seeded_heart, mock_l
 
 
 @pytest.mark.asyncio
+async def test_m3_034b_reconnect_dispatches_agent(
+    registered_suitor, seeded_heart, mock_livekit
+):
+    heart_repo = AsyncMock()
+    heart_repo.find_by_slug.return_value = seeded_heart
+
+    active = SessionDb(
+        id=uuid.uuid4(),
+        heart_id=seeded_heart.id,
+        suitor_id=registered_suitor.id,
+        status=SessionStatus.IN_PROGRESS,
+        livekit_room_name=f"session-{uuid.uuid4()}",
+    )
+    session_repo = AsyncMock()
+    session_repo.find_active_by_suitor.return_value = active
+
+    res = await start_session.__wrapped__(
+        SessionStartRequest(heart_slug=seeded_heart.shareable_slug),
+        registered_suitor,
+        heart_repo,
+        session_repo,
+        mock_livekit,
+    )
+
+    assert res.status == "reconnecting"
+    mock_livekit.create_agent_dispatch.assert_awaited_once()
+    dispatch_call = mock_livekit.create_agent_dispatch.await_args.kwargs
+    assert dispatch_call["room_name"] == active.livekit_room_name
+    assert dispatch_call["agent_name"] == "valentine-interview-agent"
+
+
+@pytest.mark.asyncio
 async def test_m3_035_get_session_status_api(
     monkeypatch, registered_suitor, completed_session
 ):

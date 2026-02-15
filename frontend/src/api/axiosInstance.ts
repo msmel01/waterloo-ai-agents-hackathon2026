@@ -6,13 +6,31 @@ export const AXIOS_INSTANCE = Axios.create({
 });
 
 let authToken: string | null = null;
+let authTokenProvider: (() => Promise<string | null>) | null = null;
 
 export function setAuthToken(token: string | null) {
   authToken = token;
 }
 
-AXIOS_INSTANCE.interceptors.request.use((config) => {
+export function setAuthTokenProvider(provider: (() => Promise<string | null>) | null) {
+  authTokenProvider = provider;
+}
+
+AXIOS_INSTANCE.interceptors.request.use(async (config) => {
+  const requestUrl = config.url ?? '';
+  const needsSuitorAuth =
+    requestUrl.startsWith('/api/v1/suitors') || requestUrl.startsWith('/api/v1/sessions');
+
+  if (!authToken && needsSuitorAuth && authTokenProvider) {
+    try {
+      authToken = await authTokenProvider();
+    } catch {
+      authToken = null;
+    }
+  }
+
   if (authToken) {
+    config.headers = config.headers ?? {};
     config.headers.Authorization = `Bearer ${authToken}`;
   }
   return config;

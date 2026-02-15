@@ -289,7 +289,19 @@ async def start_session(
                 status_code=status.HTTP_409_CONFLICT,
                 detail="You have an active session that is missing room details.",
             )
+        room_metadata = json.dumps(
+            {
+                "session_id": str(active.id),
+                "heart_id": str(heart.id),
+                "suitor_id": str(suitor.id),
+            }
+        )
         try:
+            await livekit.create_agent_dispatch(
+                room_name=active.livekit_room_name,
+                agent_name=AGENT_NAME,
+                metadata=room_metadata,
+            )
             livekit_token = await _resolve_livekit_token(
                 livekit.generate_suitor_token(
                     room_name=active.livekit_room_name,
