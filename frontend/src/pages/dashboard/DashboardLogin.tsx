@@ -33,15 +33,25 @@ export function DashboardLogin() {
         <p className="mt-2 text-sm text-slate-600">
           Enter your admin key to view screening results.
         </p>
+        <label htmlFor="dashboard-key-input" className="mt-4 block text-sm font-medium text-slate-700">
+          Admin key
+        </label>
         <input
+          id="dashboard-key-input"
           type="password"
           value={key}
           onChange={(e) => setKey(e.target.value)}
           placeholder="Dashboard API key"
-          className="mt-4 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+          className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+          aria-invalid={Boolean(error)}
+          aria-describedby={error ? 'dashboard-login-error' : undefined}
           required
         />
-        {error && <p className="mt-2 text-sm text-rose-600">{error}</p>}
+        {error && (
+          <p id="dashboard-login-error" role="alert" aria-live="assertive" className="mt-2 text-sm text-rose-600">
+            {error}
+          </p>
+        )}
         <button
           type="submit"
           disabled={loading}

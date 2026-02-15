@@ -38,7 +38,9 @@ export function DashboardSessionDetail() {
                 <h2 className="text-xl font-semibold text-slate-900">{data.suitor.name}'s Interview</h2>
                 <p className="mt-1 text-sm text-slate-500">
                   {data.session.started_at ? new Date(data.session.started_at).toLocaleString() : 'Unknown start'}
-                  {data.session.duration_seconds ? ` · ${Math.floor(data.session.duration_seconds / 60)}m ${data.session.duration_seconds % 60}s` : ''}
+                  {data.session.duration_seconds !== null && data.session.duration_seconds !== undefined
+                    ? ` · ${Math.floor(data.session.duration_seconds / 60)}m ${data.session.duration_seconds % 60}s`
+                    : ''}
                 </p>
                 {data.suitor.intro_message && (
                   <p className="mt-2 text-sm text-slate-700">"{data.suitor.intro_message}"</p>

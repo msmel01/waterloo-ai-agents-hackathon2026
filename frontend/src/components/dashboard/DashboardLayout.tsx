@@ -12,7 +12,7 @@ type Props = {
 export function DashboardLayout({ children, active, loadingStatus, onToggleStatus }: Props) {
   const navigate = useNavigate();
   const logout = () => {
-    localStorage.removeItem('dashboard_api_key');
+    sessionStorage.removeItem('dashboard_api_key');
     navigate('/dashboard/login');
   };
 

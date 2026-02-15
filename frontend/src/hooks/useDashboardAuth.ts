@@ -1,21 +1,25 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { verifyDashboardKey } from '../api/dashboard';
 
 const STORAGE_KEY = 'dashboard_api_key';
 
 export function useDashboardAuth() {
-  const apiKey = useMemo(() => localStorage.getItem(STORAGE_KEY), []);
+  const [apiKey, setApiKey] = useState<string | null>(() =>
+    sessionStorage.getItem(STORAGE_KEY)
+  );
 
-  const isAuthenticated = Boolean(apiKey);
+  const isAuthenticated = useMemo(() => Boolean(apiKey), [apiKey]);
 
   const login = async (key: string) => {
     await verifyDashboardKey(key);
-    localStorage.setItem(STORAGE_KEY, key);
+    sessionStorage.setItem(STORAGE_KEY, key);
+    setApiKey(key);
   };
 
   const logout = () => {
-    localStorage.removeItem(STORAGE_KEY);
+    sessionStorage.removeItem(STORAGE_KEY);
+    setApiKey(null);
   };
 
-  return { apiKey, isAuthenticated, login, logout };
+  return { isAuthenticated, login, logout };
 }

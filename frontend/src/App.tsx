@@ -15,7 +15,7 @@ import { DashboardSessions } from './pages/dashboard/DashboardSessions';
 import { DashboardSessionDetail } from './pages/dashboard/DashboardSessionDetail';
 
 function RequireDashboardAuth({ children }: { children: ReactElement }) {
-  const hasKey = Boolean(localStorage.getItem('dashboard_api_key'));
+  const hasKey = Boolean(sessionStorage.getItem('dashboard_api_key'));
   if (!hasKey) {
     return <Navigate to="/dashboard/login" replace />;
   }

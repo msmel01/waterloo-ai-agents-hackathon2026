@@ -30,6 +30,13 @@ export function DashboardSessions() {
       <SessionFilters filters={filters} onChange={setFilters} />
       {sessionsQuery.isLoading ? (
         <p className="mt-4 text-sm text-slate-500">Loading sessions...</p>
+      ) : sessionsQuery.isError ? (
+        <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+          Failed to load sessions.
+          {sessionsQuery.error instanceof Error && sessionsQuery.error.message
+            ? ` ${sessionsQuery.error.message}`
+            : ''}
+        </div>
       ) : data && data.sessions.length > 0 ? (
         <>
           <div className="mt-4 space-y-3">

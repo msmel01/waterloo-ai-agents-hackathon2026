@@ -8,7 +8,7 @@ from datetime import date, datetime, time, timedelta, timezone
 from typing import Annotated, Any, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
-from sqlalchemy import case, func, or_, select
+from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import col
 
@@ -277,14 +277,14 @@ async def get_dashboard_sessions(
     request: Request,
     _auth: DashboardAuthDep,
     db: DbDep,
-    page: int = Query(default=1, ge=1),
-    per_page: int = Query(default=20, ge=1, le=100),
-    verdict: Literal["date", "no_date", "pending"] | None = Query(default=None),
-    sort_by: Literal["date", "score", "name"] = Query(default="date"),
-    sort_order: Literal["asc", "desc"] = Query(default="desc"),
-    search: str | None = Query(default=None),
-    date_from: date | None = Query(default=None),
-    date_to: date | None = Query(default=None),
+    page: Annotated[int, Query(ge=1)] = 1,
+    per_page: Annotated[int, Query(ge=1, le=100)] = 20,
+    verdict: Annotated[Literal["date", "no_date", "pending"] | None, Query()] = None,
+    sort_by: Annotated[Literal["date", "score", "name"], Query()] = "date",
+    sort_order: Annotated[Literal["asc", "desc"], Query()] = "desc",
+    search: Annotated[str | None, Query()] = None,
+    date_from: Annotated[date | None, Query()] = None,
+    date_to: Annotated[date | None, Query()] = None,
 ):
     heart = await _resolve_heart(request, db)
 
@@ -600,7 +600,8 @@ async def get_dashboard_trends(
     heart = await _resolve_heart(request, db)
     cutoff = datetime.now(timezone.utc) - timedelta(days=days)
     trunc = "day" if period == "daily" else "week"
-    bucket = func.date_trunc(trunc, SessionDb.started_at)
+    bucket_source = func.coalesce(SessionDb.started_at, SessionDb.created_at)
+    bucket = func.date_trunc(trunc, bucket_source)
     aggregate_expr = func.coalesce(ScoreDb.final_score, ScoreDb.weighted_total)
 
     trend_query = (
@@ -621,7 +622,7 @@ async def get_dashboard_trends(
             SessionDb.status.in_(
                 [SessionStatus.COMPLETED, SessionStatus.SCORING, SessionStatus.SCORED]
             ),
-            or_(SessionDb.started_at.is_(None), SessionDb.started_at >= cutoff),
+            bucket_source >= cutoff,
         )
         .group_by(bucket)
         .order_by(bucket.desc())

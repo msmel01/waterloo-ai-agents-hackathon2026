@@ -9,8 +9,8 @@ import type {
 
 const apiBase = (import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1').replace(/\/$/, '');
 
-const getDashboardHeaders = () => {
-  const key = localStorage.getItem('dashboard_api_key');
+const getDashboardHeaders = (authKey?: string) => {
+  const key = authKey ?? sessionStorage.getItem('dashboard_api_key');
   return { 'X-Dashboard-Key': key || '' };
 };
 
@@ -28,14 +28,18 @@ export const verifyDashboardKey = (key: string): Promise<DashboardStats> =>
     headers: { 'X-Dashboard-Key': key },
   });
 
-export const getStats = (): Promise<DashboardStats> =>
+export const getStats = (authKey?: string): Promise<DashboardStats> =>
   fetchJson<DashboardStats>(`${apiBase}/dashboard/stats`, {
-    headers: getDashboardHeaders(),
+    headers: getDashboardHeaders(authKey),
   });
 
-export const getTrends = (period: 'daily' | 'weekly' = 'daily', days = 30): Promise<TrendData> =>
+export const getTrends = (
+  period: 'daily' | 'weekly' = 'daily',
+  days = 30,
+  authKey?: string
+): Promise<TrendData> =>
   fetchJson<TrendData>(`${apiBase}/dashboard/stats/trends?period=${period}&days=${days}`, {
-    headers: getDashboardHeaders(),
+    headers: getDashboardHeaders(authKey),
   });
 
 export const getSessions = (params: SessionQueryParams): Promise<SessionListResponse> => {
