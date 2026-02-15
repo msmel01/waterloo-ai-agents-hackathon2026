@@ -32,3 +32,7 @@ class PublicHeartProfileResponse(BaseModel):
     is_accepting: bool = Field(
         description="Whether interview entry is currently accepting new suitors."
     )
+    active: bool = Field(description="Whether the Heart has screening link enabled.")
+    message: str | None = Field(
+        default=None, description="Optional informational message for paused state."
+    )

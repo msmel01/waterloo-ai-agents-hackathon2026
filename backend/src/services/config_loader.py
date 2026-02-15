@@ -153,7 +153,6 @@ class HeartConfigLoader:
             heart.shareable_slug = cfg.shareable_slug
             heart.calcom_event_type_id = cfg.calendar.calcom_event_type_id
             heart.tavus_persona_id = cfg.avatar.tavus_persona_id
-            heart.is_active = True
             db_session.add(heart)
         else:
             heart = HeartDb(

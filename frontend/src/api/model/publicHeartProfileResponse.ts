@@ -28,4 +28,8 @@ export interface PublicHeartProfileResponse {
   persona_preview?: string | null;
   /** Whether interview entry is currently accepting new suitors. */
   is_accepting: boolean;
+  /** Whether the Heart has screening link enabled. */
+  active: boolean;
+  /** Optional informational message for paused state. */
+  message?: string | null;
 }

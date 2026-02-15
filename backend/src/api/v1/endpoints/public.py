@@ -44,6 +44,11 @@ async def get_public_profile(
     agent_ready = await _is_agent_ready()
     is_accepting = bool(heart.is_active and agent_ready)
     question_count = len(questions)
+    pause_message = (
+        "Screening is currently paused. Please check back later."
+        if not heart.is_active
+        else None
+    )
 
     return PublicHeartProfileResponse(
         display_name=heart.display_name,
@@ -55,6 +60,8 @@ async def get_public_profile(
         estimated_duration=_estimate_duration(question_count),
         persona_preview=_build_persona_preview(heart.persona),
         is_accepting=is_accepting,
+        active=bool(heart.is_active),
+        message=pause_message,
     )
 
 

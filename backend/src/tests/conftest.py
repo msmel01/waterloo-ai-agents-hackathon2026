@@ -42,6 +42,7 @@ os.environ.setdefault("OPENAI_API_KEY", "sk-test")
 os.environ.setdefault("ANTHROPIC_API_KEY", "anthropic-test")
 os.environ.setdefault("CALCOM_API_KEY", "cal-test")
 os.environ.setdefault("REDIS_URL", "redis://localhost:6379/0")
+os.environ.setdefault("DASHBOARD_API_KEY", "dashboard-test-key")
 
 
 @dataclass
