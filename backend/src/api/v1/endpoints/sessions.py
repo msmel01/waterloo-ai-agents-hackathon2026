@@ -173,6 +173,7 @@ async def get_session_status(
     id: uuid.UUID,
     suitor: CurrentSuitor,
     session_repo: SessionRepoDep,
+    score_repo: ScoreRepoDep,
 ):
     """Get current processing state for a session owned by the authenticated suitor."""
     try:
@@ -201,8 +202,9 @@ async def get_session_status(
         questions_total = len(heart_config.screening_questions)
 
     status_value = session.status.value
-    has_verdict = bool(session.has_verdict)
-    verdict_status = session.verdict_status or "pending"
+    score = await score_repo.find_by_session_id(session.id)
+    has_verdict = bool(session.has_verdict or score is not None)
+    verdict_status = session.verdict_status or ("ready" if score else "pending")
 
     return SessionStatusResponse(
         session_id=str(session.id),
@@ -325,7 +327,8 @@ async def get_session_verdict(
     if session.suitor_id != suitor.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
 
-    verdict_status = session.verdict_status or "pending"
+    score = await score_repo.find_by_session_id(session.id)
+    verdict_status = session.verdict_status or ("ready" if score else "pending")
     if verdict_status in {"pending", "scoring"}:
         raise HTTPException(
             status_code=status.HTTP_202_ACCEPTED,
@@ -337,7 +340,6 @@ async def get_session_verdict(
             detail="Scoring failed. Please try again later.",
         )
 
-    score = await score_repo.find_by_session_id(session.id)
     if not score:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

@@ -301,9 +301,9 @@ if server:
         if session_mgr.end_reason is None:
             session_mgr.end("max_duration_reached")
 
-        final_reason = session_mgr.end_reason or "session_completed"
-        await on_close(final_reason)
         try:
+            final_reason = session_mgr.end_reason or "session_completed"
+            await on_close(final_reason)
             maybe_aclose = getattr(session, "aclose", None)
             if callable(maybe_aclose):
                 await maybe_aclose()
@@ -313,9 +313,13 @@ if server:
                     result = maybe_close()
                     if asyncio.iscoroutine(result):
                         await result
+        except asyncio.CancelledError:
+            raise
         except Exception as exc:
-            logger.warning(
-                "Failed to close agent session %s cleanly: %s", session_id, exc
+            logger.exception(
+                "Failed to finalize/close agent session %s cleanly: %s",
+                session_id,
+                exc,
             )
 
 else:

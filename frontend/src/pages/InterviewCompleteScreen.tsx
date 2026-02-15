@@ -76,7 +76,7 @@ export function InterviewCompleteScreen() {
     return verdict.verdict === 'date' ? "IT'S A DATE" : 'NOT THIS TIME';
   }, [verdict?.verdict]);
 
-  if (statusQuery.isLoading || waiting) {
+  if (statusQuery.isLoading || waiting || verdictQuery.isLoading) {
     return (
       <div className="min-h-screen bg-win-bg flex flex-col py-6 px-4">
         <AppHeader />

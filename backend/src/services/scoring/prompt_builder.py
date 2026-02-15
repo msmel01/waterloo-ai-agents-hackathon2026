@@ -47,7 +47,12 @@ def format_turn_analysis(turn_summaries: list[dict[str, Any]]) -> str:
 
     sections: list[str] = []
     for turn in turn_summaries:
-        q_idx = int(turn.get("question_index", 0)) + 1
+        raw_q_idx = turn.get("question_index", 0)
+        try:
+            safe_q_idx = int(raw_q_idx)
+        except (TypeError, ValueError):
+            safe_q_idx = 0
+        q_idx = safe_q_idx + 1
         q_text = str(turn.get("question_text", "")).strip() or "Unknown question"
         quality = str(turn.get("response_quality", "unknown"))
         summary = str(turn.get("response_summary", "")).strip() or "No summary"

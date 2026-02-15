@@ -13,7 +13,7 @@ from sqlmodel import select
 
 from src.core.config import config
 from src.core.database import Database
-from src.core.exceptions import NotFoundError
+from src.core.exceptions import DuplicatedError, NotFoundError
 from src.models.domain_enums import SessionStatus
 from src.models.heart_model import HeartDb
 from src.repository.conversation_turn_repository import ConversationTurnRepository
@@ -124,7 +124,19 @@ async def score_session_task(ctx: dict, session_id: str) -> None:
             transcript=transcript,
         )
         score_payload["session_id"] = session_uuid
-        await score_repo.create(score_payload)
+        try:
+            await score_repo.create(score_payload)
+        except DuplicatedError:
+            if await score_repo.exists_for_session(session_uuid):
+                logger.info(
+                    "Duplicate score write detected for session %s; treating as idempotent success",
+                    session_id,
+                )
+                await session_repo.update_attr(session_uuid, "has_verdict", True)
+                await session_repo.update_attr(session_uuid, "verdict_status", "ready")
+                await session_repo.update_status(session_uuid, SessionStatus.SCORED)
+                return
+            raise
 
         await session_repo.update_attr(session_uuid, "has_verdict", True)
         await session_repo.update_attr(session_uuid, "verdict_status", "ready")

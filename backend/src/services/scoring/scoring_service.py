@@ -145,7 +145,11 @@ class ScoringService:
         try:
             data = json.loads(text)
         except json.JSONDecodeError as exc:  # pragma: no cover - external API output
-            logger.error("Claude returned invalid JSON: %s", text[:600])
+            logger.exception(
+                "Claude returned invalid JSON (length=%s, preview=%r)",
+                len(text),
+                text[:120],
+            )
             raise ValueError("Claude scoring output was not valid JSON") from exc
 
         if not isinstance(data, dict):
