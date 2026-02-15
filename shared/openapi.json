@@ -544,7 +544,7 @@
           "Sessions"
         ],
         "summary": "Get Session Verdict",
-        "description": "Get verdict and score breakdown for a completed/scored session.",
+        "description": "Get verdict payload for results page with booking eligibility.",
         "operationId": "get_session_verdict_api_v1_sessions__id__verdict_get",
         "security": [
           {
@@ -570,6 +570,148 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SessionVerdictResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/sessions/{id}/slots": {
+      "get": {
+        "tags": [
+          "Sessions"
+        ],
+        "summary": "Get Session Slots",
+        "description": "Get grouped available slots for date-eligible sessions.",
+        "operationId": "get_session_slots_api_v1_sessions__id__slots_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Id"
+            }
+          },
+          {
+            "name": "date_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "name": "date_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionSlotsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/sessions/{id}/book": {
+      "post": {
+        "tags": [
+          "Sessions"
+        ],
+        "summary": "Create Session Booking",
+        "description": "Book a date slot for a session that received a date verdict.",
+        "operationId": "create_session_booking_api_v1_sessions__id__book_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SessionBookRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionBookResponse"
                 }
               }
             }
@@ -790,6 +932,32 @@
         ],
         "title": "AvatarCreateResponse",
         "description": "Response for avatar creation trigger endpoint."
+      },
+      "BookedSlotResponse": {
+        "properties": {
+          "start": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Start"
+          },
+          "end": {
+            "type": "string",
+            "format": "date-time",
+            "title": "End"
+          },
+          "display": {
+            "type": "string",
+            "title": "Display"
+          }
+        },
+        "type": "object",
+        "required": [
+          "start",
+          "end",
+          "display"
+        ],
+        "title": "BookedSlotResponse",
+        "description": "Booked slot display payload."
       },
       "BookingConfirmationResponse": {
         "properties": {
@@ -1140,6 +1308,107 @@
         "title": "PublicHeartProfileResponse",
         "description": "Publicly exposed profile data."
       },
+      "SessionBookRequest": {
+        "properties": {
+          "slot_start": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Slot Start"
+          },
+          "suitor_name": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Suitor Name"
+          },
+          "suitor_email": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 3,
+            "title": "Suitor Email"
+          },
+          "suitor_notes": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suitor Notes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "slot_start",
+          "suitor_name",
+          "suitor_email"
+        ],
+        "title": "SessionBookRequest",
+        "description": "Book a selected slot for a successful date verdict session."
+      },
+      "SessionBookResponse": {
+        "properties": {
+          "booking_id": {
+            "type": "string",
+            "title": "Booking Id"
+          },
+          "cal_event_id": {
+            "type": "string",
+            "title": "Cal Event Id"
+          },
+          "slot": {
+            "$ref": "#/components/schemas/BookedSlotResponse"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "booking_id",
+          "cal_event_id",
+          "slot",
+          "status",
+          "message"
+        ],
+        "title": "SessionBookResponse",
+        "description": "Booking confirmation payload for suitor."
+      },
+      "SessionSlotsResponse": {
+        "properties": {
+          "slots": {
+            "items": {
+              "$ref": "#/components/schemas/SlotDayGroup"
+            },
+            "type": "array",
+            "title": "Slots"
+          },
+          "timezone": {
+            "type": "string",
+            "title": "Timezone"
+          },
+          "event_duration_minutes": {
+            "type": "integer",
+            "title": "Event Duration Minutes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "slots",
+          "timezone",
+          "event_duration_minutes"
+        ],
+        "title": "SessionSlotsResponse",
+        "description": "Session-scoped slot response used in M6 results flow."
+      },
       "SessionStartRequest": {
         "properties": {
           "heart_slug": {
@@ -1412,10 +1681,16 @@
             "title": "Session Id",
             "description": "Session UUID."
           },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "Verdict status payload: scoring or scored."
+          },
           "ready": {
             "type": "boolean",
             "title": "Ready",
-            "description": "Whether a verdict is ready for this session."
+            "description": "Whether a verdict is ready for this session.",
+            "default": false
           },
           "verdict": {
             "anyOf": [
@@ -1427,6 +1702,80 @@
               }
             ],
             "description": "Date/no-date verdict."
+          },
+          "booking_available": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Booking Available",
+            "description": "True only when session verdict is date."
+          },
+          "suitor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suitor Name",
+            "description": "Authenticated suitor name."
+          },
+          "heart_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Heart Name",
+            "description": "Heart display name."
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message",
+            "description": "Status message for scoring state."
+          },
+          "scores": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scores",
+            "description": "Structured weighted scoring payload."
+          },
+          "feedback": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feedback",
+            "description": "Structured feedback payload."
           },
           "weighted_total": {
             "anyOf": [
@@ -1600,10 +1949,63 @@
         "type": "object",
         "required": [
           "session_id",
-          "ready"
+          "status"
         ],
         "title": "SessionVerdictResponse",
         "description": "Final verdict payload returned to suitor."
+      },
+      "SlotDayGroup": {
+        "properties": {
+          "date": {
+            "type": "string",
+            "title": "Date"
+          },
+          "day_label": {
+            "type": "string",
+            "title": "Day Label"
+          },
+          "times": {
+            "items": {
+              "$ref": "#/components/schemas/SlotTimeItem"
+            },
+            "type": "array",
+            "title": "Times"
+          }
+        },
+        "type": "object",
+        "required": [
+          "date",
+          "day_label",
+          "times"
+        ],
+        "title": "SlotDayGroup",
+        "description": "Slots grouped by date for frontend rendering."
+      },
+      "SlotTimeItem": {
+        "properties": {
+          "start": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Start"
+          },
+          "end": {
+            "type": "string",
+            "format": "date-time",
+            "title": "End"
+          },
+          "display": {
+            "type": "string",
+            "title": "Display"
+          }
+        },
+        "type": "object",
+        "required": [
+          "start",
+          "end",
+          "display"
+        ],
+        "title": "SlotTimeItem",
+        "description": "Single slot entry shown in grouped slot picker."
       },
       "SuccessResponse": {
         "properties": {

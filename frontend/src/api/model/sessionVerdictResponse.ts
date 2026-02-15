@@ -6,7 +6,9 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { EmotionModifiers } from './emotionModifiers';
+import type { SessionVerdictResponseFeedback } from './sessionVerdictResponseFeedback';
 import type { SessionVerdictResponsePerQuestionScores } from './sessionVerdictResponsePerQuestionScores';
+import type { SessionVerdictResponseScores } from './sessionVerdictResponseScores';
 import type { Verdict } from './verdict';
 
 /**
@@ -15,10 +17,24 @@ import type { Verdict } from './verdict';
 export interface SessionVerdictResponse {
   /** Session UUID. */
   session_id: string;
+  /** Verdict status payload: scoring or scored. */
+  status: string;
   /** Whether a verdict is ready for this session. */
-  ready: boolean;
+  ready?: boolean;
   /** Date/no-date verdict. */
   verdict?: Verdict | null;
+  /** True only when session verdict is date. */
+  booking_available?: boolean | null;
+  /** Authenticated suitor name. */
+  suitor_name?: string | null;
+  /** Heart display name. */
+  heart_name?: string | null;
+  /** Status message for scoring state. */
+  message?: string | null;
+  /** Structured weighted scoring payload. */
+  scores?: SessionVerdictResponseScores;
+  /** Structured feedback payload. */
+  feedback?: SessionVerdictResponseFeedback;
   /** Overall weighted score (0-100). */
   weighted_total?: number | null;
   /** Weighted score before emotion modifier. */

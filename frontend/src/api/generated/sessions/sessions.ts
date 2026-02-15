@@ -25,8 +25,12 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  GetSessionSlotsApiV1SessionsIdSlotsGetParams,
   HTTPValidationError,
   PreCheckResponse,
+  SessionBookRequest,
+  SessionBookResponse,
+  SessionSlotsResponse,
   SessionStartRequest,
   SessionStartResponse,
   SessionStatusResponse,
@@ -348,7 +352,7 @@ export function usePreCheckApiV1SessionsPreCheckGet<TData = Awaited<ReturnType<t
 
 
 /**
- * Get verdict and score breakdown for a completed/scored session.
+ * Get verdict payload for results page with booking eligibility.
  * @summary Get Session Verdict
  */
 export const getSessionVerdictApiV1SessionsIdVerdictGet = (
@@ -434,3 +438,171 @@ export function useGetSessionVerdictApiV1SessionsIdVerdictGet<TData = Awaited<Re
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+
+
+
+/**
+ * Get grouped available slots for date-eligible sessions.
+ * @summary Get Session Slots
+ */
+export const getSessionSlotsApiV1SessionsIdSlotsGet = (
+    id: string,
+    params?: GetSessionSlotsApiV1SessionsIdSlotsGetParams,
+ signal?: AbortSignal
+) => {
+
+
+      return customInstance<SessionSlotsResponse>(
+      {url: `/api/v1/sessions/${id}/slots`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+
+
+
+
+export const getGetSessionSlotsApiV1SessionsIdSlotsGetQueryKey = (id: string,
+    params?: GetSessionSlotsApiV1SessionsIdSlotsGetParams,) => {
+    return [
+    `/api/v1/sessions/${id}/slots`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetSessionSlotsApiV1SessionsIdSlotsGetQueryOptions = <TData = Awaited<ReturnType<typeof getSessionSlotsApiV1SessionsIdSlotsGet>>, TError = HTTPValidationError>(id: string,
+    params?: GetSessionSlotsApiV1SessionsIdSlotsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSessionSlotsApiV1SessionsIdSlotsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSessionSlotsApiV1SessionsIdSlotsGetQueryKey(id,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSessionSlotsApiV1SessionsIdSlotsGet>>> = ({ signal }) => getSessionSlotsApiV1SessionsIdSlotsGet(id,params, signal);
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSessionSlotsApiV1SessionsIdSlotsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetSessionSlotsApiV1SessionsIdSlotsGetQueryResult = NonNullable<Awaited<ReturnType<typeof getSessionSlotsApiV1SessionsIdSlotsGet>>>
+export type GetSessionSlotsApiV1SessionsIdSlotsGetQueryError = HTTPValidationError
+
+
+export function useGetSessionSlotsApiV1SessionsIdSlotsGet<TData = Awaited<ReturnType<typeof getSessionSlotsApiV1SessionsIdSlotsGet>>, TError = HTTPValidationError>(
+ id: string,
+    params: undefined |  GetSessionSlotsApiV1SessionsIdSlotsGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSessionSlotsApiV1SessionsIdSlotsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSessionSlotsApiV1SessionsIdSlotsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getSessionSlotsApiV1SessionsIdSlotsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSessionSlotsApiV1SessionsIdSlotsGet<TData = Awaited<ReturnType<typeof getSessionSlotsApiV1SessionsIdSlotsGet>>, TError = HTTPValidationError>(
+ id: string,
+    params?: GetSessionSlotsApiV1SessionsIdSlotsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSessionSlotsApiV1SessionsIdSlotsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSessionSlotsApiV1SessionsIdSlotsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getSessionSlotsApiV1SessionsIdSlotsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSessionSlotsApiV1SessionsIdSlotsGet<TData = Awaited<ReturnType<typeof getSessionSlotsApiV1SessionsIdSlotsGet>>, TError = HTTPValidationError>(
+ id: string,
+    params?: GetSessionSlotsApiV1SessionsIdSlotsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSessionSlotsApiV1SessionsIdSlotsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Session Slots
+ */
+
+export function useGetSessionSlotsApiV1SessionsIdSlotsGet<TData = Awaited<ReturnType<typeof getSessionSlotsApiV1SessionsIdSlotsGet>>, TError = HTTPValidationError>(
+ id: string,
+    params?: GetSessionSlotsApiV1SessionsIdSlotsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSessionSlotsApiV1SessionsIdSlotsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetSessionSlotsApiV1SessionsIdSlotsGetQueryOptions(id,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+/**
+ * Book a date slot for a session that received a date verdict.
+ * @summary Create Session Booking
+ */
+export const createSessionBookingApiV1SessionsIdBookPost = (
+    id: string,
+    sessionBookRequest: SessionBookRequest,
+ signal?: AbortSignal
+) => {
+
+
+      return customInstance<SessionBookResponse>(
+      {url: `/api/v1/sessions/${id}/book`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: sessionBookRequest, signal
+    },
+      );
+    }
+
+
+
+export const getCreateSessionBookingApiV1SessionsIdBookPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSessionBookingApiV1SessionsIdBookPost>>, TError,{id: string;data: SessionBookRequest}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof createSessionBookingApiV1SessionsIdBookPost>>, TError,{id: string;data: SessionBookRequest}, TContext> => {
+
+const mutationKey = ['createSessionBookingApiV1SessionsIdBookPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createSessionBookingApiV1SessionsIdBookPost>>, {id: string;data: SessionBookRequest}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  createSessionBookingApiV1SessionsIdBookPost(id,data,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateSessionBookingApiV1SessionsIdBookPostMutationResult = NonNullable<Awaited<ReturnType<typeof createSessionBookingApiV1SessionsIdBookPost>>>
+    export type CreateSessionBookingApiV1SessionsIdBookPostMutationBody = SessionBookRequest
+    export type CreateSessionBookingApiV1SessionsIdBookPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Create Session Booking
+ */
+export const useCreateSessionBookingApiV1SessionsIdBookPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSessionBookingApiV1SessionsIdBookPost>>, TError,{id: string;data: SessionBookRequest}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createSessionBookingApiV1SessionsIdBookPost>>,
+        TError,
+        {id: string;data: SessionBookRequest},
+        TContext
+      > => {
+      return useMutation(getCreateSessionBookingApiV1SessionsIdBookPostMutationOptions(options), queryClient);
+    }
