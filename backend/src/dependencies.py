@@ -20,6 +20,7 @@ if TYPE_CHECKING:
     from src.services.config_loader import HeartConfig
 
 admin_key_header = APIKeyHeader(name="X-Admin-Key", auto_error=False)
+dashboard_key_header = APIKeyHeader(name="X-Dashboard-Key", auto_error=False)
 
 
 async def verify_admin_key(api_key: str | None = Security(admin_key_header)) -> str:
@@ -31,6 +32,19 @@ async def verify_admin_key(api_key: str | None = Security(admin_key_header)) -> 
             detail="Invalid admin API key",
         )
     return api_key
+
+
+async def verify_dashboard_access(
+    x_dashboard_key: str | None = Security(dashboard_key_header),
+) -> str:
+    """API key auth for dashboard endpoints."""
+    expected = config.DASHBOARD_API_KEY
+    if not x_dashboard_key or not expected or x_dashboard_key != expected:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Unauthorized",
+        )
+    return x_dashboard_key
 
 
 @inject

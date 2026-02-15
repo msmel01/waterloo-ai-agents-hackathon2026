@@ -42,6 +42,7 @@ os.environ.setdefault("OPENAI_API_KEY", "sk-test")
 os.environ.setdefault("ANTHROPIC_API_KEY", "anthropic-test")
 os.environ.setdefault("CALCOM_API_KEY", "cal-test")
 os.environ.setdefault("REDIS_URL", "redis://localhost:6379/0")
+os.environ.setdefault("DASHBOARD_API_KEY", "dashboard-test-key")
 
 
 @dataclass
@@ -342,3 +343,261 @@ def mock_calcom() -> AsyncMock:
         {"start": "2026-02-20T14:00:00Z", "end": "2026-02-20T14:30:00Z"}
     ]
     return svc
+
+
+VALID_DASHBOARD_KEY = os.environ.get("DASHBOARD_API_KEY", "dashboard-test-key")
+INVALID_DASHBOARD_KEY = "wrong-key"
+
+
+@pytest.fixture
+def dashboard_headers():
+    return {"X-Dashboard-Key": VALID_DASHBOARD_KEY}
+
+
+@pytest.fixture
+def invalid_dashboard_headers():
+    return {"X-Dashboard-Key": INVALID_DASHBOARD_KEY}
+
+
+@dataclass
+class _FakeResultM7:
+    scalar_value: Any = None
+    all_values: list[Any] | None = None
+    one_value: Any = None
+    first_value: Any = None
+
+    def scalar(self):
+        return self.scalar_value
+
+    def all(self):
+        return self.all_values or []
+
+    def one(self):
+        return self.one_value
+
+    def first(self):
+        return self.first_value
+
+    def scalars(self):
+        class _S:
+            def __init__(self, first_value: Any):
+                self._first = first_value
+
+            def first(self):
+                return self._first
+
+        return _S(self.first_value)
+
+
+class FakeAsyncSessionM7:
+    def __init__(
+        self, execute_results: list[_FakeResultM7] | None = None, *, heart=None
+    ):
+        self._execute_results = execute_results or []
+        self._idx = 0
+        self._heart = heart
+        self.add = Mock()
+        self.committed = False
+        self.refreshed = False
+
+    async def execute(self, _query):
+        if self._idx >= len(self._execute_results):
+            return _FakeResultM7()
+        result = self._execute_results[self._idx]
+        self._idx += 1
+        return result
+
+    async def get(self, _model, _id):
+        return self._heart
+
+    async def commit(self):
+        self.committed = True
+
+    async def refresh(self, _obj):
+        self.refreshed = True
+
+
+@pytest.fixture
+def fake_result_builder_m7():
+    def _build(
+        *,
+        scalar_value: Any = None,
+        all_values: list[Any] | None = None,
+        one_value: Any = None,
+        first_value: Any = None,
+    ) -> _FakeResultM7:
+        return _FakeResultM7(
+            scalar_value=scalar_value,
+            all_values=all_values,
+            one_value=one_value,
+            first_value=first_value,
+        )
+
+    return _build
+
+
+@pytest.fixture
+def make_fake_db_m7():
+    def _build(results: list[_FakeResultM7] | None = None, *, heart=None):
+        return FakeAsyncSessionM7(results, heart=heart)
+
+    return _build
+
+
+@pytest.fixture
+def dashboard_request():
+    class _AppState:
+        heart_id = None
+        frontend_url = "http://localhost:5173"
+
+    class _App:
+        state = _AppState()
+
+    class _Req:
+        app = _App()
+
+    return _Req()
+
+
+@pytest.fixture
+async def m7_seeded_heart() -> Any:
+    from src.models.heart_model import HeartDb
+
+    now = datetime.now(timezone.utc)
+    return HeartDb(
+        id=uuid.uuid4(),
+        display_name="Melika",
+        bio="A witty and warm person...",
+        shareable_slug="melika",
+        persona={"traits": ["witty", "warm"]},
+        expectations={"must_haves": ["Humor", "Depth", "Creativity"]},
+        is_active=True,
+        deactivated_at=None,
+        created_at=now,
+        updated_at=now,
+    )
+
+
+@pytest.fixture
+async def m7_sample_suitors() -> list[Any]:
+    from src.models.suitor_model import SuitorDb
+
+    now = datetime.now(timezone.utc)
+    rows = [
+        ("Alex", "Hey, I love hiking and cooking."),
+        ("Jordan", None),
+        ("Sam", "Music is my life."),
+        ("Taylor", "Looking for something real."),
+        ("Riley", "First time doing this!"),
+    ]
+    suitors = []
+    for name, intro in rows:
+        suitors.append(
+            SuitorDb(
+                id=uuid.uuid4(),
+                name=name,
+                intro_message=intro,
+                created_at=now,
+                updated_at=now,
+            )
+        )
+    return suitors
+
+
+@pytest.fixture
+async def m7_sample_sessions(m7_seeded_heart, m7_sample_suitors) -> list[Any]:
+    from src.models.domain_enums import SessionStatus
+    from src.models.session_model import SessionDb
+
+    now = datetime.now(timezone.utc)
+    configs = [
+        (0, SessionStatus.COMPLETED, 120, 12, 5),
+        (1, SessionStatus.COMPLETED, 100, 8, 4),
+        (2, SessionStatus.COMPLETED, 80, 11, 5),
+        (3, SessionStatus.IN_PROGRESS, 10, None, 3),
+        (4, SessionStatus.FAILED, 60, 3, 2),
+    ]
+    sessions = []
+    for idx, status, offset, duration, turns in configs:
+        started = now - timedelta(minutes=offset)
+        ended = started + timedelta(minutes=duration) if duration else None
+        transcript = [
+            {
+                "turn": i + 1,
+                "question": f"Question {i + 1}?",
+                "answer": f"Answer {i + 1} from {m7_sample_suitors[idx].name}.",
+                "timestamp": (started + timedelta(minutes=i * 2)).isoformat(),
+            }
+            for i in range(turns)
+        ]
+        sessions.append(
+            SessionDb(
+                id=uuid.uuid4(),
+                heart_id=m7_seeded_heart.id,
+                suitor_id=m7_sample_suitors[idx].id,
+                livekit_room_name=f"room-{uuid.uuid4().hex[:8]}",
+                status=status,
+                turn_summaries={"turns": transcript},
+                started_at=started,
+                ended_at=ended,
+                created_at=started,
+            )
+        )
+    return sessions
+
+
+@pytest.fixture
+async def m7_sample_scores(m7_sample_sessions) -> list[Any]:
+    from src.models.domain_enums import Verdict
+    from src.models.score_model import ScoreDb
+
+    now = datetime.now(timezone.utc)
+    data = [
+        (0, 82, 71, 88, 75, 79.5, Verdict.DATE),
+        (1, 45, 38, 52, 41, 44.3, Verdict.NO_DATE),
+        (2, 72, 68, 74, 70, 71.2, Verdict.DATE),
+    ]
+    scores = []
+    for idx, eff, cre, intent, ei, agg, verdict in data:
+        scores.append(
+            ScoreDb(
+                id=uuid.uuid4(),
+                session_id=m7_sample_sessions[idx].id,
+                effort_score=eff,
+                creativity_score=cre,
+                intent_clarity_score=intent,
+                emotional_intelligence_score=ei,
+                weighted_total=agg,
+                final_score=agg,
+                verdict=verdict,
+                feedback_text="Feedback text",
+                feedback_json={
+                    "summary": f"Feedback for {verdict.value}",
+                    "strengths": ["Strength 1", "Strength 2"],
+                    "improvements": ["Area 1"],
+                    "favorite_moment": "A standout answer",
+                },
+                created_at=now,
+            )
+        )
+    return scores
+
+
+@pytest.fixture
+async def m7_sample_booking(
+    m7_seeded_heart, m7_sample_suitors, m7_sample_sessions
+) -> Any:
+    from src.models.booking_model import BookingDb
+
+    return BookingDb(
+        id=uuid.uuid4(),
+        session_id=m7_sample_sessions[0].id,
+        heart_id=m7_seeded_heart.id,
+        suitor_id=m7_sample_suitors[0].id,
+        calcom_booking_id="cal_test_12345",
+        suitor_email="alex@example.com",
+        suitor_notes="Looking forward to it!",
+        booking_status="confirmed",
+        scheduled_at=datetime.now(timezone.utc) + timedelta(days=2),
+        created_at=datetime.now(timezone.utc),
+    )

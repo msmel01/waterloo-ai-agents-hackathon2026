@@ -803,6 +803,375 @@
         ]
       }
     },
+    "/api/v1/dashboard/stats": {
+      "get": {
+        "tags": [
+          "Dashboard"
+        ],
+        "summary": "Get Dashboard Stats",
+        "operationId": "get_dashboard_stats_api_v1_dashboard_stats_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardStatsResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ]
+      }
+    },
+    "/api/v1/dashboard/sessions": {
+      "get": {
+        "tags": [
+          "Dashboard"
+        ],
+        "summary": "Get Dashboard Sessions",
+        "operationId": "get_dashboard_sessions_api_v1_dashboard_sessions_get",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Per Page"
+            }
+          },
+          {
+            "name": "verdict",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "date",
+                    "no_date",
+                    "pending"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Verdict"
+            }
+          },
+          {
+            "name": "sort_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "date",
+                "score",
+                "name"
+              ],
+              "type": "string",
+              "default": "date",
+              "title": "Sort By"
+            }
+          },
+          {
+            "name": "sort_order",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "type": "string",
+              "default": "desc",
+              "title": "Sort Order"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Search"
+            }
+          },
+          {
+            "name": "date_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "name": "date_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardSessionsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/dashboard/sessions/{session_id}": {
+      "get": {
+        "tags": [
+          "Dashboard"
+        ],
+        "summary": "Get Dashboard Session Detail",
+        "operationId": "get_dashboard_session_detail_api_v1_dashboard_sessions__session_id__get",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Session Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardSessionDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/dashboard/heart/status": {
+      "get": {
+        "tags": [
+          "Dashboard"
+        ],
+        "summary": "Get Dashboard Heart Status",
+        "operationId": "get_dashboard_heart_status_api_v1_dashboard_heart_status_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardHeartStatusResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ]
+      },
+      "patch": {
+        "tags": [
+          "Dashboard"
+        ],
+        "summary": "Patch Dashboard Heart Status",
+        "operationId": "patch_dashboard_heart_status_api_v1_dashboard_heart_status_patch",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DashboardHeartStatusPatchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardHeartStatusResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ]
+      }
+    },
+    "/api/v1/dashboard/stats/trends": {
+      "get": {
+        "tags": [
+          "Dashboard"
+        ],
+        "summary": "Get Dashboard Trends",
+        "operationId": "get_dashboard_trends_api_v1_dashboard_stats_trends_get",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "daily",
+                "weekly"
+              ],
+              "type": "string",
+              "default": "daily",
+              "title": "Period"
+            }
+          },
+          {
+            "name": "days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 365,
+              "minimum": 1,
+              "default": 30,
+              "title": "Days"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardTrendsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/tools/add": {
       "post": {
         "tags": [
@@ -1116,6 +1485,854 @@
         "title": "CalendarStatusResponse",
         "description": "Calendar status response with lightweight slot preview."
       },
+      "DashboardAvgScores": {
+        "properties": {
+          "effort": {
+            "type": "number",
+            "title": "Effort"
+          },
+          "creativity": {
+            "type": "number",
+            "title": "Creativity"
+          },
+          "intent_clarity": {
+            "type": "number",
+            "title": "Intent Clarity"
+          },
+          "emotional_intelligence": {
+            "type": "number",
+            "title": "Emotional Intelligence"
+          },
+          "aggregate": {
+            "type": "number",
+            "title": "Aggregate"
+          }
+        },
+        "type": "object",
+        "required": [
+          "effort",
+          "creativity",
+          "intent_clarity",
+          "emotional_intelligence",
+          "aggregate"
+        ],
+        "title": "DashboardAvgScores"
+      },
+      "DashboardBookingBlock": {
+        "properties": {
+          "booking_id": {
+            "type": "string",
+            "title": "Booking Id"
+          },
+          "cal_event_id": {
+            "type": "string",
+            "title": "Cal Event Id"
+          },
+          "booked_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Booked At"
+          },
+          "slot_start": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Slot Start"
+          },
+          "suitor_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suitor Email"
+          },
+          "suitor_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suitor Notes"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "booking_id",
+          "cal_event_id",
+          "booked_at",
+          "slot_start",
+          "status"
+        ],
+        "title": "DashboardBookingBlock"
+      },
+      "DashboardBookingsStats": {
+        "properties": {
+          "total_booked": {
+            "type": "integer",
+            "title": "Total Booked"
+          },
+          "upcoming": {
+            "type": "integer",
+            "title": "Upcoming"
+          },
+          "booking_rate": {
+            "type": "number",
+            "title": "Booking Rate"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total_booked",
+          "upcoming",
+          "booking_rate"
+        ],
+        "title": "DashboardBookingsStats"
+      },
+      "DashboardFeedbackBlock": {
+        "properties": {
+          "summary": {
+            "type": "string",
+            "title": "Summary"
+          },
+          "strengths": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Strengths"
+          },
+          "improvements": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Improvements"
+          },
+          "favorite_moment": {
+            "type": "string",
+            "title": "Favorite Moment"
+          }
+        },
+        "type": "object",
+        "required": [
+          "summary",
+          "strengths",
+          "improvements",
+          "favorite_moment"
+        ],
+        "title": "DashboardFeedbackBlock"
+      },
+      "DashboardHeartStatusPatchRequest": {
+        "properties": {
+          "active": {
+            "type": "boolean",
+            "title": "Active",
+            "description": "Whether screening link is active"
+          }
+        },
+        "type": "object",
+        "required": [
+          "active"
+        ],
+        "title": "DashboardHeartStatusPatchRequest"
+      },
+      "DashboardHeartStatusResponse": {
+        "properties": {
+          "slug": {
+            "type": "string",
+            "title": "Slug"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "total_sessions": {
+            "type": "integer",
+            "title": "Total Sessions"
+          },
+          "link": {
+            "type": "string",
+            "title": "Link"
+          },
+          "deactivated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deactivated At"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "slug",
+          "name",
+          "active",
+          "total_sessions",
+          "link"
+        ],
+        "title": "DashboardHeartStatusResponse"
+      },
+      "DashboardPagination": {
+        "properties": {
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "per_page": {
+            "type": "integer",
+            "title": "Per Page"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "total_pages": {
+            "type": "integer",
+            "title": "Total Pages"
+          },
+          "has_next": {
+            "type": "boolean",
+            "title": "Has Next"
+          },
+          "has_prev": {
+            "type": "boolean",
+            "title": "Has Prev"
+          }
+        },
+        "type": "object",
+        "required": [
+          "page",
+          "per_page",
+          "total",
+          "total_pages",
+          "has_next",
+          "has_prev"
+        ],
+        "title": "DashboardPagination"
+      },
+      "DashboardRecentActivity": {
+        "properties": {
+          "sessions_today": {
+            "type": "integer",
+            "title": "Sessions Today"
+          },
+          "sessions_this_week": {
+            "type": "integer",
+            "title": "Sessions This Week"
+          },
+          "sessions_this_month": {
+            "type": "integer",
+            "title": "Sessions This Month"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sessions_today",
+          "sessions_this_week",
+          "sessions_this_month"
+        ],
+        "title": "DashboardRecentActivity"
+      },
+      "DashboardScoreDistribution": {
+        "properties": {
+          "excellent": {
+            "type": "integer",
+            "title": "Excellent"
+          },
+          "good": {
+            "type": "integer",
+            "title": "Good"
+          },
+          "average": {
+            "type": "integer",
+            "title": "Average"
+          },
+          "below_average": {
+            "type": "integer",
+            "title": "Below Average"
+          }
+        },
+        "type": "object",
+        "required": [
+          "excellent",
+          "good",
+          "average",
+          "below_average"
+        ],
+        "title": "DashboardScoreDistribution"
+      },
+      "DashboardScoresBlock": {
+        "properties": {
+          "effort": {
+            "$ref": "#/components/schemas/DashboardWeightedScore"
+          },
+          "creativity": {
+            "$ref": "#/components/schemas/DashboardWeightedScore"
+          },
+          "intent_clarity": {
+            "$ref": "#/components/schemas/DashboardWeightedScore"
+          },
+          "emotional_intelligence": {
+            "$ref": "#/components/schemas/DashboardWeightedScore"
+          },
+          "aggregate": {
+            "type": "number",
+            "title": "Aggregate"
+          }
+        },
+        "type": "object",
+        "required": [
+          "effort",
+          "creativity",
+          "intent_clarity",
+          "emotional_intelligence",
+          "aggregate"
+        ],
+        "title": "DashboardScoresBlock"
+      },
+      "DashboardSessionBlock": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "ended_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ended At"
+          },
+          "duration_seconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Seconds"
+          },
+          "livekit_room_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Livekit Room Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "DashboardSessionBlock"
+      },
+      "DashboardSessionDetailResponse": {
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "title": "Session Id"
+          },
+          "suitor": {
+            "$ref": "#/components/schemas/DashboardSuitorBlock"
+          },
+          "session": {
+            "$ref": "#/components/schemas/DashboardSessionBlock"
+          },
+          "transcript": {
+            "items": {
+              "$ref": "#/components/schemas/DashboardTranscriptTurn"
+            },
+            "type": "array",
+            "title": "Transcript"
+          },
+          "scores": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DashboardScoresBlock"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "verdict": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "date",
+                  "no_date"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Verdict"
+          },
+          "feedback": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DashboardFeedbackBlock"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "booking": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DashboardBookingBlock"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "session_id",
+          "suitor",
+          "session",
+          "transcript"
+        ],
+        "title": "DashboardSessionDetailResponse"
+      },
+      "DashboardSessionScores": {
+        "properties": {
+          "effort": {
+            "type": "number",
+            "title": "Effort"
+          },
+          "creativity": {
+            "type": "number",
+            "title": "Creativity"
+          },
+          "intent_clarity": {
+            "type": "number",
+            "title": "Intent Clarity"
+          },
+          "emotional_intelligence": {
+            "type": "number",
+            "title": "Emotional Intelligence"
+          },
+          "aggregate": {
+            "type": "number",
+            "title": "Aggregate"
+          }
+        },
+        "type": "object",
+        "required": [
+          "effort",
+          "creativity",
+          "intent_clarity",
+          "emotional_intelligence",
+          "aggregate"
+        ],
+        "title": "DashboardSessionScores"
+      },
+      "DashboardSessionSummary": {
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "title": "Session Id"
+          },
+          "suitor_name": {
+            "type": "string",
+            "title": "Suitor Name"
+          },
+          "suitor_intro": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suitor Intro"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "ended_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ended At"
+          },
+          "duration_seconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Seconds"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "questions_asked": {
+            "type": "integer",
+            "title": "Questions Asked"
+          },
+          "scores": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DashboardSessionScores"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "verdict": {
+            "type": "string",
+            "enum": [
+              "date",
+              "no_date",
+              "pending"
+            ],
+            "title": "Verdict",
+            "default": "pending"
+          },
+          "has_booking": {
+            "type": "boolean",
+            "title": "Has Booking"
+          },
+          "booking_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Booking Date"
+          }
+        },
+        "type": "object",
+        "required": [
+          "session_id",
+          "suitor_name",
+          "status",
+          "questions_asked",
+          "has_booking"
+        ],
+        "title": "DashboardSessionSummary"
+      },
+      "DashboardSessionsResponse": {
+        "properties": {
+          "sessions": {
+            "items": {
+              "$ref": "#/components/schemas/DashboardSessionSummary"
+            },
+            "type": "array",
+            "title": "Sessions"
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/DashboardPagination"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sessions",
+          "pagination"
+        ],
+        "title": "DashboardSessionsResponse"
+      },
+      "DashboardStatsResponse": {
+        "properties": {
+          "total_suitors": {
+            "type": "integer",
+            "title": "Total Suitors"
+          },
+          "total_sessions": {
+            "type": "integer",
+            "title": "Total Sessions"
+          },
+          "completed_sessions": {
+            "type": "integer",
+            "title": "Completed Sessions"
+          },
+          "active_sessions": {
+            "type": "integer",
+            "title": "Active Sessions"
+          },
+          "failed_sessions": {
+            "type": "integer",
+            "title": "Failed Sessions"
+          },
+          "total_dates": {
+            "type": "integer",
+            "title": "Total Dates"
+          },
+          "total_rejections": {
+            "type": "integer",
+            "title": "Total Rejections"
+          },
+          "match_rate": {
+            "type": "number",
+            "title": "Match Rate"
+          },
+          "avg_scores": {
+            "$ref": "#/components/schemas/DashboardAvgScores"
+          },
+          "score_distribution": {
+            "$ref": "#/components/schemas/DashboardScoreDistribution"
+          },
+          "recent_activity": {
+            "$ref": "#/components/schemas/DashboardRecentActivity"
+          },
+          "bookings": {
+            "$ref": "#/components/schemas/DashboardBookingsStats"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total_suitors",
+          "total_sessions",
+          "completed_sessions",
+          "active_sessions",
+          "failed_sessions",
+          "total_dates",
+          "total_rejections",
+          "match_rate",
+          "avg_scores",
+          "score_distribution",
+          "recent_activity",
+          "bookings"
+        ],
+        "title": "DashboardStatsResponse"
+      },
+      "DashboardSuitorBlock": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "intro_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Intro Message"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "created_at"
+        ],
+        "title": "DashboardSuitorBlock"
+      },
+      "DashboardTranscriptTurn": {
+        "properties": {
+          "turn": {
+            "type": "integer",
+            "title": "Turn"
+          },
+          "question": {
+            "type": "string",
+            "title": "Question"
+          },
+          "answer": {
+            "type": "string",
+            "title": "Answer"
+          },
+          "timestamp": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Timestamp"
+          }
+        },
+        "type": "object",
+        "required": [
+          "turn",
+          "question",
+          "answer",
+          "timestamp"
+        ],
+        "title": "DashboardTranscriptTurn"
+      },
+      "DashboardTrendPoint": {
+        "properties": {
+          "date": {
+            "type": "string",
+            "title": "Date"
+          },
+          "sessions": {
+            "type": "integer",
+            "title": "Sessions"
+          },
+          "avg_aggregate": {
+            "type": "number",
+            "title": "Avg Aggregate"
+          },
+          "dates": {
+            "type": "integer",
+            "title": "Dates"
+          },
+          "rejections": {
+            "type": "integer",
+            "title": "Rejections"
+          }
+        },
+        "type": "object",
+        "required": [
+          "date",
+          "sessions",
+          "avg_aggregate",
+          "dates",
+          "rejections"
+        ],
+        "title": "DashboardTrendPoint"
+      },
+      "DashboardTrendsResponse": {
+        "properties": {
+          "period": {
+            "type": "string",
+            "enum": [
+              "daily",
+              "weekly"
+            ],
+            "title": "Period"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/DashboardTrendPoint"
+            },
+            "type": "array",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "period",
+          "data"
+        ],
+        "title": "DashboardTrendsResponse"
+      },
+      "DashboardWeightedScore": {
+        "properties": {
+          "score": {
+            "type": "number",
+            "title": "Score"
+          },
+          "weight": {
+            "type": "number",
+            "title": "Weight"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          }
+        },
+        "type": "object",
+        "required": [
+          "score",
+          "weight",
+          "label"
+        ],
+        "title": "DashboardWeightedScore"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -1262,6 +2479,23 @@
             "type": "boolean",
             "title": "Is Accepting",
             "description": "Whether interview entry is currently accepting new suitors."
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active",
+            "description": "Whether the Heart has screening link enabled."
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message",
+            "description": "Optional informational message for paused state."
           }
         },
         "type": "object",
@@ -1271,7 +2505,8 @@
           "has_calendar",
           "question_count",
           "estimated_duration",
-          "is_accepting"
+          "is_accepting",
+          "active"
         ],
         "title": "PublicHeartProfileResponse",
         "description": "Publicly exposed profile data."
@@ -2294,7 +3529,7 @@
       "APIKeyHeader": {
         "type": "apiKey",
         "in": "header",
-        "name": "X-Admin-Key"
+        "name": "X-Dashboard-Key"
       },
       "HTTPBearer": {
         "type": "http",

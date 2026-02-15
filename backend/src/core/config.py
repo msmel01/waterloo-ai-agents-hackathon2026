@@ -65,6 +65,7 @@ class Config(BaseSettings):
     DB_FORCE_ROLL_BACK: bool = False
     REDIS_URL: str = "redis://localhost:6379/0"
     ADMIN_API_KEY: Optional[str] = None
+    DASHBOARD_API_KEY: Optional[str] = None
     MAX_SESSIONS_PER_DAY: int = 3
     SESSION_PENDING_TIMEOUT: int = 300
     SESSION_MAX_DURATION: int = 1800

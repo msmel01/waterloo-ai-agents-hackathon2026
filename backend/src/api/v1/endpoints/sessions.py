@@ -268,8 +268,8 @@ async def start_session(
         )
     if not heart.is_active:
         raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Interviews are currently paused. Please check back later.",
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Screening is currently paused. Check back later.",
         )
     active = await session_repo.find_active_by_suitor(suitor.id)
     if active:
