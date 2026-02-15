@@ -1,27 +1,35 @@
 # Backend
 
-Backend service for **Valentine Hotline** (Voice AI Hackathon Waterloo - 2026).
+Backend for **Valentine Hotline**
+Voice AI Hackathon Waterloo 2026
 
-## What it includes
+This service powers:
 
-- FastAPI REST API (`/api/v1`)
-- LiveKit voice agent runtime (`agent/`)
-- arq worker tasks (`workers/`)
-- PostgreSQL models + migrations
+- `/api/v1` REST endpoints (public + dashboard)
+- Live voice interview orchestration
+- async transcript scoring + maintenance jobs
 
-## Tech Stack
+## Stack
 
 - Python 3.11
 - FastAPI
-- SQLAlchemy + SQLModel
+- SQLModel + SQLAlchemy
 - Alembic
 - Redis + arq
-- LiveKit + Deepgram + OpenAI
-- Anthropic Claude (scoring)
+- LiveKit agent runtime
+- Smallest.ai STT/TTS for low-latency speech pipeline
+- OpenAI (conversation) + Anthropic (scoring)
 
-## Run Locally
+## Why It’s Cool
 
-### API
+- Voice-native screening flow with production-style endpoint hardening
+- Ultra-efficient speech loop powered by Smallest.ai
+- Worker-based scoring pipeline with retry and recovery paths
+- Built to be observable, testable, and deployable on Render
+
+## Run Local
+
+1. API
 
 ```bash
 cd backend
@@ -29,14 +37,14 @@ uv sync
 uv run uvicorn src.main:app --reload
 ```
 
-### Agent (new terminal)
+2. Agent (new terminal)
 
 ```bash
 cd backend
 uv run python -m livekit.agents start agent.main
 ```
 
-### Worker (new terminal)
+3. Worker (new terminal)
 
 ```bash
 cd backend
@@ -59,13 +67,12 @@ uv run pytest -v
 
 ## Environment
 
-- Copy `.env.example` to `.env`
-- Fill required keys for DB, LiveKit, Deepgram, OpenAI, Anthropic, Clerk, Redis
+- Copy `.env.example` -> `.env`
+- Set DB, Redis, LiveKit, OpenAI, Anthropic, Clerk keys
 
-## Key Paths
+## Important Paths
 
-- `src/` — API, schemas, services, repositories
-- `agent/` — LiveKit interview agent
-- `workers/` — scoring + maintenance jobs
-- `migrations/` — Alembic migrations
-- `config/heart_config.yaml` — heart persona/questions config
+- `src/` -> API + services + repositories
+- `agent/` -> voice interview agent
+- `workers/` -> scoring + cron jobs
+- `migrations/` -> Alembic revisions

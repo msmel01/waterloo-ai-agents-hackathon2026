@@ -1,28 +1,33 @@
 # Valentine Hotline
 
-Project for **Voice AI Hackathon Waterloo - 2026**.
+Built for **Voice AI Hackathon Waterloo 2026**.
 
-Valentine Hotline is an AI-powered dating screening system where suitors have a voice interview with an AI persona, then receive scored results and a date/no-date verdict.
+Valentine Hotline is a voice-first AI screening pipeline for dating intros:
 
-## Monorepo
+`Suitor calls in -> AI interview -> transcript + scoring -> Date / No Date`
 
-- `backend/` — FastAPI API, LiveKit agent runtime, worker tasks
-- `frontend/` — React + Vite client app
-- `locustfile.py` — load testing entry
-- `render.yaml` — deployment blueprint
+## Why It Feels Fast
 
-## Tech Stack
+Valentine Hotline is tuned for ultra-efficient voice interactions using **[Smallest.ai](https://smallest.ai/)** for low-latency speech handling in the interview loop.
 
-- Backend: Python, FastAPI, SQLAlchemy/SQLModel, Alembic
+## Repo Map
+
+- `backend/` -> FastAPI API, LiveKit agent, async workers
+- `frontend/` -> React + Vite app
+- `locustfile.py` -> load testing profile
+- `render.yaml` -> deployment setup
+
+## Stack
+
+- Backend: FastAPI, SQLModel/SQLAlchemy, Alembic, Redis, arq
 - Frontend: React, TypeScript, Vite, Tailwind
-- Realtime voice: LiveKit + Deepgram + OpenAI
-- Scoring: Anthropic Claude via arq worker + Redis
-- Database: PostgreSQL (Neon)
-- Auth: Clerk (suitor), API key (dashboard)
+- Voice: LiveKit + Smallest.ai STT/TTS + OpenAI conversation engine
+- Scoring: Anthropic Claude
+- Infra: Neon Postgres + Render
 
 ## Quick Start
 
-### 1) Backend
+1. API
 
 ```bash
 cd backend
@@ -30,21 +35,21 @@ uv sync
 uv run uvicorn src.main:app --reload
 ```
 
-### 2) Agent (separate terminal)
+2. Voice Agent (new terminal)
 
 ```bash
 cd backend
 uv run python -m livekit.agents start agent.main
 ```
 
-### 3) Worker (separate terminal)
+3. Worker (new terminal)
 
 ```bash
 cd backend
 uv run arq workers.main.WorkerSettings
 ```
 
-### 4) Frontend
+4. Frontend
 
 ```bash
 cd frontend
@@ -52,10 +57,13 @@ npm install
 npm run dev
 ```
 
-## Notes
+## Environment
 
-- Set environment variables in `backend/.env` and `frontend/.env.local`.
-- API is served under `/api/v1`.
-- For folder-specific details, see:
-  - `backend/README.md`
-  - `frontend/README.md`
+- Configure `backend/.env`
+- Configure `frontend/.env.local`
+- API base path is `/api/v1`
+
+## More Docs
+
+- `backend/README.md`
+- `frontend/README.md`

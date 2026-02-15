@@ -1,18 +1,26 @@
 # Frontend
 
-Frontend app for **Valentine Hotline** (Voice AI Hackathon Waterloo - 2026).
+Frontend for **Valentine Hotline**
+Voice AI Hackathon Waterloo 2026
 
-## Tech Stack
+The UI delivers the full suitor + dashboard experience:
 
-- React
-- TypeScript
-- Vite
+- suitor onboarding and interview journey
+- real-time voice room UX
+- results, feedback, and booking flow
+- dashboard analytics + session review
+
+## Stack
+
+- React + TypeScript + Vite
 - Tailwind CSS
 - TanStack Query
 - LiveKit client SDK
-- Clerk (auth)
+- Clerk auth
 
-## Run Locally
+Interview UX is optimized for fast turn-taking, backed by a Smallest.ai-powered speech pipeline on the backend.
+
+## Run Local
 
 ```bash
 cd frontend
@@ -29,21 +37,21 @@ npm run build
 
 ## Environment
 
-Create `frontend/.env.local` and set values like:
+Create `frontend/.env.local`:
 
-- `VITE_API_URL` (example: `http://localhost:8000`)
-- `VITE_CLERK_PUBLISHABLE_KEY`
-- `VITE_HEART_SLUG` (example: `heart`)
+- `VITE_API_URL=http://localhost:8000`
+- `VITE_CLERK_PUBLISHABLE_KEY=...`
+- `VITE_HEART_SLUG=heart`
 
-## Key Paths
+## Important Paths
 
-- `src/pages/` — route screens
-- `src/components/` — UI components
-- `src/hooks/` — app hooks (auth, polling, LiveKit)
-- `src/api/` — API client + generated endpoints
-- `src/types/` — shared frontend types
+- `src/pages/` -> route pages
+- `src/components/` -> reusable UI
+- `src/hooks/` -> auth, polling, session hooks
+- `src/api/` -> axios + generated clients
+- `src/types/` -> app types
 
 ## Notes
 
-- API calls target backend `/api/v1` routes.
-- Interview room uses LiveKit token returned by backend session start endpoint.
+- API target: `/api/v1`
+- Session tokens are issued by backend and consumed by LiveKit UI
