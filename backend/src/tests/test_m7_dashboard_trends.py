@@ -22,6 +22,18 @@ def _build_trends_db(make_fake_db_m7, fake_result_builder_m7, rows, *, heart):
     return make_fake_db_m7([fake_result_builder_m7(all_values=rows)], heart=heart)
 
 
+async def _call_trends(func, request, auth, db, **kwargs):
+    defaults = {"period": "daily", "days": 30}
+    defaults.update(kwargs)
+    return await func(
+        request,
+        auth,
+        db,
+        period=defaults["period"],
+        days=defaults["days"],
+    )
+
+
 @pytest.mark.asyncio
 async def test_m7_trends_001_returns_daily_data(
     dashboard_request,
@@ -35,7 +47,7 @@ async def test_m7_trends_001_returns_daily_data(
     db = _build_trends_db(
         make_fake_db_m7, fake_result_builder_m7, rows, heart=m7_seeded_heart
     )
-    out = await get_dashboard_trends(dashboard_request, "ok", db)
+    out = await _call_trends(get_dashboard_trends, dashboard_request, "ok", db)
     assert out.period == "daily"
     assert len(out.data) == 5
 
@@ -53,7 +65,7 @@ async def test_m7_trends_002_response_item_shape(
     db = _build_trends_db(
         make_fake_db_m7, fake_result_builder_m7, rows, heart=m7_seeded_heart
     )
-    out = await get_dashboard_trends(dashboard_request, "ok", db)
+    out = await _call_trends(get_dashboard_trends, dashboard_request, "ok", db)
     point = out.data[0].model_dump()
     for key in ["date", "sessions", "avg_aggregate", "dates", "rejections"]:
         assert key in point
@@ -72,7 +84,7 @@ async def test_m7_trends_003_daily_aggregation_correct(
     db = _build_trends_db(
         make_fake_db_m7, fake_result_builder_m7, rows, heart=m7_seeded_heart
     )
-    out = await get_dashboard_trends(dashboard_request, "ok", db)
+    out = await _call_trends(get_dashboard_trends, dashboard_request, "ok", db)
     assert out.data[0].sessions == 3
     assert out.data[0].dates == 2
     assert out.data[0].rejections == 1
@@ -92,7 +104,9 @@ async def test_m7_trends_004_weekly_period(
     db = _build_trends_db(
         make_fake_db_m7, fake_result_builder_m7, rows, heart=m7_seeded_heart
     )
-    out = await get_dashboard_trends(dashboard_request, "ok", db, period="weekly")
+    out = await _call_trends(
+        get_dashboard_trends, dashboard_request, "ok", db, period="weekly"
+    )
     assert out.period == "weekly"
 
 
@@ -109,7 +123,7 @@ async def test_m7_trends_005_custom_days_range(
     db = _build_trends_db(
         make_fake_db_m7, fake_result_builder_m7, rows, heart=m7_seeded_heart
     )
-    out = await get_dashboard_trends(dashboard_request, "ok", db, days=7)
+    out = await _call_trends(get_dashboard_trends, dashboard_request, "ok", db, days=7)
     assert len(out.data) == 1
 
 
@@ -126,7 +140,7 @@ async def test_m7_trends_006_default_30_days(
     db = _build_trends_db(
         make_fake_db_m7, fake_result_builder_m7, rows, heart=m7_seeded_heart
     )
-    out = await get_dashboard_trends(dashboard_request, "ok", db)
+    out = await _call_trends(get_dashboard_trends, dashboard_request, "ok", db)
     assert all(point.date for point in out.data)
 
 
@@ -145,7 +159,7 @@ async def test_m7_trends_007_empty_days_excluded_or_zero(
     db = _build_trends_db(
         make_fake_db_m7, fake_result_builder_m7, rows, heart=m7_seeded_heart
     )
-    out = await get_dashboard_trends(dashboard_request, "ok", db)
+    out = await _call_trends(get_dashboard_trends, dashboard_request, "ok", db)
     assert len(out.data) in (2, 5)
 
 
@@ -162,7 +176,7 @@ async def test_m7_trends_008_only_completed_sessions(
     db = _build_trends_db(
         make_fake_db_m7, fake_result_builder_m7, rows, heart=m7_seeded_heart
     )
-    out = await get_dashboard_trends(dashboard_request, "ok", db)
+    out = await _call_trends(get_dashboard_trends, dashboard_request, "ok", db)
     assert out.data[0].sessions == 2
 
 
@@ -181,7 +195,7 @@ async def test_m7_trends_009_sorted_by_date_descending(
     db = _build_trends_db(
         make_fake_db_m7, fake_result_builder_m7, rows, heart=m7_seeded_heart
     )
-    out = await get_dashboard_trends(dashboard_request, "ok", db)
+    out = await _call_trends(get_dashboard_trends, dashboard_request, "ok", db)
     dates = [point.date for point in out.data]
     assert dates == sorted(dates, reverse=True)
 

@@ -40,6 +40,33 @@ def _build_sessions_db(make_fake_db_m7, fake_result_builder_m7, *, heart, rows, 
     )
 
 
+async def _call_sessions(func, request, auth, db, **kwargs):
+    defaults = {
+        "page": 1,
+        "per_page": 20,
+        "verdict": None,
+        "sort_by": "date",
+        "sort_order": "desc",
+        "search": None,
+        "date_from": None,
+        "date_to": None,
+    }
+    defaults.update(kwargs)
+    return await func(
+        request,
+        auth,
+        db,
+        page=defaults["page"],
+        per_page=defaults["per_page"],
+        verdict=defaults["verdict"],
+        sort_by=defaults["sort_by"],
+        sort_order=defaults["sort_order"],
+        search=defaults["search"],
+        date_from=defaults["date_from"],
+        date_to=defaults["date_to"],
+    )
+
+
 @pytest.mark.asyncio
 async def test_m7_integrity_001_stats_consistent_with_session_list(
     dashboard_request,
@@ -66,7 +93,9 @@ async def test_m7_integrity_001_stats_consistent_with_session_list(
         rows=rows,
         total=10,
     )
-    session_list = await get_dashboard_sessions(dashboard_request, "ok", sessions_db)
+    session_list = await _call_sessions(
+        get_dashboard_sessions, dashboard_request, "ok", sessions_db
+    )
     assert stats.total_sessions == session_list.pagination.total
 
 
@@ -97,7 +126,9 @@ async def test_m7_integrity_002_session_detail_matches_list_summary(
         rows=list_rows,
         total=1,
     )
-    listing = await get_dashboard_sessions(dashboard_request, "ok", list_db)
+    listing = await _call_sessions(
+        get_dashboard_sessions, dashboard_request, "ok", list_db
+    )
 
     detail_db = make_fake_db_m7(
         [
@@ -173,8 +204,8 @@ async def test_m7_integrity_005_large_dataset_pagination(
         rows=rows,
         total=500,
     )
-    out = await get_dashboard_sessions(
-        dashboard_request, "ok", db, page=25, per_page=20
+    out = await _call_sessions(
+        get_dashboard_sessions, dashboard_request, "ok", db, page=25, per_page=20
     )
     assert len(out.sessions) == 20
     assert out.pagination.total == 500
@@ -200,7 +231,7 @@ async def test_m7_integrity_006_special_characters_in_suitor_name(
         rows=rows,
         total=1,
     )
-    out = await get_dashboard_sessions(dashboard_request, "ok", db)
+    out = await _call_sessions(get_dashboard_sessions, dashboard_request, "ok", db)
     assert out.sessions[0].suitor_name == "O'Brien-Smith 🎉"
 
 
@@ -215,8 +246,12 @@ async def test_m7_integrity_007_search_sql_injection_safe(
     db = _build_sessions_db(
         make_fake_db_m7, fake_result_builder_m7, heart=m7_seeded_heart, rows=[], total=0
     )
-    out = await get_dashboard_sessions(
-        dashboard_request, "ok", db, search="'; DROP TABLE sessions; --"
+    out = await _call_sessions(
+        get_dashboard_sessions,
+        dashboard_request,
+        "ok",
+        db,
+        search="'; DROP TABLE sessions; --",
     )
     assert out.sessions == []
 
@@ -275,7 +310,7 @@ async def test_m7_integrity_009_null_intro_message(
         rows=rows,
         total=1,
     )
-    list_out = await get_dashboard_sessions(dashboard_request, "ok", db)
+    list_out = await _call_sessions(get_dashboard_sessions, dashboard_request, "ok", db)
     assert list_out.sessions[0].suitor_intro is None
 
     detail_db = make_fake_db_m7(

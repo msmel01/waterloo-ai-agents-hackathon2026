@@ -32,6 +32,33 @@ def _build_db_for_sessions(
     )
 
 
+async def _call_sessions(func, request, auth, db, *args, **kwargs):
+    defaults = {
+        "page": 1,
+        "per_page": 20,
+        "verdict": None,
+        "sort_by": "date",
+        "sort_order": "desc",
+        "search": None,
+        "date_from": None,
+        "date_to": None,
+    }
+    defaults.update(kwargs)
+    return await func(
+        request,
+        auth,
+        db,
+        page=defaults["page"],
+        per_page=defaults["per_page"],
+        verdict=defaults["verdict"],
+        sort_by=defaults["sort_by"],
+        sort_order=defaults["sort_order"],
+        search=defaults["search"],
+        date_from=defaults["date_from"],
+        date_to=defaults["date_to"],
+    )
+
+
 @pytest.mark.asyncio
 async def test_m7_sessions_001_returns_paginated_list(
     dashboard_request,
@@ -51,7 +78,7 @@ async def test_m7_sessions_001_returns_paginated_list(
         rows=rows,
         heart=m7_seeded_heart,
     )
-    out = await get_dashboard_sessions(dashboard_request, "ok", db)
+    out = await _call_sessions(get_dashboard_sessions, dashboard_request, "ok", db)
     assert len(out.sessions) == 5
     assert out.pagination.total == 5
 
@@ -74,7 +101,7 @@ async def test_m7_sessions_002_response_item_shape(
         rows=rows,
         heart=m7_seeded_heart,
     )
-    out = await get_dashboard_sessions(dashboard_request, "ok", db)
+    out = await _call_sessions(get_dashboard_sessions, dashboard_request, "ok", db)
     item = out.sessions[0].model_dump()
     for key in [
         "session_id",
@@ -101,7 +128,7 @@ async def test_m7_sessions_003_empty_list(
     db = _build_db_for_sessions(
         make_fake_db_m7, fake_result_builder_m7, total=0, rows=[], heart=m7_seeded_heart
     )
-    out = await get_dashboard_sessions(dashboard_request, "ok", db)
+    out = await _call_sessions(get_dashboard_sessions, dashboard_request, "ok", db)
     assert out.sessions == []
     assert out.pagination.total == 0
 
@@ -124,7 +151,7 @@ async def test_m7_sessions_004_includes_suitor_data(
         rows=rows,
         heart=m7_seeded_heart,
     )
-    out = await get_dashboard_sessions(dashboard_request, "ok", db)
+    out = await _call_sessions(get_dashboard_sessions, dashboard_request, "ok", db)
     assert out.sessions[0].suitor_name == "Alex"
     assert out.sessions[0].suitor_intro == "Hey, I love hiking and cooking."
 
@@ -150,7 +177,7 @@ async def test_m7_sessions_005_duration_calculated(
         rows=rows,
         heart=m7_seeded_heart,
     )
-    out = await get_dashboard_sessions(dashboard_request, "ok", db)
+    out = await _call_sessions(get_dashboard_sessions, dashboard_request, "ok", db)
     assert out.sessions[0].duration_seconds == 600
 
 
@@ -174,7 +201,7 @@ async def test_m7_sessions_006_duration_null_for_active_session(
         rows=rows,
         heart=m7_seeded_heart,
     )
-    out = await get_dashboard_sessions(dashboard_request, "ok", db)
+    out = await _call_sessions(get_dashboard_sessions, dashboard_request, "ok", db)
     assert out.sessions[0].duration_seconds is None
 
 
@@ -196,7 +223,7 @@ async def test_m7_sessions_007_questions_asked_from_transcript(
         rows=rows,
         heart=m7_seeded_heart,
     )
-    out = await get_dashboard_sessions(dashboard_request, "ok", db)
+    out = await _call_sessions(get_dashboard_sessions, dashboard_request, "ok", db)
     assert out.sessions[0].questions_asked == 5
 
 
@@ -218,7 +245,7 @@ async def test_m7_sessions_008_scores_null_for_unscored_session(
         rows=rows,
         heart=m7_seeded_heart,
     )
-    out = await get_dashboard_sessions(dashboard_request, "ok", db)
+    out = await _call_sessions(get_dashboard_sessions, dashboard_request, "ok", db)
     assert out.sessions[0].scores is None
     assert out.sessions[0].verdict == "pending"
 
@@ -248,7 +275,7 @@ async def test_m7_sessions_009_has_booking_true_when_booked(
         rows=rows,
         heart=m7_seeded_heart,
     )
-    out = await get_dashboard_sessions(dashboard_request, "ok", db)
+    out = await _call_sessions(get_dashboard_sessions, dashboard_request, "ok", db)
     assert out.sessions[0].has_booking is True
     assert out.sessions[0].booking_date is not None
 
@@ -274,7 +301,7 @@ async def test_m7_sessions_010_has_booking_false_when_no_booking(
         rows=rows,
         heart=m7_seeded_heart,
     )
-    out = await get_dashboard_sessions(dashboard_request, "ok", db)
+    out = await _call_sessions(get_dashboard_sessions, dashboard_request, "ok", db)
     assert out.sessions[0].has_booking is False
     assert out.sessions[0].booking_date is None
 
@@ -297,7 +324,7 @@ async def test_m7_sessions_011_default_pagination(
         rows=rows[:20],
         heart=m7_seeded_heart,
     )
-    out = await get_dashboard_sessions(dashboard_request, "ok", db)
+    out = await _call_sessions(get_dashboard_sessions, dashboard_request, "ok", db)
     assert out.pagination.page == 1
     assert out.pagination.per_page == 20
     assert out.pagination.total == 25
@@ -322,7 +349,9 @@ async def test_m7_sessions_012_custom_page_size(
         rows=rows[:5],
         heart=m7_seeded_heart,
     )
-    out = await get_dashboard_sessions(dashboard_request, "ok", db, page=2, per_page=5)
+    out = await _call_sessions(
+        get_dashboard_sessions, dashboard_request, "ok", db, page=2, per_page=5
+    )
     assert len(out.sessions) == 5
     assert out.pagination.page == 2
     assert out.pagination.has_prev is True
@@ -347,7 +376,9 @@ async def test_m7_sessions_013_last_page(
         rows=rows,
         heart=m7_seeded_heart,
     )
-    out = await get_dashboard_sessions(dashboard_request, "ok", db, page=3, per_page=10)
+    out = await _call_sessions(
+        get_dashboard_sessions, dashboard_request, "ok", db, page=3, per_page=10
+    )
     assert len(out.sessions) == 2
     assert out.pagination.has_next is False
 
@@ -397,7 +428,9 @@ async def test_m7_sessions_016_filter_by_verdict_date(
         rows=rows,
         heart=m7_seeded_heart,
     )
-    out = await get_dashboard_sessions(dashboard_request, "ok", db, verdict="date")
+    out = await _call_sessions(
+        get_dashboard_sessions, dashboard_request, "ok", db, verdict="date"
+    )
     assert len(out.sessions) == 2
     assert all(row.verdict == "date" for row in out.sessions)
 
@@ -423,7 +456,9 @@ async def test_m7_sessions_017_filter_by_verdict_no_date(
         rows=rows,
         heart=m7_seeded_heart,
     )
-    out = await get_dashboard_sessions(dashboard_request, "ok", db, verdict="no_date")
+    out = await _call_sessions(
+        get_dashboard_sessions, dashboard_request, "ok", db, verdict="no_date"
+    )
     assert len(out.sessions) == 1
     assert out.sessions[0].verdict == "no_date"
 
@@ -446,7 +481,9 @@ async def test_m7_sessions_018_filter_by_verdict_pending(
         rows=rows,
         heart=m7_seeded_heart,
     )
-    out = await get_dashboard_sessions(dashboard_request, "ok", db, verdict="pending")
+    out = await _call_sessions(
+        get_dashboard_sessions, dashboard_request, "ok", db, verdict="pending"
+    )
     assert len(out.sessions) == 1
     assert out.sessions[0].verdict == "pending"
 
@@ -471,7 +508,9 @@ async def test_m7_sessions_019_search_by_suitor_name(
         rows=rows,
         heart=m7_seeded_heart,
     )
-    out = await get_dashboard_sessions(dashboard_request, "ok", db, search="alex")
+    out = await _call_sessions(
+        get_dashboard_sessions, dashboard_request, "ok", db, search="alex"
+    )
     assert {s.suitor_name for s in out.sessions} == {"Alex", "Alexandra"}
 
 
@@ -483,8 +522,8 @@ async def test_m7_sessions_020_search_no_results(
     db = _build_db_for_sessions(
         make_fake_db_m7, fake_result_builder_m7, total=0, rows=[], heart=m7_seeded_heart
     )
-    out = await get_dashboard_sessions(
-        dashboard_request, "ok", db, search="nonexistentname"
+    out = await _call_sessions(
+        get_dashboard_sessions, dashboard_request, "ok", db, search="nonexistentname"
     )
     assert out.sessions == []
     assert out.pagination.total == 0
@@ -508,7 +547,8 @@ async def test_m7_sessions_021_filter_by_date_range(
         rows=rows,
         heart=m7_seeded_heart,
     )
-    out = await get_dashboard_sessions(
+    out = await _call_sessions(
+        get_dashboard_sessions,
         dashboard_request,
         "ok",
         db,
@@ -539,7 +579,8 @@ async def test_m7_sessions_022_combined_filters(
         rows=rows,
         heart=m7_seeded_heart,
     )
-    out = await get_dashboard_sessions(
+    out = await _call_sessions(
+        get_dashboard_sessions,
         dashboard_request,
         "ok",
         db,
@@ -570,7 +611,7 @@ async def test_m7_sessions_023_sort_by_date_desc_default(
         rows=rows,
         heart=m7_seeded_heart,
     )
-    out = await get_dashboard_sessions(dashboard_request, "ok", db)
+    out = await _call_sessions(get_dashboard_sessions, dashboard_request, "ok", db)
     assert out.pagination.page == 1
 
 
@@ -592,8 +633,13 @@ async def test_m7_sessions_024_sort_by_date_asc(
         rows=rows,
         heart=m7_seeded_heart,
     )
-    out = await get_dashboard_sessions(
-        dashboard_request, "ok", db, sort_by="date", sort_order="asc"
+    out = await _call_sessions(
+        get_dashboard_sessions,
+        dashboard_request,
+        "ok",
+        db,
+        sort_by="date",
+        sort_order="asc",
     )
     assert len(out.sessions) == 3
 
@@ -621,8 +667,13 @@ async def test_m7_sessions_025_sort_by_score_desc(
         rows=rows,
         heart=m7_seeded_heart,
     )
-    out = await get_dashboard_sessions(
-        dashboard_request, "ok", db, sort_by="score", sort_order="desc"
+    out = await _call_sessions(
+        get_dashboard_sessions,
+        dashboard_request,
+        "ok",
+        db,
+        sort_by="score",
+        sort_order="desc",
     )
     vals = [s.scores.aggregate for s in out.sessions if s.scores]
     assert sorted(vals, reverse=True) == sorted(vals, reverse=True)
@@ -649,7 +700,12 @@ async def test_m7_sessions_026_sort_by_name(
         rows=rows,
         heart=m7_seeded_heart,
     )
-    out = await get_dashboard_sessions(
-        dashboard_request, "ok", db, sort_by="name", sort_order="asc"
+    out = await _call_sessions(
+        get_dashboard_sessions,
+        dashboard_request,
+        "ok",
+        db,
+        sort_by="name",
+        sort_order="asc",
     )
     assert {s.suitor_name for s in out.sessions} == {"Alex", "Bella", "Charlie"}
